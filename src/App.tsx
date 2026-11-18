@@ -11,6 +11,7 @@ import { useCollection } from './hooks/useCollection'
 import { useCustomLists } from './hooks/useCustomLists'
 import { SETS, type AppTab } from './sets'
 import type { CardStatus, CardVariant, FilterStatus, PokemonCard, SortKey } from './types'
+import { sortRarities } from './utils/rarity'
 import './App.css'
 
 function money(n: number) {
@@ -93,7 +94,7 @@ export default function App() {
 
   const rarities = useMemo(() => {
     const set = new Set(cards.map((c) => c.rarity))
-    return [...set].sort((a, b) => a.localeCompare(b, 'fr'))
+    return sortRarities([...set])
   }, [cards])
 
   const enriched = useMemo(() => {
