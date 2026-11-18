@@ -1,19 +1,22 @@
-# Pokémon 151 — Ma collection
+# Ma collection Pokémon
 
-Application web pour suivre ta collection de l’extension **Pokémon 151** :
+Application pour suivre tes séries **151** et **Règne Delta** : cartes possédées / manquantes / reverse, listes perso, estimations et export.
 
-- voir toutes les cartes (images + rareté)
-- marquer **possédée**, **manquante** ou **recherchée**
-- afficher la **côte** (Cardmarket en euros, sinon TCGPlayer)
-- **copier / télécharger** la liste des numéros recherchés
+## Accès en ligne
 
-La collection est enregistrée dans ton navigateur (rien n’est envoyé sur un serveur).
+**https://0xdocteur.github.io/ma-collection-pokemon/**
 
-## Lancer
+## Sur ton PC
 
 ```bash
 npm install
 npm run dev
 ```
 
-Ouvre l’adresse affichée (souvent `http://localhost:5173`).
+## Transférer ta collection vers le site en ligne
+
+1. Sur localhost : clique **Télécharger ma sauvegarde**
+2. Ouvre le site en ligne
+3. Clique **Restaurer une sauvegarde** et choisis le fichier
+
+La collection reste dans ton navigateur (pas de compte).
