@@ -4,6 +4,7 @@ import { BackupPanel } from './components/BackupPanel'
 import { CustomLists } from './components/CustomLists'
 import { ExportPanel } from './components/ExportPanel'
 import { GlobalEstimate } from './components/GlobalEstimate'
+import { LotSearch } from './components/LotSearch'
 import { PokemonCardTile } from './components/PokemonCardTile'
 import { QuickAdd } from './components/QuickAdd'
 import { useCollection } from './hooks/useCollection'
@@ -218,6 +219,13 @@ export default function App() {
         </button>
         <button
           type="button"
+          className={tab === 'lots' ? 'tab active' : 'tab'}
+          onClick={() => setTab('lots')}
+        >
+          Chercher des lots
+        </button>
+        <button
+          type="button"
           className={tab === 'estimation' ? 'tab active' : 'tab'}
           onClick={() => setTab('estimation')}
         >
@@ -241,6 +249,14 @@ export default function App() {
           <p className="state-msg error">{error}</p>
         ) : (
           <CustomLists cardsBySet={cardsBySet} {...customLists} />
+        )
+      ) : tab === 'lots' ? (
+        loading ? (
+          <p className="state-msg">Chargement des séries…</p>
+        ) : error ? (
+          <p className="state-msg error">{error}</p>
+        ) : (
+          <LotSearch cardsBySet={cardsBySet} getStatus={getStatus} />
         )
       ) : (
         <>
