@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 96" fill="none">
+  <circle cx="48" cy="48" r="40" fill="#f4f1ec"/>
+  <path d="M8 48a40 40 0 0 1 80 0" fill="#e63946"/>
+  <path d="M8 48h80" stroke="#0c1118" stroke-width="7"/>
+  <circle cx="48" cy="48" r="40" stroke="#0c1118" stroke-width="5" fill="none"/>
+  <circle cx="48" cy="48" r="14" fill="#0c1118"/>
+  <circle cx="48" cy="48" r="8.5" fill="#f4f1ec"/>
+  <circle cx="48" cy="48" r="4" fill="#0c1118"/>
+  <text
+    x="112"
+    y="62"
+    fill="#f4f1ec"
+    font-family="Syne, Arial Black, Arial, sans-serif"
+    font-size="52"
+    font-weight="800"
+    letter-spacing="-2"
+  >POKEDOC</text>
+</svg>

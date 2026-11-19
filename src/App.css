@@ -8,19 +8,73 @@
   z-index: 1;
 }
 
+.site-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.85rem 1rem;
+  margin-bottom: 1rem;
+  position: sticky;
+  top: 0.55rem;
+  z-index: 5;
+  padding: 0.35rem 0.35rem 0.35rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(12, 17, 24, 0.72);
+  border: 1px solid var(--line);
+  backdrop-filter: blur(14px);
+}
+
+.pokedoc-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-shrink: 0;
+}
+
+.pokedoc-ball {
+  display: block;
+  filter: drop-shadow(0 4px 10px rgba(230, 57, 70, 0.28));
+}
+
+.pokedoc-word {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 1.15rem;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  background: linear-gradient(120deg, #fff 10%, var(--gold) 55%, var(--red) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.pokedoc-logo.compact .pokedoc-word {
+  font-size: 0.95rem;
+}
+
+.hero-logo {
+  margin-bottom: 0.85rem;
+}
+
+.hero-logo .pokedoc-word {
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+}
+
+.hero-logo .pokedoc-ball {
+  width: clamp(34px, 5vw, 48px);
+  height: clamp(34px, 5vw, 48px);
+}
+
 .tabs {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  margin-bottom: 1rem;
-  position: sticky;
-  top: 0.75rem;
-  z-index: 5;
-  padding: 0.45rem;
-  border-radius: 999px;
-  background: rgba(12, 17, 24, 0.78);
-  border: 1px solid var(--line);
-  backdrop-filter: blur(12px);
+  flex: 1;
+  min-width: min(100%, 280px);
+  padding: 0.1rem;
+  border: 0;
+  background: transparent;
+  backdrop-filter: none;
 }
 
 .tab {
@@ -1140,6 +1194,8 @@ textarea:focus {
   color: var(--muted);
   font-size: 0.82rem;
   max-width: 70ch;
+  display: grid;
+  gap: 0.75rem;
 }
 
 @keyframes rise {

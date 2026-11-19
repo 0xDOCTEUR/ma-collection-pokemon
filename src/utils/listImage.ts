@@ -1,3 +1,5 @@
+import { drawPokedocLogo } from './brand'
+
 export interface ListImageRow {
   number: string
   name: string
@@ -82,7 +84,7 @@ export async function downloadListImage(options: ListImageOptions): Promise<void
   const thumbW = 52
   const thumbH = 72
   const rowH = 92
-  const headerH = 118
+  const headerH = 148
   const footerH = 96
   const height = headerH + rows.length * rowH + footerH
 
@@ -109,20 +111,22 @@ export async function downloadListImage(options: ListImageOptions): Promise<void
   ctx.arc(40, height + 20, 140, 0, Math.PI * 2)
   ctx.fill()
 
+  drawPokedocLogo(ctx, pad, 22, 34)
+
   ctx.fillStyle = '#9aa6b5'
   ctx.font = '500 13px "DM Sans", system-ui, sans-serif'
-  ctx.fillText('Liste de cartes · comparaison des cotes', pad, 36)
+  ctx.fillText('Liste de cartes · comparaison des cotes', pad, 78)
 
   ctx.fillStyle = '#f4f1ec'
   ctx.font = '800 28px Syne, system-ui, sans-serif'
-  ctx.fillText(title, pad, 70)
+  ctx.fillText(title, pad, 108)
 
   ctx.fillStyle = '#9aa6b5'
   ctx.font = '400 14px "DM Sans", system-ui, sans-serif'
   ctx.fillText(
     `${setName} · ${rows.length} carte${rows.length > 1 ? 's' : ''}`,
     pad,
-    96,
+    132,
   )
 
   const images = await Promise.all(rows.map((row) => loadImage(row.imageUrl)))

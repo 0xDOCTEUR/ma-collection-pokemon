@@ -5,6 +5,7 @@ import { CustomLists } from './components/CustomLists'
 import { ExportPanel } from './components/ExportPanel'
 import { GlobalEstimate } from './components/GlobalEstimate'
 import { LotSearch } from './components/LotSearch'
+import { PokedocLogo } from './components/PokedocLogo'
 import { PokemonCardTile } from './components/PokemonCardTile'
 import { QuickAdd } from './components/QuickAdd'
 import { useCollection } from './hooks/useCollection'
@@ -200,40 +201,43 @@ export default function App() {
     <div className="app">
       <div className="atmosphere" aria-hidden="true" />
 
-      <nav className="tabs" aria-label="Séries">
-        {SETS.map((set) => (
+      <header className="site-top">
+        <PokedocLogo />
+        <nav className="tabs" aria-label="Séries">
+          {SETS.map((set) => (
+            <button
+              key={set.id}
+              type="button"
+              className={tab === set.id ? 'tab active' : 'tab'}
+              onClick={() => setTab(set.id)}
+            >
+              {set.shortName}
+            </button>
+          ))}
           <button
-            key={set.id}
             type="button"
-            className={tab === set.id ? 'tab active' : 'tab'}
-            onClick={() => setTab(set.id)}
+            className={tab === 'listes' ? 'tab active' : 'tab'}
+            onClick={() => setTab('listes')}
           >
-            {set.shortName}
+            Mes listes
           </button>
-        ))}
-        <button
-          type="button"
-          className={tab === 'listes' ? 'tab active' : 'tab'}
-          onClick={() => setTab('listes')}
-        >
-          Mes listes
-        </button>
-        <button
-          type="button"
-          className={tab === 'lots' ? 'tab active' : 'tab'}
-          onClick={() => setTab('lots')}
-        >
-          Chercher des lots
-        </button>
-        <button
-          type="button"
-          className={tab === 'estimation' ? 'tab active' : 'tab'}
-          onClick={() => setTab('estimation')}
-        >
-          Estimation
-          <span className="tab-value">{money(globalOwnedValue)}</span>
-        </button>
-      </nav>
+          <button
+            type="button"
+            className={tab === 'lots' ? 'tab active' : 'tab'}
+            onClick={() => setTab('lots')}
+          >
+            Chercher des lots
+          </button>
+          <button
+            type="button"
+            className={tab === 'estimation' ? 'tab active' : 'tab'}
+            onClick={() => setTab('estimation')}
+          >
+            Estimation
+            <span className="tab-value">{money(globalOwnedValue)}</span>
+          </button>
+        </nav>
+      </header>
 
       {tab === 'estimation' ? (
         loading ? (
@@ -263,6 +267,7 @@ export default function App() {
         <>
           <header className="hero">
             <div className="hero-copy">
+              <PokedocLogo className="hero-logo" />
               <p className="brand">{activeSet?.name}</p>
               <h1>Ta collection, claire et à jour</h1>
               <p className="lede">
@@ -426,10 +431,11 @@ export default function App() {
       <BackupPanel />
 
       <footer className="footer">
+        <PokedocLogo compact />
         <p>
-          Séries : Pokémon 151 et Règne Delta. Côtes TCGPlayer (converties en euros) et Cardmarket.
-          Collection sauvegardée dans ton navigateur. Pour le site en ligne, exporte puis restaure ta
-          sauvegarde.
+          POKEDOC — séries Pokémon 151 et Règne Delta. Côtes TCGPlayer (converties en euros) et
+          Cardmarket. Collection sauvegardée dans ton navigateur. Pour le site en ligne, exporte puis
+          restaure ta sauvegarde.
         </p>
       </footer>
     </div>
