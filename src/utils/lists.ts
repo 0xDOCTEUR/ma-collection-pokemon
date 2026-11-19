@@ -40,14 +40,14 @@ export function sortEntries(entries: ListEntry[]): ListEntry[] {
 }
 
 export function formatList(entries: ListEntry[], format: ListFormat): string {
-  const sorted = sortEntries(entries)
+  // Conserve l’ordre fourni (tri numéro, rareté, etc. géré par l’appelant).
   if (format === 'numbers') {
-    return sorted
+    return entries
       .map((e) => (e.variant === 'reverse' ? `${e.card.number}R` : e.card.number))
       .join(', ')
   }
   if (format === 'numbers-names') {
-    return sorted
+    return entries
       .map(
         (e) =>
           `${e.card.number} — ${e.card.name}${e.variant === 'reverse' ? ' (reverse)' : ''}`,
@@ -56,7 +56,7 @@ export function formatList(entries: ListEntry[], format: ListFormat): string {
   }
   return [
     'numero;nom;version;statut;rarete;prix_tcgplayer_eur;prix_cardmarket_eur',
-    ...sorted.map((e) => {
+    ...entries.map((e) => {
       const price = pricesFor(e.card, e.variant)
       const cm = cardmarketPricesFor(e.card, e.variant)
       const statut =

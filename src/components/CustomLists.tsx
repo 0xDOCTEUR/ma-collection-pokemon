@@ -7,7 +7,7 @@ import {
 } from '../api/pokemon'
 import type { CustomList } from '../hooks/useCustomLists'
 import { SETS } from '../sets'
-import type { CardVariant, PokemonCard } from '../types'
+import type { CardVariant, PokemonCard, SortKey } from '../types'
 import { cardmarketPricesFor, pricesFor, variantKey } from '../types'
 import {
   downloadText,
@@ -17,6 +17,29 @@ import {
   type ListFormat,
 } from '../utils/lists'
 import { downloadListImage } from '../utils/listImage'
+import { compareRarity } from '../utils/rarity'
+
+type ListSortKey = Extract<
+  SortKey,
+  'number' | 'name' | 'rarity-asc' | 'rarity-desc' | 'price-asc' | 'price-desc'
+>
+
+function compareCards(a: PokemonCard, b: PokemonCard, sort: ListSortKey): number {
+  if (sort === 'name') return a.name.localeCompare(b.name, 'fr')
+  if (sort === 'rarity-asc') {
+    const byRarity = compareRarity(a.rarity, b.rarity)
+    if (byRarity !== 0) return byRarity
+    return Number.parseInt(a.number, 10) - Number.parseInt(b.number, 10)
+  }
+  if (sort === 'rarity-desc') {
+    const byRarity = compareRarity(b.rarity, a.rarity)
+    if (byRarity !== 0) return byRarity
+    return Number.parseInt(a.number, 10) - Number.parseInt(b.number, 10)
+  }
+  if (sort === 'price-asc') return euroValue(a) - euroValue(b)
+  if (sort === 'price-desc') return euroValue(b) - euroValue(a)
+  return Number.parseInt(a.number, 10) - Number.parseInt(b.number, 10)
+}
 
 interface Props {
   cardsBySet: Record<string, PokemonCard[]>
@@ -49,6 +72,7 @@ export function CustomLists({
   const [format, setFormat] = useState<ListFormat>('numbers-names')
   const [copied, setCopied] = useState(false)
   const [onlySelected, setOnlySelected] = useState(false)
+  const [sort, setSort] = useState<ListSortKey>('number')
   const [imageBusy, setImageBusy] = useState(false)
   const [imageError, setImageError] = useState<string | null>(null)
   const detailRef = useRef<HTMLElement>(null)
@@ -75,11 +99,11 @@ export function CustomLists({
       }
     }
     return entries.sort((a, b) => {
-      const n = Number.parseInt(a.card.number, 10) - Number.parseInt(b.card.number, 10)
-      if (n !== 0) return n
+      const byCard = compareCards(a.card, b.card, sort)
+      if (byCard !== 0) return byCard
       return a.variant.localeCompare(b.variant)
     })
-  }, [active, cards, selectedSet])
+  }, [active, cards, selectedSet, sort])
 
   const selectedValue = useMemo(
     () => selectedEntries.reduce((sum, e) => sum + euroValue(e.card, e.variant), 0),
@@ -133,7 +157,7 @@ export function CustomLists({
 
   const visibleCards = useMemo(() => {
     const q = deferredQuery.trim().toLowerCase()
-    return cards.filter((card) => {
+    const filtered = cards.filter((card) => {
       if (onlySelected) {
         const hasNormal = selectedSet.has(variantKey(card.id, 'normal'))
         const hasReverse =
@@ -147,7 +171,8 @@ export function CustomLists({
         `${card.number}/${card.printedTotal}`.includes(q)
       )
     })
-  }, [cards, deferredQuery, onlySelected, selectedSet])
+    return [...filtered].sort((a, b) => compareCards(a, b, sort))
+  }, [cards, deferredQuery, onlySelected, selectedSet, sort])
 
   function formatQuoteDate(raw: string | null | undefined) {
     if (!raw) return null
@@ -520,14 +545,30 @@ export function CustomLists({
               </div>
 
               <h3 className="list-picker-title">Ajouter ou retirer des cartes</h3>
-              <label className="search list-search">
-                Recherche dans {setInfo?.name ?? 'la collection'}
-                <input
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Nom ou numéro"
-                />
-              </label>
+              <div className="list-tools">
+                <label className="search list-search">
+                  Recherche dans {setInfo?.name ?? 'la collection'}
+                  <input
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder="Nom ou numéro"
+                  />
+                </label>
+                <label>
+                  Tri
+                  <select
+                    value={sort}
+                    onChange={(e) => setSort(e.target.value as ListSortKey)}
+                  >
+                    <option value="number">Numéro</option>
+                    <option value="name">Nom</option>
+                    <option value="rarity-asc">Rareté (moins rare → plus rare)</option>
+                    <option value="rarity-desc">Rareté (plus rare → moins rare)</option>
+                    <option value="price-desc">Côte TCG décroissante</option>
+                    <option value="price-asc">Côte TCG croissante</option>
+                  </select>
+                </label>
+              </div>
 
               <div className="select-grid">
                 {visibleCards.map((card) => (
