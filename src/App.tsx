@@ -253,7 +253,7 @@ export default function App() {
         ) : error ? (
           <p className="state-msg error">{error}</p>
         ) : (
-          <CustomLists cardsBySet={cardsBySet} {...customLists} />
+          <CustomLists cardsBySet={cardsBySet} getStatus={getStatus} {...customLists} />
         )
       ) : tab === 'lots' ? (
         loading ? (

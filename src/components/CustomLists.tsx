@@ -1,4 +1,4 @@
-import { useDeferredValue, useMemo, useRef, useState } from 'react'
+import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import {
   cardmarketEuroValue,
   euroValue,
@@ -7,7 +7,13 @@ import {
 } from '../api/pokemon'
 import type { CustomList } from '../hooks/useCustomLists'
 import { SETS } from '../sets'
-import type { CardVariant, PokemonCard, SortKey } from '../types'
+import type {
+  CardStatus,
+  CardVariant,
+  FilterStatus,
+  PokemonCard,
+  SortKey,
+} from '../types'
 import { cardmarketPricesFor, pricesFor, variantKey } from '../types'
 import {
   downloadText,
@@ -17,25 +23,10 @@ import {
   type ListFormat,
 } from '../utils/lists'
 import { downloadListImage } from '../utils/listImage'
-import { compareRarity } from '../utils/rarity'
+import { sortRarities } from '../utils/rarity'
 
-type ListSortKey = Extract<
-  SortKey,
-  'number' | 'name' | 'rarity-asc' | 'rarity-desc' | 'price-asc' | 'price-desc'
->
-
-function compareCards(a: PokemonCard, b: PokemonCard, sort: ListSortKey): number {
+function compareCards(a: PokemonCard, b: PokemonCard, sort: SortKey): number {
   if (sort === 'name') return a.name.localeCompare(b.name, 'fr')
-  if (sort === 'rarity-asc') {
-    const byRarity = compareRarity(a.rarity, b.rarity)
-    if (byRarity !== 0) return byRarity
-    return Number.parseInt(a.number, 10) - Number.parseInt(b.number, 10)
-  }
-  if (sort === 'rarity-desc') {
-    const byRarity = compareRarity(b.rarity, a.rarity)
-    if (byRarity !== 0) return byRarity
-    return Number.parseInt(a.number, 10) - Number.parseInt(b.number, 10)
-  }
   if (sort === 'price-asc') return euroValue(a) - euroValue(b)
   if (sort === 'price-desc') return euroValue(b) - euroValue(a)
   return Number.parseInt(a.number, 10) - Number.parseInt(b.number, 10)
@@ -43,6 +34,7 @@ function compareCards(a: PokemonCard, b: PokemonCard, sort: ListSortKey): number
 
 interface Props {
   cardsBySet: Record<string, PokemonCard[]>
+  getStatus: (setId: string, id: string, variant: CardVariant) => CardStatus
   lists: CustomList[]
   createList: (name: string, setId: string) => string
   renameList: (id: string, name: string) => void
@@ -55,6 +47,7 @@ interface Props {
 
 export function CustomLists({
   cardsBySet,
+  getStatus,
   lists,
   createList,
   renameList,
@@ -72,7 +65,9 @@ export function CustomLists({
   const [format, setFormat] = useState<ListFormat>('numbers-names')
   const [copied, setCopied] = useState(false)
   const [onlySelected, setOnlySelected] = useState(false)
-  const [sort, setSort] = useState<ListSortKey>('number')
+  const [filter, setFilter] = useState<FilterStatus>('all')
+  const [rarity, setRarity] = useState('all')
+  const [sort, setSort] = useState<SortKey>('number')
   const [imageBusy, setImageBusy] = useState(false)
   const [imageError, setImageError] = useState<string | null>(null)
   const detailRef = useRef<HTMLElement>(null)
@@ -82,6 +77,19 @@ export function CustomLists({
   const setInfo = SETS.find((s) => s.id === active?.setId)
   const cards = active ? (cardsBySet[active.setId] ?? []) : []
   const selectedSet = useMemo(() => new Set(active?.selected ?? []), [active?.selected])
+
+  const rarities = useMemo(() => {
+    const set = new Set(cards.map((c) => c.rarity))
+    return sortRarities([...set])
+  }, [cards])
+
+  useEffect(() => {
+    setQuery('')
+    setFilter('all')
+    setRarity('all')
+    setSort('number')
+    setOnlySelected(false)
+  }, [active?.id, active?.setId])
 
   const selectedEntries = useMemo(() => {
     if (!active) return [] as ListEntry[]
@@ -156,14 +164,36 @@ export function CustomLists({
   }, [selectedEntries, format, selectedValue, selectedCardmarketValue])
 
   const visibleCards = useMemo(() => {
+    if (!active) return [] as PokemonCard[]
     const q = deferredQuery.trim().toLowerCase()
     const filtered = cards.filter((card) => {
+      const normalStatus = getStatus(active.setId, card.id, 'normal')
+      const reverseStatus = card.hasReverse
+        ? getStatus(active.setId, card.id, 'reverse')
+        : ('missing' as CardStatus)
+
       if (onlySelected) {
         const hasNormal = selectedSet.has(variantKey(card.id, 'normal'))
         const hasReverse =
           card.hasReverse && selectedSet.has(variantKey(card.id, 'reverse'))
         if (!hasNormal && !hasReverse) return false
       }
+
+      if (filter === 'owned') {
+        if (!(normalStatus === 'owned' || reverseStatus === 'owned')) return false
+      } else if (filter === 'wanted') {
+        if (!(normalStatus === 'wanted' || reverseStatus === 'wanted')) return false
+      } else if (filter === 'missing') {
+        if (!(normalStatus === 'missing' || (card.hasReverse && reverseStatus === 'missing'))) {
+          return false
+        }
+      } else if (filter === 'reverse-missing') {
+        if (!(card.hasReverse && reverseStatus === 'missing')) return false
+      } else if (filter === 'reverse-owned') {
+        if (!(card.hasReverse && reverseStatus === 'owned')) return false
+      }
+
+      if (rarity !== 'all' && card.rarity !== rarity) return false
       if (!q) return true
       return (
         card.name.toLowerCase().includes(q) ||
@@ -172,7 +202,25 @@ export function CustomLists({
       )
     })
     return [...filtered].sort((a, b) => compareCards(a, b, sort))
-  }, [cards, deferredQuery, onlySelected, selectedSet, sort])
+  }, [
+    active,
+    cards,
+    deferredQuery,
+    filter,
+    getStatus,
+    onlySelected,
+    rarity,
+    selectedSet,
+    sort,
+  ])
+
+  function resetFilters() {
+    setQuery('')
+    setFilter('all')
+    setRarity('all')
+    setSort('number')
+    setOnlySelected(false)
+  }
 
   function formatQuoteDate(raw: string | null | undefined) {
     if (!raw) return null
@@ -545,30 +593,62 @@ export function CustomLists({
               </div>
 
               <h3 className="list-picker-title">Ajouter ou retirer des cartes</h3>
-              <div className="list-tools">
-                <label className="search list-search">
-                  Recherche dans {setInfo?.name ?? 'la collection'}
+              <section className="controls panel list-controls">
+                <label className="search">
+                  Recherche
                   <input
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder="Nom ou numéro"
                   />
                 </label>
+
                 <label>
-                  Tri
+                  Statut
                   <select
-                    value={sort}
-                    onChange={(e) => setSort(e.target.value as ListSortKey)}
+                    value={filter}
+                    onChange={(e) => setFilter(e.target.value as FilterStatus)}
                   >
-                    <option value="number">Numéro</option>
-                    <option value="name">Nom</option>
-                    <option value="rarity-asc">Rareté (moins rare → plus rare)</option>
-                    <option value="rarity-desc">Rareté (plus rare → moins rare)</option>
-                    <option value="price-desc">Côte TCG décroissante</option>
-                    <option value="price-asc">Côte TCG croissante</option>
+                    <option value="all">Toutes</option>
+                    <option value="owned">Possédées</option>
+                    <option value="missing">Manquantes</option>
+                    <option value="wanted">Recherchées</option>
+                    <option value="reverse-missing">Reverse manquantes</option>
+                    <option value="reverse-owned">Reverse possédées</option>
                   </select>
                 </label>
-              </div>
+
+                <label>
+                  Rareté
+                  <select value={rarity} onChange={(e) => setRarity(e.target.value)}>
+                    <option value="all">Toutes</option>
+                    {rarities.map((r) => (
+                      <option key={r} value={r}>
+                        {r}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label>
+                  Tri
+                  <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)}>
+                    <option value="number">Numéro</option>
+                    <option value="name">Nom</option>
+                    <option value="price-desc">Côte décroissante</option>
+                    <option value="price-asc">Côte croissante</option>
+                  </select>
+                </label>
+
+                <button type="button" className="btn ghost danger" onClick={resetFilters}>
+                  Réinitialiser
+                </button>
+              </section>
+              <p className="result-count">
+                {visibleCards.length} carte{visibleCards.length > 1 ? 's' : ''} affichée
+                {visibleCards.length > 1 ? 's' : ''}
+                {setInfo ? ` · ${setInfo.name}` : ''}
+              </p>
 
               <div className="select-grid">
                 {visibleCards.map((card) => (

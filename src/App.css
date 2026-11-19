@@ -603,16 +603,8 @@
   margin-bottom: 1rem;
 }
 
-.list-tools {
-  display: grid;
-  grid-template-columns: 1.4fr 1fr;
-  gap: 0.85rem;
-  margin-bottom: 1rem;
-  align-items: end;
-}
-
-.list-search {
-  margin-bottom: 0;
+.list-controls {
+  margin-bottom: 0.75rem;
 }
 
 .checkbox-line {
@@ -1252,8 +1244,7 @@ textarea:focus {
   }
 
   .list-create-row,
-  .list-editor-head,
-  .list-tools {
+  .list-editor-head {
     grid-template-columns: 1fr;
   }
 
