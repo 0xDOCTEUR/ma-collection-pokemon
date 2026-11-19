@@ -66,6 +66,32 @@ export function formatList(entries: ListEntry[], format: ListFormat): string {
   ].join('\n')
 }
 
+/** Liste à envoyer ou à coller, à partir des cartes cochées encore à trouver. */
+export function formatSearchList(
+  entries: ListEntry[],
+  format: ListFormat,
+  options: { title: string; subtitle?: string },
+): string {
+  if (entries.length === 0) return ''
+  if (format === 'csv') return formatList(entries, 'csv')
+
+  const count = `${entries.length} carte${entries.length > 1 ? 's' : ''}`
+  const body =
+    format === 'numbers'
+      ? formatList(entries, 'numbers')
+      : entries
+          .map((entry) => {
+            const version = entry.variant === 'reverse' ? 'reverse' : 'normale'
+            return `${entry.card.number} — ${entry.card.name} · ${version} · ${entry.card.rarity}`
+          })
+          .join('\n')
+
+  const lines = [`Cartes recherchées — ${options.title}`]
+  if (options.subtitle) lines.push(options.subtitle)
+  lines.push('', body, '', count)
+  return lines.join('\n')
+}
+
 export function downloadText(text: string, filename: string) {
   const blob = new Blob([text], { type: 'text/plain;charset=utf-8' })
   const url = URL.createObjectURL(blob)

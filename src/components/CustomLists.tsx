@@ -17,7 +17,7 @@ import type {
 import { cardmarketPricesFor, pricesFor, variantKey } from '../types'
 import {
   downloadText,
-  formatList,
+  formatSearchList,
   slugify,
   type ListEntry,
   type ListFormat,
@@ -97,12 +97,20 @@ export function CustomLists({
     for (const card of cards) {
       const normalKey = variantKey(card.id, 'normal')
       if (selectedSet.has(normalKey)) {
-        entries.push({ card, variant: 'normal', status: 'missing' })
+        entries.push({
+          card,
+          variant: 'normal',
+          status: getStatus(active.setId, card.id, 'normal'),
+        })
       }
       if (card.hasReverse) {
         const reverseKey = variantKey(card.id, 'reverse')
         if (selectedSet.has(reverseKey)) {
-          entries.push({ card, variant: 'reverse', status: 'missing' })
+          entries.push({
+            card,
+            variant: 'reverse',
+            status: getStatus(active.setId, card.id, 'reverse'),
+          })
         }
       }
     }
@@ -111,7 +119,13 @@ export function CustomLists({
       if (byCard !== 0) return byCard
       return a.variant.localeCompare(b.variant)
     })
-  }, [active, cards, selectedSet, sort])
+  }, [active, cards, getStatus, selectedSet, sort])
+
+  const searchEntries = useMemo(
+    () => selectedEntries.filter((entry) => entry.status !== 'owned'),
+    [selectedEntries],
+  )
+  const alreadyOwnedCount = selectedEntries.length - searchEntries.length
 
   const selectedValue = useMemo(
     () => selectedEntries.reduce((sum, e) => sum + euroValue(e.card, e.variant), 0),
@@ -153,15 +167,15 @@ export function CustomLists({
   }, [lists, cardsBySet])
 
   const text = useMemo(() => {
-    const body = formatList(selectedEntries, format)
-    if (selectedEntries.length === 0) return body
-    const count = `${selectedEntries.length} carte${selectedEntries.length > 1 ? 's' : ''}`
-    const footer =
-      format === 'csv'
-        ? `\ntotal_tcgplayer_eur;${selectedValue.toFixed(2)}\ntotal_cardmarket_eur;${selectedCardmarketValue.toFixed(2)}`
-        : `\n\nTotal TCGPlayer : ${money(selectedValue)}\nTotal Cardmarket : ${money(selectedCardmarketValue)}\n(${count})`
-    return body + footer
-  }, [selectedEntries, format, selectedValue, selectedCardmarketValue])
+    if (!active || searchEntries.length === 0) return ''
+    const body = formatSearchList(searchEntries, format, {
+      title: active.name,
+      subtitle: setInfo?.name,
+    })
+    if (format !== 'csv') return body
+    const count = searchEntries.length
+    return `${body}\ntotal_cartes;${count}\ntotal_tcgplayer_eur;${searchEntries.reduce((sum, entry) => sum + euroValue(entry.card, entry.variant), 0).toFixed(2)}\ntotal_cardmarket_eur;${searchEntries.reduce((sum, entry) => sum + cardmarketEuroValue(entry.card, entry.variant), 0).toFixed(2)}`
+  }, [active, format, searchEntries, setInfo?.name])
 
   const visibleCards = useMemo(() => {
     if (!active) return [] as PokemonCard[]
@@ -269,7 +283,8 @@ export function CustomLists({
 
   function download() {
     if (!active || !text) return
-    downloadText(text, `${slugify(active.name)}-selection.txt`)
+    const extension = format === 'csv' ? 'csv' : 'txt'
+    downloadText(text, `${slugify(active.name)}-cartes-recherchees.${extension}`)
   }
 
   async function downloadImage() {
@@ -543,54 +558,56 @@ export function CustomLists({
                 )}
               </section>
 
-              <div className="list-copy-box">
+              <section className="list-copy-box" aria-label="Liste des cartes recherchées">
+                <h3>Liste des cartes recherchées</h3>
+                <p className="muted">
+                  {selectedEntries.length === 0
+                    ? 'Coche des cartes plus bas. Cette liste reprend celles que tu n’as pas encore.'
+                    : searchEntries.length === 0
+                      ? 'Toutes les cartes cochées sont déjà marquées « J’ai ».'
+                      : alreadyOwnedCount > 0
+                        ? `À partir des cartes cochées que tu n’as pas encore. ${alreadyOwnedCount} carte${alreadyOwnedCount > 1 ? 's' : ''} déjà marquée${alreadyOwnedCount > 1 ? 's' : ''} « J’ai » ${alreadyOwnedCount > 1 ? 'ne sont' : 'n’est'} pas dans la liste.`
+                        : 'À partir des cartes cochées que tu n’as pas encore.'}
+                </p>
                 <div className="export-filters">
-                  <label>
-                    Format à copier
-                    <select
-                      value={format}
-                      onChange={(e) => setFormat(e.target.value as ListFormat)}
-                    >
-                      <option value="numbers">Numéros (1, 4, 25R…)</option>
-                      <option value="numbers-names">Numéro + nom</option>
-                      <option value="csv">Tableau CSV</option>
-                    </select>
-                  </label>
-                  <label className="checkbox-line">
-                    <input
-                      type="checkbox"
-                      checked={onlySelected}
-                      onChange={(e) => setOnlySelected(e.target.checked)}
-                    />
-                    Afficher seulement la sélection
-                  </label>
-                </div>
+                <label>
+                  Format
+                  <select
+                    value={format}
+                    onChange={(e) => setFormat(e.target.value as ListFormat)}
+                  >
+                    <option value="numbers">Numéros (1, 4, 25R…)</option>
+                    <option value="numbers-names">Numéro, nom et version</option>
+                    <option value="csv">Tableau CSV</option>
+                  </select>
+                </label>
+              </div>
                 <textarea
                   className="export-box"
                   readOnly
-                  rows={5}
+                  rows={6}
                   value={text}
-                  placeholder="Coche des cartes pour remplir la liste…"
+                  placeholder="La liste des cartes recherchées s’affiche ici."
                 />
                 <div className="export-actions">
                   <button
                     type="button"
                     className="btn primary"
                     onClick={copy}
-                    disabled={selectedEntries.length === 0}
+                    disabled={searchEntries.length === 0}
                   >
-                    {copied ? 'Copié !' : 'Copier la sélection'}
+                    {copied ? 'Copié !' : 'Copier la liste'}
                   </button>
                   <button
                     type="button"
                     className="btn ghost"
                     onClick={download}
-                    disabled={selectedEntries.length === 0}
+                    disabled={searchEntries.length === 0}
                   >
-                    Télécharger
+                    Télécharger la liste
                   </button>
                 </div>
-              </div>
+              </section>
 
               <h3 className="list-picker-title">Ajouter ou retirer des cartes</h3>
               <section className="controls panel list-controls">
@@ -638,6 +655,15 @@ export function CustomLists({
                     <option value="price-desc">Côte décroissante</option>
                     <option value="price-asc">Côte croissante</option>
                   </select>
+                </label>
+
+                <label className="checkbox-line">
+                  <input
+                    type="checkbox"
+                    checked={onlySelected}
+                    onChange={(e) => setOnlySelected(e.target.checked)}
+                  />
+                  Afficher seulement la sélection
                 </label>
 
                 <button type="button" className="btn ghost danger" onClick={resetFilters}>
