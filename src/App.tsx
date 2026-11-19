@@ -427,7 +427,7 @@ export default function App() {
 
       <footer className="footer">
         <p>
-          Séries : Pokémon 151 et Règne Delta. Côtes estimées via TCGPlayer (converties en euros).
+          Séries : Pokémon 151 et Règne Delta. Côtes TCGPlayer (converties en euros) et Cardmarket.
           Collection sauvegardée dans ton navigateur. Pour le site en ligne, exporte puis restaure ta
           sauvegarde.
         </p>

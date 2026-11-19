@@ -1,9 +1,14 @@
 import { useDeferredValue, useMemo, useRef, useState } from 'react'
-import { euroValue, formatPrice } from '../api/pokemon'
+import {
+  cardmarketEuroValue,
+  euroValue,
+  formatCardmarketPrice,
+  formatPrice,
+} from '../api/pokemon'
 import type { CustomList } from '../hooks/useCustomLists'
 import { SETS } from '../sets'
 import type { CardVariant, PokemonCard } from '../types'
-import { pricesFor, variantKey } from '../types'
+import { cardmarketPricesFor, pricesFor, variantKey } from '../types'
 import {
   downloadText,
   formatList,
@@ -11,6 +16,7 @@ import {
   type ListEntry,
   type ListFormat,
 } from '../utils/lists'
+import { downloadListImage } from '../utils/listImage'
 
 interface Props {
   cardsBySet: Record<string, PokemonCard[]>
@@ -43,6 +49,8 @@ export function CustomLists({
   const [format, setFormat] = useState<ListFormat>('numbers-names')
   const [copied, setCopied] = useState(false)
   const [onlySelected, setOnlySelected] = useState(false)
+  const [imageBusy, setImageBusy] = useState(false)
+  const [imageError, setImageError] = useState<string | null>(null)
   const detailRef = useRef<HTMLElement>(null)
 
   const active = lists.find((l) => l.id === activeId) ?? lists[0] ?? null
@@ -78,6 +86,11 @@ export function CustomLists({
     [selectedEntries],
   )
 
+  const selectedCardmarketValue = useMemo(
+    () => selectedEntries.reduce((sum, e) => sum + cardmarketEuroValue(e.card, e.variant), 0),
+    [selectedEntries],
+  )
+
   const money = (n: number) =>
     new Intl.NumberFormat('fr-FR', {
       style: 'currency',
@@ -86,18 +99,23 @@ export function CustomLists({
     }).format(n)
 
   const listValues = useMemo(() => {
-    const map = new Map<string, number>()
+    const map = new Map<string, { tcg: number; cardmarket: number }>()
     for (const list of lists) {
       const setCards = cardsBySet[list.setId] ?? []
       const keys = new Set(list.selected)
-      let total = 0
+      let tcg = 0
+      let cardmarket = 0
       for (const card of setCards) {
-        if (keys.has(variantKey(card.id, 'normal'))) total += euroValue(card, 'normal')
+        if (keys.has(variantKey(card.id, 'normal'))) {
+          tcg += euroValue(card, 'normal')
+          cardmarket += cardmarketEuroValue(card, 'normal')
+        }
         if (card.hasReverse && keys.has(variantKey(card.id, 'reverse'))) {
-          total += euroValue(card, 'reverse')
+          tcg += euroValue(card, 'reverse')
+          cardmarket += cardmarketEuroValue(card, 'reverse')
         }
       }
-      map.set(list.id, total)
+      map.set(list.id, { tcg, cardmarket })
     }
     return map
   }, [lists, cardsBySet])
@@ -105,12 +123,13 @@ export function CustomLists({
   const text = useMemo(() => {
     const body = formatList(selectedEntries, format)
     if (selectedEntries.length === 0) return body
+    const count = `${selectedEntries.length} carte${selectedEntries.length > 1 ? 's' : ''}`
     const footer =
       format === 'csv'
-        ? `\ntotal_estime_eur;${selectedValue.toFixed(2)}`
-        : `\n\nEstimation totale : ${money(selectedValue)} (${selectedEntries.length} carte${selectedEntries.length > 1 ? 's' : ''})`
+        ? `\ntotal_tcgplayer_eur;${selectedValue.toFixed(2)}\ntotal_cardmarket_eur;${selectedCardmarketValue.toFixed(2)}`
+        : `\n\nTotal TCGPlayer : ${money(selectedValue)}\nTotal Cardmarket : ${money(selectedCardmarketValue)}\n(${count})`
     return body + footer
-  }, [selectedEntries, format, selectedValue])
+  }, [selectedEntries, format, selectedValue, selectedCardmarketValue])
 
   const visibleCards = useMemo(() => {
     const q = deferredQuery.trim().toLowerCase()
@@ -130,10 +149,7 @@ export function CustomLists({
     })
   }, [cards, deferredQuery, onlySelected, selectedSet])
 
-  const quoteDate = useMemo(() => {
-    const raw = selectedEntries
-      .map((entry) => pricesFor(entry.card, entry.variant).updatedAt)
-      .find((value): value is string => Boolean(value))
+  function formatQuoteDate(raw: string | null | undefined) {
     if (!raw) return null
     const [year, month, day] = raw.split(/[/-]/).map((part) => Number.parseInt(part, 10))
     if (!year || !month || !day) return null
@@ -142,6 +158,20 @@ export function CustomLists({
       month: 'long',
       year: 'numeric',
     })
+  }
+
+  const quoteDate = useMemo(() => {
+    const raw = selectedEntries
+      .map((entry) => pricesFor(entry.card, entry.variant).updatedAt)
+      .find((value): value is string => Boolean(value))
+    return formatQuoteDate(raw)
+  }, [selectedEntries])
+
+  const cardmarketQuoteDate = useMemo(() => {
+    const raw = selectedEntries
+      .map((entry) => cardmarketPricesFor(entry.card, entry.variant).updatedAt)
+      .find((value): value is string => Boolean(value))
+    return formatQuoteDate(raw)
   }, [selectedEntries])
 
   function openList(id: string) {
@@ -169,6 +199,34 @@ export function CustomLists({
     downloadText(text, `${slugify(active.name)}-selection.txt`)
   }
 
+  async function downloadImage() {
+    if (!active || selectedEntries.length === 0 || imageBusy) return
+    setImageBusy(true)
+    setImageError(null)
+    try {
+      await downloadListImage({
+        title: active.name,
+        setName: setInfo?.name ?? active.setId,
+        rows: selectedEntries.map((entry) => ({
+          number: entry.card.number,
+          name: entry.card.name,
+          variantLabel: entry.variant === 'reverse' ? 'Reverse' : 'Normale',
+          rarity: entry.card.rarity,
+          tcgPrice: formatPrice(entry.card, entry.variant),
+          cardmarketPrice: formatCardmarketPrice(entry.card, entry.variant),
+          imageUrl: entry.card.imageSmall,
+        })),
+        tcgTotal: money(selectedValue),
+        cardmarketTotal: money(selectedCardmarketValue),
+        filename: `${slugify(active.name)}-liste.png`,
+      })
+    } catch {
+      setImageError('Impossible de créer l’image. Réessaie.')
+    } finally {
+      setImageBusy(false)
+    }
+  }
+
   function selectAllVisible() {
     if (!active) return
     const keys: string[] = []
@@ -186,7 +244,7 @@ export function CustomLists({
           <p className="eyebrow">Listes perso</p>
           <h2>Crée ta liste, coche, copie</h2>
           <p className="muted">
-            Clique une liste pour voir les cartes dedans, le prix de chacune et le total.
+            Clique une liste pour comparer les cotes TCGPlayer et Cardmarket, carte par carte.
           </p>
         </div>
       </header>
@@ -225,7 +283,7 @@ export function CustomLists({
           <div className="list-picker panel">
             {lists.map((list) => {
               const setName = SETS.find((s) => s.id === list.setId)?.shortName ?? list.setId
-              const value = listValues.get(list.id) ?? 0
+              const value = listValues.get(list.id) ?? { tcg: 0, cardmarket: 0 }
               return (
                 <button
                   key={list.id}
@@ -237,7 +295,10 @@ export function CustomLists({
                   <span>
                     {setName} · {list.selected.length} carte(s)
                   </span>
-                  <em className="list-chip-price">{money(value)}</em>
+                  <em className="list-chip-price">
+                    TCG {money(value.tcg)}
+                    <span className="list-chip-price-cm">CM {money(value.cardmarket)}</span>
+                  </em>
                 </button>
               )
             })}
@@ -290,44 +351,64 @@ export function CustomLists({
               </div>
 
               <div className="list-price-panel">
-                <div>
-                  <span className="stat-label">Estimation de la liste</span>
-                  <strong className="list-price-total">{money(selectedValue)}</strong>
+                <div className="list-price-compare">
+                  <div>
+                    <span className="stat-label">Total TCGPlayer</span>
+                    <strong className="list-price-total">{money(selectedValue)}</strong>
+                    <small>Côte américaine convertie en euros</small>
+                  </div>
+                  <div>
+                    <span className="stat-label">Total Cardmarket</span>
+                    <strong className="list-price-total list-price-total-cm">
+                      {money(selectedCardmarketValue)}
+                    </strong>
+                    <small>Côte européenne en euros</small>
+                  </div>
+                </div>
+                <div className="list-price-side">
                   <small>
                     {selectedEntries.length} carte
-                    {selectedEntries.length > 1 ? 's' : ''} sélectionnée
                     {selectedEntries.length > 1 ? 's' : ''}
                     {setInfo ? ` · ${setInfo.name}` : ''}
-                    {selectedEntries.length > 0
-                      ? ` · moyenne ${money(selectedValue / selectedEntries.length)}`
-                      : ''}
                   </small>
                   {selectedEntries.length > 0 && (
                     <p className="list-price-note">
-                      Cote du {quoteDate ?? 'dernier relevé'}, convertie en euros. Indicatif : ce
-                      n’est pas le prix en France aujourd’hui.
+                      TCGPlayer : {quoteDate ?? 'dernier relevé'}. Cardmarket :{' '}
+                      {cardmarketQuoteDate ?? 'dernier relevé'}. Indicatif pour comparer, pas un
+                      prix d’achat garanti.
                     </p>
                   )}
-                </div>
-                <div className="export-actions">
-                  <button type="button" className="btn ghost" onClick={selectAllVisible}>
-                    Tout cocher (filtrées)
-                  </button>
-                  <button
-                    type="button"
-                    className="btn ghost"
-                    onClick={() => clearSelection(active.id)}
-                  >
-                    Tout décocher
-                  </button>
+                  <div className="export-actions">
+                    <button type="button" className="btn ghost" onClick={selectAllVisible}>
+                      Tout cocher (filtrées)
+                    </button>
+                    <button
+                      type="button"
+                      className="btn ghost"
+                      onClick={() => clearSelection(active.id)}
+                    >
+                      Tout décocher
+                    </button>
+                  </div>
                 </div>
               </div>
 
               <section className="list-contents" aria-label="Cartes de la liste">
-                <h3>
-                  Cartes dans « {active.name} »
-                  {selectedEntries.length > 0 ? ` (${selectedEntries.length})` : ''}
-                </h3>
+                <div className="list-contents-head">
+                  <h3>
+                    Cartes dans « {active.name} »
+                    {selectedEntries.length > 0 ? ` (${selectedEntries.length})` : ''}
+                  </h3>
+                  <button
+                    type="button"
+                    className="btn primary"
+                    onClick={downloadImage}
+                    disabled={selectedEntries.length === 0 || imageBusy}
+                  >
+                    {imageBusy ? 'Création…' : 'Télécharger en image'}
+                  </button>
+                </div>
+                {imageError && <p className="state-msg error">{imageError}</p>}
                 {selectedEntries.length === 0 ? (
                   <p className="state-msg">
                     Cette liste est vide. Coche des cartes plus bas pour les ajouter.
@@ -336,7 +417,13 @@ export function CustomLists({
                   <ul className="list-contents-rows">
                     {selectedEntries.map((entry) => (
                       <li key={variantKey(entry.card.id, entry.variant)}>
-                        <img src={entry.card.imageSmall} alt="" width={42} height={58} />
+                        <img
+                          src={entry.card.imageSmall}
+                          alt=""
+                          width={42}
+                          height={58}
+                          crossOrigin="anonymous"
+                        />
                         <div>
                           <strong>
                             {entry.card.number} — {entry.card.name}
@@ -348,7 +435,14 @@ export function CustomLists({
                           </span>
                         </div>
                         <div className="list-contents-price">
-                          <em>{formatPrice(entry.card, entry.variant)}</em>
+                          <em>
+                            <span className="price-source">TCG</span>
+                            {formatPrice(entry.card, entry.variant)}
+                          </em>
+                          <em className="price-cm">
+                            <span className="price-source">CM</span>
+                            {formatCardmarketPrice(entry.card, entry.variant)}
+                          </em>
                           <button
                             type="button"
                             className="list-row-remove"
@@ -360,8 +454,17 @@ export function CustomLists({
                       </li>
                     ))}
                     <li className="list-contents-total">
-                      <span>Total</span>
-                      <strong>{money(selectedValue)}</strong>
+                      <span>Totaux</span>
+                      <div className="list-contents-totals">
+                        <strong>
+                          <span className="price-source">TCG</span>
+                          {money(selectedValue)}
+                        </strong>
+                        <strong className="price-cm">
+                          <span className="price-source">CM</span>
+                          {money(selectedCardmarketValue)}
+                        </strong>
+                      </div>
                     </li>
                   </ul>
                 )}
@@ -477,7 +580,10 @@ function SelectCard({
             onClick={() => onToggle('normal')}
           >
             <span>{normalOn ? 'Normale ✓' : 'Normale'}</span>
-            <span className="chip-price">{formatPrice(card, 'normal')}</span>
+            <span className="chip-price">
+              TCG {formatPrice(card, 'normal')}
+              <span className="chip-price-cm">CM {formatCardmarketPrice(card, 'normal')}</span>
+            </span>
           </button>
           {card.hasReverse && (
             <button
@@ -486,7 +592,10 @@ function SelectCard({
               onClick={() => onToggle('reverse')}
             >
               <span>{reverseOn ? 'Reverse ✓' : 'Reverse'}</span>
-              <span className="chip-price">{formatPrice(card, 'reverse')}</span>
+              <span className="chip-price">
+                TCG {formatPrice(card, 'reverse')}
+                <span className="chip-price-cm">CM {formatCardmarketPrice(card, 'reverse')}</span>
+              </span>
             </button>
           )}
         </div>

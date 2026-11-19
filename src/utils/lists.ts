@@ -1,5 +1,5 @@
 import type { CardStatus, CardVariant, PokemonCard } from '../types'
-import { pricesFor } from '../types'
+import { cardmarketPricesFor, pricesFor } from '../types'
 
 export interface ListEntry {
   card: PokemonCard
@@ -55,12 +55,13 @@ export function formatList(entries: ListEntry[], format: ListFormat): string {
       .join('\n')
   }
   return [
-    'numero;nom;version;statut;rarete;prix_eur',
+    'numero;nom;version;statut;rarete;prix_tcgplayer_eur;prix_cardmarket_eur',
     ...sorted.map((e) => {
       const price = pricesFor(e.card, e.variant)
+      const cm = cardmarketPricesFor(e.card, e.variant)
       const statut =
         e.status === 'owned' ? 'possedee' : e.status === 'wanted' ? 'recherchee' : 'manquante'
-      return `${e.card.number};${e.card.name};${e.variant};${statut};${e.card.rarity};${price.eur ?? price.usd ?? ''}`
+      return `${e.card.number};${e.card.name};${e.variant};${statut};${e.card.rarity};${price.eur ?? price.usd ?? ''};${cm.eur ?? ''}`
     }),
   ].join('\n')
 }

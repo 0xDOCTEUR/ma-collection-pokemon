@@ -23,6 +23,8 @@ export interface PokemonCard {
   hasNormal: boolean
   prices: CardPrices
   reversePrices: CardPrices | null
+  cardmarketPrices?: CardPrices | null
+  reverseCardmarketPrices?: CardPrices | null
   printedTotal: number
 }
 
@@ -36,16 +38,23 @@ export function variantKey(cardId: string, variant: CardVariant): string {
   return variant === 'reverse' ? `${cardId}:reverse` : cardId
 }
 
+const EMPTY_PRICES: CardPrices = {
+  eur: null,
+  usd: null,
+  source: null,
+  updatedAt: null,
+}
+
 export function pricesFor(card: PokemonCard, variant: CardVariant): CardPrices {
   if (variant === 'reverse') {
-    return (
-      card.reversePrices ?? {
-        eur: null,
-        usd: null,
-        source: null,
-        updatedAt: null,
-      }
-    )
+    return card.reversePrices ?? EMPTY_PRICES
   }
   return card.prices
+}
+
+export function cardmarketPricesFor(card: PokemonCard, variant: CardVariant): CardPrices {
+  if (variant === 'reverse') {
+    return card.reverseCardmarketPrices ?? EMPTY_PRICES
+  }
+  return card.cardmarketPrices ?? EMPTY_PRICES
 }

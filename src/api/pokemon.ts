@@ -1,5 +1,5 @@
 import type { CardPrices, CardVariant, PokemonCard } from '../types'
-import { pricesFor } from '../types'
+import { cardmarketPricesFor, pricesFor } from '../types'
 import type { SetInfo } from '../sets'
 
 export async function fetchSetCards(set: SetInfo): Promise<PokemonCard[]> {
@@ -32,9 +32,25 @@ export function formatPrice(card: PokemonCard, variant: CardVariant = 'normal'):
   return formatPrices(pricesFor(card, variant))
 }
 
+export function formatCardmarketPrice(
+  card: PokemonCard,
+  variant: CardVariant = 'normal',
+): string {
+  return formatPrices(cardmarketPricesFor(card, variant))
+}
+
+/** Côte TCGPlayer convertie en euros (estimation actuelle de l’appli). */
 export function euroValue(card: PokemonCard, variant: CardVariant = 'normal'): number {
   const prices = pricesFor(card, variant)
   if (prices.eur != null) return prices.eur
   if (prices.usd != null) return prices.usd * 0.92
   return 0
+}
+
+/** Côte Cardmarket en euros (tendance du marché européen). */
+export function cardmarketEuroValue(
+  card: PokemonCard,
+  variant: CardVariant = 'normal',
+): number {
+  return cardmarketPricesFor(card, variant).eur ?? 0
 }
