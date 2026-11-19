@@ -2,8 +2,12 @@ import type { CardPrices, CardVariant, PokemonCard } from '../types'
 import { cardmarketPricesFor, pricesFor } from '../types'
 import type { SetInfo } from '../sets'
 
+/** Change ce numéro quand les fichiers de côtes sont mis à jour, pour éviter un vieux cache. */
+const DATA_VERSION = '2026-11-19-cm'
+
 export async function fetchSetCards(set: SetInfo): Promise<PokemonCard[]> {
-  const response = await fetch(set.dataUrl)
+  const url = `${set.dataUrl}${set.dataUrl.includes('?') ? '&' : '?'}v=${DATA_VERSION}`
+  const response = await fetch(url, { cache: 'no-cache' })
   if (!response.ok) {
     throw new Error(`Impossible de charger ${set.name} (code ${response.status})`)
   }
