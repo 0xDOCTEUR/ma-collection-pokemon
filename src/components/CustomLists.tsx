@@ -1,9 +1,9 @@
-import { useDeferredValue, useMemo, useState } from 'react'
+import { useDeferredValue, useMemo, useRef, useState } from 'react'
 import { euroValue, formatPrice } from '../api/pokemon'
 import type { CustomList } from '../hooks/useCustomLists'
 import { SETS } from '../sets'
 import type { CardVariant, PokemonCard } from '../types'
-import { variantKey } from '../types'
+import { pricesFor, variantKey } from '../types'
 import {
   downloadText,
   formatList,
@@ -43,6 +43,7 @@ export function CustomLists({
   const [format, setFormat] = useState<ListFormat>('numbers-names')
   const [copied, setCopied] = useState(false)
   const [onlySelected, setOnlySelected] = useState(false)
+  const detailRef = useRef<HTMLElement>(null)
 
   const active = lists.find((l) => l.id === activeId) ?? lists[0] ?? null
 
@@ -129,6 +130,27 @@ export function CustomLists({
     })
   }, [cards, deferredQuery, onlySelected, selectedSet])
 
+  const quoteDate = useMemo(() => {
+    const raw = selectedEntries
+      .map((entry) => pricesFor(entry.card, entry.variant).updatedAt)
+      .find((value): value is string => Boolean(value))
+    if (!raw) return null
+    const [year, month, day] = raw.split(/[/-]/).map((part) => Number.parseInt(part, 10))
+    if (!year || !month || !day) return null
+    return new Date(year, month - 1, day).toLocaleDateString('fr-FR', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    })
+  }, [selectedEntries])
+
+  function openList(id: string) {
+    setActiveId(id)
+    window.requestAnimationFrame(() => {
+      detailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+  }
+
   function handleCreate() {
     const id = createList(newName || `Liste ${lists.length + 1}`, newSetId)
     setActiveId(id)
@@ -164,7 +186,7 @@ export function CustomLists({
           <p className="eyebrow">Listes perso</p>
           <h2>Crée ta liste, coche, copie</h2>
           <p className="muted">
-            Choisis une collection, sélectionne les cartes (normale / reverse), puis copie la liste.
+            Clique une liste pour voir les cartes dedans, le prix de chacune et le total.
           </p>
         </div>
       </header>
@@ -209,7 +231,7 @@ export function CustomLists({
                   key={list.id}
                   type="button"
                   className={list.id === active?.id ? 'list-chip active' : 'list-chip'}
-                  onClick={() => setActiveId(list.id)}
+                  onClick={() => openList(list.id)}
                 >
                   <strong>{list.name}</strong>
                   <span>
@@ -222,7 +244,7 @@ export function CustomLists({
           </div>
 
           {active && (
-            <section className="panel list-editor">
+            <section className="panel list-editor" ref={detailRef}>
               <div className="list-editor-head">
                 <label>
                   Nom de la liste
@@ -280,6 +302,12 @@ export function CustomLists({
                       ? ` · moyenne ${money(selectedValue / selectedEntries.length)}`
                       : ''}
                   </small>
+                  {selectedEntries.length > 0 && (
+                    <p className="list-price-note">
+                      Cote du {quoteDate ?? 'dernier relevé'}, convertie en euros. Indicatif : ce
+                      n’est pas le prix en France aujourd’hui.
+                    </p>
+                  )}
                 </div>
                 <div className="export-actions">
                   <button type="button" className="btn ghost" onClick={selectAllVisible}>
@@ -294,6 +322,50 @@ export function CustomLists({
                   </button>
                 </div>
               </div>
+
+              <section className="list-contents" aria-label="Cartes de la liste">
+                <h3>
+                  Cartes dans « {active.name} »
+                  {selectedEntries.length > 0 ? ` (${selectedEntries.length})` : ''}
+                </h3>
+                {selectedEntries.length === 0 ? (
+                  <p className="state-msg">
+                    Cette liste est vide. Coche des cartes plus bas pour les ajouter.
+                  </p>
+                ) : (
+                  <ul className="list-contents-rows">
+                    {selectedEntries.map((entry) => (
+                      <li key={variantKey(entry.card.id, entry.variant)}>
+                        <img src={entry.card.imageSmall} alt="" width={42} height={58} />
+                        <div>
+                          <strong>
+                            {entry.card.number} — {entry.card.name}
+                          </strong>
+                          <span>
+                            {entry.variant === 'reverse' ? 'Reverse' : 'Normale'}
+                            {' · '}
+                            {entry.card.rarity}
+                          </span>
+                        </div>
+                        <div className="list-contents-price">
+                          <em>{formatPrice(entry.card, entry.variant)}</em>
+                          <button
+                            type="button"
+                            className="list-row-remove"
+                            onClick={() => toggleCard(active.id, entry.card.id, entry.variant)}
+                          >
+                            Retirer
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                    <li className="list-contents-total">
+                      <span>Total</span>
+                      <strong>{money(selectedValue)}</strong>
+                    </li>
+                  </ul>
+                )}
+              </section>
 
               <div className="list-copy-box">
                 <div className="export-filters">
@@ -344,6 +416,7 @@ export function CustomLists({
                 </div>
               </div>
 
+              <h3 className="list-picker-title">Ajouter ou retirer des cartes</h3>
               <label className="search list-search">
                 Recherche dans {setInfo?.name ?? 'la collection'}
                 <input
@@ -394,7 +467,6 @@ function SelectCard({
           <span className="tile-num">
             {card.number}/{card.printedTotal}
           </span>
-          <span className="tile-price">{formatPrice(card, 'normal')}</span>
         </div>
         <h3 className="tile-name">{card.name}</h3>
         <p className="tile-meta">{card.rarity}</p>
@@ -404,7 +476,8 @@ function SelectCard({
             className={normalOn ? 'chip active-owned' : 'chip'}
             onClick={() => onToggle('normal')}
           >
-            {normalOn ? 'Normale ✓' : 'Normale'}
+            <span>{normalOn ? 'Normale ✓' : 'Normale'}</span>
+            <span className="chip-price">{formatPrice(card, 'normal')}</span>
           </button>
           {card.hasReverse && (
             <button
@@ -412,7 +485,8 @@ function SelectCard({
               className={reverseOn ? 'chip active-wanted' : 'chip'}
               onClick={() => onToggle('reverse')}
             >
-              {reverseOn ? 'Reverse ✓' : 'Reverse'}
+              <span>{reverseOn ? 'Reverse ✓' : 'Reverse'}</span>
+              <span className="chip-price">{formatPrice(card, 'reverse')}</span>
             </button>
           )}
         </div>

@@ -287,6 +287,10 @@
   padding: 1.2rem 1.35rem;
 }
 
+.list-editor {
+  scroll-margin-top: 5.5rem;
+}
+
 .list-create h3,
 .list-editor h3 {
   font-family: 'Syne', sans-serif;
@@ -373,6 +377,107 @@
   font-size: clamp(1.6rem, 3vw, 2.1rem);
   color: var(--gold);
   letter-spacing: -0.02em;
+}
+
+.list-price-note {
+  margin: 0.45rem 0 0;
+  max-width: 42rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.list-contents {
+  margin: 0.25rem 0 1.25rem;
+}
+
+.list-contents h3,
+.list-picker-title {
+  font-family: 'Syne', sans-serif;
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+}
+
+.list-contents .state-msg {
+  margin: 0;
+}
+
+.list-contents-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.list-contents-rows li {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.55rem 0.15rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.list-contents-rows img {
+  width: 42px;
+  height: 58px;
+  object-fit: cover;
+  border-radius: 6px;
+  background: #070a0f;
+}
+
+.list-contents-rows strong {
+  display: block;
+  font-size: 0.92rem;
+}
+
+.list-contents-rows span {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.list-contents-price {
+  display: grid;
+  justify-items: end;
+  gap: 0.1rem;
+}
+
+.list-contents-price em {
+  font-style: normal;
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  color: var(--gold);
+}
+
+.list-row-remove {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.75rem;
+  padding: 0.15rem 0;
+}
+
+.list-row-remove:hover {
+  color: var(--red);
+}
+
+.list-contents-total {
+  grid-template-columns: 1fr auto !important;
+  border-bottom: 0;
+  padding-top: 0.85rem;
+}
+
+.list-contents-total span {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+.list-contents-total strong {
+  font-family: 'Syne', sans-serif;
+  font-size: 1.25rem;
+  color: var(--gold);
 }
 
 .list-copy-box {
@@ -925,6 +1030,21 @@ textarea:focus {
     background 0.2s ease,
     border-color 0.2s ease,
     color 0.2s ease;
+}
+
+.select-tile .chip {
+  border-radius: 12px;
+  padding: 0.35rem 0.4rem;
+  display: grid;
+  gap: 0.05rem;
+  justify-items: center;
+}
+
+.chip-price {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  color: var(--gold);
+  font-size: 0.72rem;
 }
 
 .chip:hover {
