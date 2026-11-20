@@ -67,11 +67,27 @@ export default function App() {
     ;(async () => {
       try {
         setLoading(true)
-        const entries = await Promise.all(
-          SETS.map(async (set) => [set.id, await fetchSetCards(set)] as const),
+        setError(null)
+        const results = await Promise.all(
+          SETS.map(async (set) => {
+            try {
+              return [set.id, await fetchSetCards(set), null] as const
+            } catch (e) {
+              return [
+                set.id,
+                [] as PokemonCard[],
+                e instanceof Error ? e.message : `Erreur ${set.name}`,
+              ] as const
+            }
+          }),
         )
-        if (!cancelled) {
-          setCardsBySet(Object.fromEntries(entries))
+        if (cancelled) return
+        setCardsBySet(Object.fromEntries(results.map(([id, cards]) => [id, cards])))
+        const failures = results.filter(([, cards, err]) => err && cards.length === 0)
+        if (failures.length === SETS.length) {
+          setError(failures[0]?.[2] ?? 'Erreur de chargement')
+        } else if (failures.length > 0) {
+          setError(failures.map(([, , err]) => err).filter(Boolean).join(' · '))
         }
       } catch (e) {
         if (!cancelled) {
@@ -406,7 +422,7 @@ export default function App() {
           {loading && <p className="state-msg">Chargement des séries…</p>}
           {error && <p className="state-msg error">{error}</p>}
 
-          {!loading && !error && activeSet && (
+          {!loading && activeSet && cards.length > 0 && (
             <>
               <p className="result-count">
                 {visible.length} carte{visible.length > 1 ? 's' : ''} affichée
