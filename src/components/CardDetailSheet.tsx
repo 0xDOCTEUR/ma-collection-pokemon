@@ -105,8 +105,12 @@ export function CardDetailSheet({ card, onClose }: Props) {
                 )}
               </div>
               <div>
-                <span className="stat-label">Cardmarket (fichier)</span>
-                <strong>{formatCardmarketPrice(card, 'normal')}</strong>
+                <span className="stat-label">Cardmarket</span>
+                <strong>
+                  {stats
+                    ? formatEuro(stats.trend ?? stats.avg1 ?? stats.avg7)
+                    : formatCardmarketPrice(card, 'normal')}
+                </strong>
                 {card.hasReverse && (
                   <small>Reverse {formatCardmarketPrice(card, 'reverse')}</small>
                 )}

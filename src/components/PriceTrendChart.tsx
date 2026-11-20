@@ -15,23 +15,40 @@ function formatShortDate(iso: string): string {
   )
 }
 
+/** Libellés d’axe : garder les centimes pour les petites cotes. */
+function formatAxisEuro(value: number): string {
+  const abs = Math.abs(value)
+  if (abs >= 100) return Math.round(value).toLocaleString('fr-FR')
+  if (abs >= 10) {
+    return value.toLocaleString('fr-FR', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 1,
+    })
+  }
+  return value.toLocaleString('fr-FR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
+}
+
 export function PriceTrendChart({ points, range, onRangeChange }: Props) {
   const width = 420
   const height = 180
-  const pad = { top: 16, right: 16, bottom: 28, left: 48 }
+  const pad = { top: 16, right: 16, bottom: 28, left: 52 }
   const innerW = width - pad.left - pad.right
   const innerH = height - pad.top - pad.bottom
 
   const values = points.map((p) => p.value)
   const minV = values.length ? Math.min(...values) : 0
   const maxV = values.length ? Math.max(...values) : 1
-  const span = Math.max(maxV - minV, maxV * 0.04, 1)
-  const yMin = Math.max(0, minV - span * 0.12)
-  const yMax = maxV + span * 0.12
+  // Marge adaptée aux petites cotes (ex. 0,13 €) : ne pas forcer 1 € d’écart.
+  const span = Math.max(maxV - minV, Math.max(maxV, 0.05) * 0.12, 0.02)
+  const yMin = Math.max(0, minV - span * 0.15)
+  const yMax = maxV + span * 0.15
 
   const xAt = (i: number) =>
     pad.left + (points.length <= 1 ? innerW / 2 : (i / (points.length - 1)) * innerW)
-  const yAt = (v: number) => pad.top + ((yMax - v) / (yMax - yMin)) * innerH
+  const yAt = (v: number) => pad.top + ((yMax - v) / (yMax - yMin || 1)) * innerH
 
   const line =
     points.length > 1
@@ -78,8 +95,8 @@ export function PriceTrendChart({ points, range, onRangeChange }: Props) {
             role="img"
             aria-label={`Courbe de cote sur ${range} jours`}
           >
-            {ticks.map((t) => (
-              <g key={t}>
+            {ticks.map((t, idx) => (
+              <g key={`${idx}-${t}`}>
                 <line
                   x1={pad.left}
                   x2={width - pad.right}
@@ -88,7 +105,7 @@ export function PriceTrendChart({ points, range, onRangeChange }: Props) {
                   className="price-chart-grid"
                 />
                 <text x={pad.left - 8} y={yAt(t) + 4} textAnchor="end" className="price-chart-label">
-                  {Math.round(t)}
+                  {formatAxisEuro(t)}
                 </text>
               </g>
             ))}
@@ -110,6 +127,9 @@ export function PriceTrendChart({ points, range, onRangeChange }: Props) {
                   r={4}
                   className={p.recorded ? 'price-chart-dot' : 'price-chart-dot approx'}
                 />
+                <title>
+                  {formatShortDate(p.date)} : {formatEuro(p.value)}
+                </title>
                 {(i === 0 || i === points.length - 1) && (
                   <text
                     x={xAt(i)}
