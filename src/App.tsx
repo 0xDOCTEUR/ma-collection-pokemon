@@ -1,6 +1,7 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { euroValue, fetchSetCards } from './api/pokemon'
 import { BackupPanel } from './components/BackupPanel'
+import { CardDetailSheet } from './components/CardDetailSheet'
 import { CustomLists } from './components/CustomLists'
 import { ExportPanel } from './components/ExportPanel'
 import { GlobalEstimate } from './components/GlobalEstimate'
@@ -57,6 +58,7 @@ export default function App() {
   const [filter, setFilter] = useState<FilterStatus>('all')
   const [rarity, setRarity] = useState('all')
   const [sort, setSort] = useState<SortKey>('number')
+  const [detailCard, setDetailCard] = useState<PokemonCard | null>(null)
   const { getStatus, setStatus, markMany, resetSet, savedAt } = useCollection()
   const customLists = useCustomLists()
 
@@ -420,12 +422,17 @@ export default function App() {
                     onSetStatus={(variant, status) =>
                       setStatus(activeSet.id, card.id, status, variant)
                     }
+                    onOpenDetail={() => setDetailCard(card)}
                   />
                 ))}
               </div>
             </>
           )}
         </>
+      )}
+
+      {detailCard && (
+        <CardDetailSheet card={detailCard} onClose={() => setDetailCard(null)} />
       )}
 
       <BackupPanel />

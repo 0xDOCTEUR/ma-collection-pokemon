@@ -14,6 +14,8 @@ export interface PokemonCard {
   name: string
   number: string
   localId?: string
+  /** Identifiant TCGdex (ex. sv03.5-199) pour les côtes live Cardmarket. */
+  tcgdexId?: string
   rarity: string
   artist: string
   types: string[]
@@ -26,6 +28,27 @@ export interface PokemonCard {
   cardmarketPrices?: CardPrices | null
   reverseCardmarketPrices?: CardPrices | null
   printedTotal: number
+}
+
+/** Moyennes glissantes Cardmarket renvoyées par TCGdex. */
+export interface CardmarketLiveStats {
+  updated: string | null
+  low: number | null
+  avg: number | null
+  trend: number | null
+  avg1: number | null
+  avg7: number | null
+  avg30: number | null
+}
+
+export type PriceRangeDays = 30 | 90
+
+export interface PriceHistoryPoint {
+  /** Jour au format YYYY-MM-DD */
+  date: string
+  value: number
+  /** true = relevé enregistré dans l’appli ; false = point dérivé des moyennes */
+  recorded: boolean
 }
 
 export type CollectionMap = Record<string, CardStatus>

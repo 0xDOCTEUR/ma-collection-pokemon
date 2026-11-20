@@ -1097,6 +1097,224 @@ textarea:focus {
   border: 1px solid var(--line);
 }
 
+.tile-detail-hint {
+  position: absolute;
+  right: 0.55rem;
+  top: 0.55rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--wanted);
+  background: rgba(0, 0, 0, 0.72);
+  border: 1px solid rgba(78, 168, 222, 0.45);
+  opacity: 0;
+  transform: translateY(-4px);
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+}
+
+.tile:hover .tile-detail-hint,
+.tile-media:focus-visible .tile-detail-hint {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.card-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: end center;
+  padding: 0.75rem;
+  background: rgba(4, 8, 14, 0.72);
+  backdrop-filter: blur(8px);
+  animation: rise 0.25s ease both;
+}
+
+.card-sheet {
+  width: min(920px, 100%);
+  max-height: min(92vh, 860px);
+  overflow: auto;
+  border-radius: 22px 22px 16px 16px;
+  border: 1px solid var(--line);
+  background:
+    radial-gradient(ellipse at top right, rgba(78, 168, 222, 0.12), transparent 45%),
+    linear-gradient(180deg, #121821 0%, #0b1018 100%);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+  padding: 1.1rem 1.2rem 1.4rem;
+  animation: rise 0.35s ease both;
+}
+
+.card-sheet-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.card-sheet-head h2 {
+  font-family: 'Syne', sans-serif;
+  margin: 0.15rem 0;
+  font-size: 1.45rem;
+  letter-spacing: -0.02em;
+}
+
+.card-sheet-num {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.card-sheet-body {
+  display: grid;
+  grid-template-columns: minmax(140px, 220px) 1fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.card-sheet-art {
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: #070a0f;
+}
+
+.card-sheet-main {
+  display: grid;
+  gap: 1rem;
+}
+
+.card-sheet-prices,
+.card-sheet-avgs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 0.75rem;
+}
+
+.card-sheet-prices > div,
+.card-sheet-avgs > div {
+  padding: 0.7rem 0.8rem;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.card-sheet-prices strong,
+.card-sheet-avgs strong {
+  display: block;
+  font-family: 'Syne', sans-serif;
+  font-size: 1.05rem;
+  margin-top: 0.2rem;
+}
+
+.card-sheet-prices small {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.card-sheet-updated {
+  margin: 0;
+  font-size: 0.8rem;
+}
+
+.price-chart {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.85rem 0.9rem 1rem;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.price-chart-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.65rem;
+  align-items: center;
+}
+
+.price-chart-head h3 {
+  font-family: 'Syne', sans-serif;
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.price-chart-range {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.price-chart-svg {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.price-chart-grid {
+  stroke: rgba(255, 255, 255, 0.08);
+  stroke-width: 1;
+}
+
+.price-chart-label {
+  fill: var(--muted);
+  font-size: 10px;
+}
+
+.price-chart-area {
+  fill: rgba(78, 168, 222, 0.14);
+}
+
+.price-chart-line {
+  stroke: #4ea8de;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.price-chart-line.approx {
+  stroke-dasharray: 6 5;
+}
+
+.price-chart-dot {
+  fill: #4ea8de;
+  stroke: #0b1018;
+  stroke-width: 2;
+}
+
+.price-chart-dot.approx {
+  fill: transparent;
+  stroke: #4ea8de;
+}
+
+.price-chart-legend {
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.82rem;
+}
+
+.price-chart-empty {
+  margin: 0.25rem 0;
+}
+
+@media (max-width: 720px) {
+  .card-sheet-body {
+    grid-template-columns: 1fr;
+  }
+
+  .card-sheet-art {
+    max-width: 220px;
+    margin: 0 auto;
+  }
+}
+
 .status-owned .tile-badge {
   color: var(--mint);
   border-color: rgba(61, 214, 198, 0.4);

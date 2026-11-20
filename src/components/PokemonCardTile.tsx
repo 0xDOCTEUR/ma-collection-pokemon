@@ -12,6 +12,7 @@ interface Props {
   normalStatus: CardStatus
   reverseStatus: CardStatus
   onSetStatus: (variant: CardVariant, status: CardStatus) => void
+  onOpenDetail: () => void
 }
 
 function nextToggle(current: CardStatus, target: 'owned' | 'wanted'): CardStatus {
@@ -23,6 +24,7 @@ export function PokemonCardTile({
   normalStatus,
   reverseStatus,
   onSetStatus,
+  onOpenDetail,
 }: Props) {
   const overall: CardStatus =
     normalStatus === 'owned' || (card.hasReverse && reverseStatus === 'owned')
@@ -36,11 +38,12 @@ export function PokemonCardTile({
       <button
         type="button"
         className="tile-media"
-        onClick={() => onSetStatus('normal', nextToggle(normalStatus, 'owned'))}
-        title="Marquer la version normale"
+        onClick={onOpenDetail}
+        title="Voir la cote et le graphique"
       >
         <img src={card.imageSmall} alt={card.name} loading="lazy" width={245} height={342} />
         <span className="tile-badge">{STATUS_LABEL[overall]}</span>
+        <span className="tile-detail-hint">Cote</span>
       </button>
 
       <div className="tile-body">
