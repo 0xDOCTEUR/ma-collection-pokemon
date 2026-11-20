@@ -85,14 +85,13 @@ export function buildTrendPoints(
 ): PriceHistoryPoint[] {
   const store = readStore()
   const cutoff = daysAgoKey(range)
-  const recorded = (store[cardKey] ?? [])
-    .filter((s) => s.date >= cutoff)
-    .map((s) => {
-      const value = pickValue(s)
-      if (value == null) return null
-      return { date: s.date, value, recorded: true } satisfies PriceHistoryPoint
-    })
-    .filter((p): p is PriceHistoryPoint => p != null)
+  const recorded: PriceHistoryPoint[] = []
+  for (const s of store[cardKey] ?? []) {
+    if (s.date < cutoff) continue
+    const value = pickValue(s)
+    if (value == null) continue
+    recorded.push({ date: s.date, value, recorded: true })
+  }
 
   if (recorded.length >= 2) {
     return recorded
