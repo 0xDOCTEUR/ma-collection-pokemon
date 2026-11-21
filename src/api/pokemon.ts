@@ -6,6 +6,7 @@ import type {
 } from '../types'
 import { cardmarketPricesFor, pricesFor } from '../types'
 import type { SetInfo } from '../sets'
+import type { PopulationFile } from '../utils/population'
 
 /** Change ce numéro quand les fichiers de côtes sont mis à jour, pour éviter un vieux cache. */
 const DATA_VERSION = '2026-11-19-cm'
@@ -23,6 +24,15 @@ export async function fetchSetCards(set: SetInfo): Promise<PokemonCard[]> {
     throw new Error(`Impossible de charger ${set.name} (code ${response.status})`)
   }
   return (await response.json()) as PokemonCard[]
+}
+
+export async function fetchPopulation(set: SetInfo): Promise<PopulationFile> {
+  const url = `${set.populationUrl}${set.populationUrl.includes('?') ? '&' : '?'}v=${DATA_VERSION}`
+  const response = await fetch(url, { cache: 'no-cache' })
+  if (!response.ok) {
+    throw new Error(`Impossible de charger la population de ${set.name} (code ${response.status})`)
+  }
+  return (await response.json()) as PopulationFile
 }
 
 export function formatPrices(prices: CardPrices): string {

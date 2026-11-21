@@ -8,13 +8,37 @@ import {
 import type { CardmarketLiveStats, PokemonCard, PriceRangeDays } from '../types'
 import { buildTrendPoints, recordPriceSnapshot } from '../utils/priceHistory'
 import { PriceTrendChart } from './PriceTrendChart'
+import {
+  MIN_POPULATION_SAMPLE,
+  formatCensusDate,
+  formatCount,
+  formatGemRate,
+  primaryPrinting,
+  printingLabel,
+  type PsaPrinting,
+} from '../utils/population'
 
 interface Props {
   card: PokemonCard
   onClose: () => void
+  population: PsaPrinting[] | null
+  rank: number | null
+  comparableCount: number
+  sourceUrl: string | null
+  sourceName: string
+  censusDate: string | null
 }
 
-export function CardDetailSheet({ card, onClose }: Props) {
+export function CardDetailSheet({
+  card,
+  onClose,
+  population,
+  rank,
+  comparableCount,
+  sourceUrl,
+  sourceName,
+  censusDate,
+}: Props) {
   const titleId = useId()
   const [range, setRange] = useState<PriceRangeDays>(30)
   const [stats, setStats] = useState<CardmarketLiveStats | null>(null)
@@ -156,10 +180,109 @@ export function CardDetailSheet({ card, onClose }: Props) {
               </>
             )}
 
+            <PopulationBlock
+              printings={population}
+              rank={rank}
+              comparableCount={comparableCount}
+              sourceUrl={sourceUrl}
+              sourceName={sourceName}
+              censusDate={censusDate}
+            />
+
             <PriceTrendChart points={points} range={range} onRangeChange={setRange} />
           </div>
         </div>
       </aside>
     </div>
+  )
+}
+
+function PopulationBlock({
+  printings,
+  rank,
+  comparableCount,
+  sourceUrl,
+  sourceName,
+  censusDate,
+}: {
+  printings: PsaPrinting[] | null
+  rank: number | null
+  comparableCount: number
+  sourceUrl: string | null
+  sourceName: string
+  censusDate: string | null
+}) {
+  if (printings == null) return null
+
+  const primary = primaryPrinting(printings)
+  const rows = [...printings].sort((a, b) => a.psa10 - b.psa10 || a.total - b.total)
+  const censusLabel = formatCensusDate(censusDate)
+
+  return (
+    <section className="pop-block">
+      <div className="pop-block-head">
+        <h3>Population PSA</h3>
+        <p className="muted">
+          Nombre d’exemplaires déjà notés par PSA. La note 10 est la note parfaite. Moins il y en a,
+          plus cette version est rare parmi les cartes notées.
+        </p>
+      </div>
+
+      {rows.length === 0 ? (
+        <p className="pop-note">Pas encore de chiffre PSA pour cette carte.</p>
+      ) : (
+        <table className="pop-table">
+          <thead>
+            <tr>
+              <th>Version</th>
+              <th>Cartes notées</th>
+              <th>Notes 10</th>
+              <th>Part de 10</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => {
+              const compared = primary != null && row.label === primary.label && row.total === primary.total
+              return (
+                <tr key={`${row.label}-${row.total}`} className={compared ? 'is-compared' : undefined}>
+                  <td>
+                    {printingLabel(row.label)}
+                    {compared && rows.length > 1 ? <small> comparée</small> : null}
+                  </td>
+                  <td>{formatCount(row.total)}</td>
+                  <td>{formatCount(row.psa10)}</td>
+                  <td>{formatGemRate(row)}</td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      )}
+
+      {primary && primary.total >= MIN_POPULATION_SAMPLE && rank != null && (
+        <p className="pop-note">
+          Classement dans la série : <strong>{rank === 1 ? '1re' : `${rank}e`}</strong> plus rare
+          sur {comparableCount} cartes, pour la version {printingLabel(primary.label).toLowerCase()}{' '}
+          ({formatCount(primary.psa10)} notes 10). La 1re est celle qui a le moins de notes 10.
+        </p>
+      )}
+      {primary && primary.total < MIN_POPULATION_SAMPLE && (
+        <p className="pop-note">
+          Moins de {MIN_POPULATION_SAMPLE} cartes notées pour la version{' '}
+          {printingLabel(primary.label).toLowerCase()}. On ne la classe pas : un petit chiffre veut
+          surtout dire que presque personne ne l’envoie chez PSA.
+        </p>
+      )}
+
+      <p className="pop-note">
+        Chiffres de la version anglaise ({sourceName}
+        {censusLabel ? `, recensement du ${censusLabel}` : ''}). Le numéro est le même en français.{' '}
+        {sourceUrl && (
+          <a href={sourceUrl} target="_blank" rel="noreferrer">
+            Voir la source
+          </a>
+        )}
+      </p>
+    </section>
   )
 }

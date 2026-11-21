@@ -55,7 +55,7 @@ export type CollectionMap = Record<string, CardStatus>
 export type CollectionsBySet = Record<string, CollectionMap>
 
 export type FilterStatus = 'all' | CardStatus | 'reverse-missing' | 'reverse-owned'
-export type SortKey = 'number' | 'price-asc' | 'price-desc' | 'name'
+export type SortKey = 'number' | 'price-asc' | 'price-desc' | 'name' | 'pop-asc' | 'pop-desc'
 
 export function variantKey(cardId: string, variant: CardVariant): string {
   return variant === 'reverse' ? `${cardId}:reverse` : cardId

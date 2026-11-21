@@ -1,0 +1,3819 @@
+{
+  "source": "https://cardprice.com/pop/psa/151",
+  "sourceName": "CardPrice",
+  "fetchedAt": "2026-11-21",
+  "cards": {
+    "sv3pt5-1": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 4024,
+          "psa10": 3538,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 1752,
+          "psa10": 695,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 439,
+          "psa10": 166,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-2": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 2362,
+          "psa10": 2081,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 126,
+          "psa10": 52,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 43,
+          "psa10": 17,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-3": {
+      "printings": [
+        {
+          "label": "",
+          "total": 2167,
+          "psa10": 626,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-4": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 4576,
+          "psa10": 3976,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 329,
+          "psa10": 127,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 164,
+          "psa10": 56,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-5": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 2577,
+          "psa10": 2214,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 173,
+          "psa10": 45,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 80,
+          "psa10": 28,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-6": {
+      "printings": [
+        {
+          "label": "",
+          "total": 5826,
+          "psa10": 1826,
+          "updatedAt": "2026-09-17"
+        }
+      ]
+    },
+    "sv3pt5-7": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 4575,
+          "psa10": 3963,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 503,
+          "psa10": 174,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 196,
+          "psa10": 57,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-8": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 2364,
+          "psa10": 2071,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 148,
+          "psa10": 58,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 41,
+          "psa10": 13,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-9": {
+      "printings": [
+        {
+          "label": "",
+          "total": 3057,
+          "psa10": 1010,
+          "updatedAt": "2026-09-18"
+        }
+      ]
+    },
+    "sv3pt5-10": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 669,
+          "psa10": 574,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 43,
+          "psa10": 14,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 19,
+          "psa10": 9,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-11": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 690,
+          "psa10": 600,
+          "updatedAt": "2026-09-18"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 47,
+          "psa10": 13,
+          "updatedAt": "2026-09-18"
+        },
+        {
+          "label": "",
+          "total": 7,
+          "psa10": 4,
+          "updatedAt": "2026-09-18"
+        }
+      ]
+    },
+    "sv3pt5-12": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 755,
+          "psa10": 651,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 49,
+          "psa10": 22,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 14,
+          "psa10": 5,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-13": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 609,
+          "psa10": 559,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 30,
+          "psa10": 11,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 9,
+          "psa10": 5,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-14": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 628,
+          "psa10": 569,
+          "updatedAt": "2026-09-18"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 24,
+          "psa10": 9,
+          "updatedAt": "2026-09-18"
+        },
+        {
+          "label": "",
+          "total": 8,
+          "psa10": 1,
+          "updatedAt": "2026-09-18"
+        }
+      ]
+    },
+    "sv3pt5-15": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 691,
+          "psa10": 606,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 59,
+          "psa10": 25,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 33,
+          "psa10": 19,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-16": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 1074,
+          "psa10": 916,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 77,
+          "psa10": 28,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 35,
+          "psa10": 11,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-17": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 1236,
+          "psa10": 1049,
+          "updatedAt": "2026-09-18"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 24,
+          "psa10": 10,
+          "updatedAt": "2026-09-18"
+        },
+        {
+          "label": "",
+          "total": 7,
+          "psa10": 3,
+          "updatedAt": "2026-09-18"
+        }
+      ]
+    },
+    "sv3pt5-18": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 731,
+          "psa10": 634,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 37,
+          "psa10": 17,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 11,
+          "psa10": 5,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-19": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 597,
+          "psa10": 505,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 31,
+          "psa10": 10,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 8,
+          "psa10": 5,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-20": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 605,
+          "psa10": 521,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 30,
+          "psa10": 13,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 13,
+          "psa10": 6,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-21": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 590,
+          "psa10": 535,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 27,
+          "psa10": 8,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 10,
+          "psa10": 4,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-22": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 564,
+          "psa10": 493,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 24,
+          "psa10": 11,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 9,
+          "psa10": 3,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-23": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 649,
+          "psa10": 558,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 37,
+          "psa10": 15,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 7,
+          "psa10": 3,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-24": {
+      "printings": [
+        {
+          "label": "",
+          "total": 356,
+          "psa10": 118,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-25": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 13976,
+          "psa10": 11684,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 746,
+          "psa10": 327,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 350,
+          "psa10": 103,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-26": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 3010,
+          "psa10": 2610,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 249,
+          "psa10": 100,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 84,
+          "psa10": 26,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-27": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 589,
+          "psa10": 504,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 46,
+          "psa10": 14,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 8,
+          "psa10": 3,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-28": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 632,
+          "psa10": 570,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 37,
+          "psa10": 15,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 6,
+          "psa10": 4,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-29": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 652,
+          "psa10": 575,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 25,
+          "psa10": 6,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 5,
+          "psa10": 1,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-30": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 643,
+          "psa10": 571,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 28,
+          "psa10": 9,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 7,
+          "psa10": 2,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-31": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 772,
+          "psa10": 713,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 35,
+          "psa10": 10,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 8,
+          "psa10": 4,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-32": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 609,
+          "psa10": 538,
+          "updatedAt": "2026-09-18"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 20,
+          "psa10": 4,
+          "updatedAt": "2026-09-18"
+        },
+        {
+          "label": "",
+          "total": 2,
+          "psa10": 0,
+          "updatedAt": "2026-09-18"
+        }
+      ]
+    },
+    "sv3pt5-33": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 622,
+          "psa10": 566,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 35,
+          "psa10": 11,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 3,
+          "psa10": 2,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-34": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 756,
+          "psa10": 627,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 102,
+          "psa10": 44,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 44,
+          "psa10": 19,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-35": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 996,
+          "psa10": 881,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 51,
+          "psa10": 17,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 10,
+          "psa10": 4,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-36": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 847,
+          "psa10": 778,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 34,
+          "psa10": 16,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 9,
+          "psa10": 3,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-37": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 1511,
+          "psa10": 1264,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 44,
+          "psa10": 19,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 11,
+          "psa10": 5,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-38": {
+      "printings": [
+        {
+          "label": "",
+          "total": 747,
+          "psa10": 254,
+          "updatedAt": "2026-09-18"
+        }
+      ]
+    },
+    "sv3pt5-39": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 1651,
+          "psa10": 1396,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 80,
+          "psa10": 32,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 29,
+          "psa10": 7,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-40": {
+      "printings": [
+        {
+          "label": "",
+          "total": 371,
+          "psa10": 128,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-41": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 635,
+          "psa10": 565,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 26,
+          "psa10": 12,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 7,
+          "psa10": 4,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-42": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 619,
+          "psa10": 528,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 27,
+          "psa10": 13,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 6,
+          "psa10": 4,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-43": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 593,
+          "psa10": 541,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 33,
+          "psa10": 13,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 16,
+          "psa10": 6,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-44": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 643,
+          "psa10": 574,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 35,
+          "psa10": 10,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 11,
+          "psa10": 2,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-45": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 694,
+          "psa10": 593,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 58,
+          "psa10": 45,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 26,
+          "psa10": 10,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-46": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 604,
+          "psa10": 556,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 24,
+          "psa10": 7,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 6,
+          "psa10": 1,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-47": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 612,
+          "psa10": 544,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 23,
+          "psa10": 10,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 2,
+          "psa10": 1,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-48": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 562,
+          "psa10": 497,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 29,
+          "psa10": 6,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 4,
+          "psa10": 3,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-49": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 546,
+          "psa10": 495,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 22,
+          "psa10": 9,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 4,
+          "psa10": 1,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-50": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 684,
+          "psa10": 625,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 31,
+          "psa10": 9,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 5,
+          "psa10": 2,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-51": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 642,
+          "psa10": 570,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 29,
+          "psa10": 10,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 4,
+          "psa10": 3,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-52": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 2268,
+          "psa10": 1984,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 50,
+          "psa10": 20,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 24,
+          "psa10": 8,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-53": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 1662,
+          "psa10": 1454,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 55,
+          "psa10": 15,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 7,
+          "psa10": 0,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-54": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 2338,
+          "psa10": 2012,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 110,
+          "psa10": 20,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 29,
+          "psa10": 9,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-55": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 851,
+          "psa10": 768,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 33,
+          "psa10": 14,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 8,
+          "psa10": 5,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-56": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 633,
+          "psa10": 550,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 30,
+          "psa10": 17,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 4,
+          "psa10": 1,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-57": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 656,
+          "psa10": 576,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 37,
+          "psa10": 12,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 2,
+          "psa10": 1,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-58": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 1079,
+          "psa10": 976,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 47,
+          "psa10": 14,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 23,
+          "psa10": 10,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-59": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 1344,
+          "psa10": 1150,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 110,
+          "psa10": 38,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 36,
+          "psa10": 17,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-60": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 784,
+          "psa10": 683,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 25,
+          "psa10": 9,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 8,
+          "psa10": 3,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-61": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 825,
+          "psa10": 722,
+          "updatedAt": "2026-09-18"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 34,
+          "psa10": 15,
+          "updatedAt": "2026-09-18"
+        },
+        {
+          "label": "",
+          "total": 4,
+          "psa10": 1,
+          "updatedAt": "2026-09-18"
+        }
+      ]
+    },
+    "sv3pt5-62": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 861,
+          "psa10": 740,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 43,
+          "psa10": 18,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 7,
+          "psa10": 5,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-63": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 1528,
+          "psa10": 1355,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 515,
+          "psa10": 198,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 53,
+          "psa10": 17,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-64": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 1795,
+          "psa10": 1479,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 439,
+          "psa10": 165,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 63,
+          "psa10": 22,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-65": {
+      "printings": [
+        {
+          "label": "",
+          "total": 635,
+          "psa10": 182,
+          "updatedAt": "2026-09-18"
+        }
+      ]
+    },
+    "sv3pt5-66": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 716,
+          "psa10": 616,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 45,
+          "psa10": 15,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 5,
+          "psa10": 2,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-67": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 787,
+          "psa10": 687,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 41,
+          "psa10": 16,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 6,
+          "psa10": 0,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-68": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 800,
+          "psa10": 678,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 66,
+          "psa10": 49,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 41,
+          "psa10": 23,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-69": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 651,
+          "psa10": 588,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 22,
+          "psa10": 9,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 4,
+          "psa10": 2,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-70": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 589,
+          "psa10": 508,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 21,
+          "psa10": 9,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 5,
+          "psa10": 3,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-71": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 572,
+          "psa10": 493,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 34,
+          "psa10": 16,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 2,
+          "psa10": 1,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-72": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 546,
+          "psa10": 461,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 27,
+          "psa10": 11,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 2,
+          "psa10": 1,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-73": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 673,
+          "psa10": 610,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 29,
+          "psa10": 9,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 4,
+          "psa10": 3,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-74": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 1109,
+          "psa10": 981,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 26,
+          "psa10": 15,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 2,
+          "psa10": 2,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-75": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 1130,
+          "psa10": 966,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 28,
+          "psa10": 14,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 7,
+          "psa10": 3,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-76": {
+      "printings": [
+        {
+          "label": "",
+          "total": 354,
+          "psa10": 111,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-77": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 703,
+          "psa10": 627,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 30,
+          "psa10": 14,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 5,
+          "psa10": 3,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-78": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 767,
+          "psa10": 696,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 35,
+          "psa10": 16,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 9,
+          "psa10": 4,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-79": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 1689,
+          "psa10": 1512,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 59,
+          "psa10": 23,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 12,
+          "psa10": 4,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-80": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 1116,
+          "psa10": 991,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 48,
+          "psa10": 16,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 9,
+          "psa10": 2,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-81": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 647,
+          "psa10": 571,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 39,
+          "psa10": 17,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 12,
+          "psa10": 7,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-82": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 693,
+          "psa10": 613,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 30,
+          "psa10": 7,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 8,
+          "psa10": 5,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-83": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 685,
+          "psa10": 601,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 37,
+          "psa10": 14,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 8,
+          "psa10": 3,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-84": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 1062,
+          "psa10": 900,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 28,
+          "psa10": 6,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 4,
+          "psa10": 1,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-85": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 1159,
+          "psa10": 1008,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 60,
+          "psa10": 21,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 26,
+          "psa10": 10,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-86": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 685,
+          "psa10": 604,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 27,
+          "psa10": 9,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 4,
+          "psa10": 1,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-87": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 704,
+          "psa10": 635,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 22,
+          "psa10": 9,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 5,
+          "psa10": 2,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-88": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 597,
+          "psa10": 548,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 20,
+          "psa10": 10,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 9,
+          "psa10": 5,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-89": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 703,
+          "psa10": 659,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 31,
+          "psa10": 14,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 6,
+          "psa10": 3,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-90": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 620,
+          "psa10": 543,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 27,
+          "psa10": 7,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 2,
+          "psa10": 1,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-91": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 641,
+          "psa10": 576,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 38,
+          "psa10": 24,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 3,
+          "psa10": 3,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-92": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 2248,
+          "psa10": 1943,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 109,
+          "psa10": 37,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 29,
+          "psa10": 6,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-93": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 2312,
+          "psa10": 2039,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 158,
+          "psa10": 66,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 34,
+          "psa10": 19,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-94": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 7116,
+          "psa10": 5984,
+          "updatedAt": "2026-09-17"
+        },
+        {
+          "label": "",
+          "total": 2081,
+          "psa10": 695,
+          "updatedAt": "2026-09-17"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 551,
+          "psa10": 127,
+          "updatedAt": "2026-09-17"
+        }
+      ]
+    },
+    "sv3pt5-95": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 1214,
+          "psa10": 1088,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 18,
+          "psa10": 10,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 4,
+          "psa10": 1,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-96": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 796,
+          "psa10": 711,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 37,
+          "psa10": 13,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 6,
+          "psa10": 5,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-97": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 662,
+          "psa10": 584,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 18,
+          "psa10": 13,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 7,
+          "psa10": 2,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-98": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 649,
+          "psa10": 557,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 33,
+          "psa10": 7,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 6,
+          "psa10": 1,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-99": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 655,
+          "psa10": 592,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 25,
+          "psa10": 8,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 7,
+          "psa10": 4,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-100": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 1222,
+          "psa10": 1093,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 36,
+          "psa10": 20,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 7,
+          "psa10": 2,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-101": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 1171,
+          "psa10": 1015,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 103,
+          "psa10": 32,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 23,
+          "psa10": 6,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-102": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 602,
+          "psa10": 525,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 29,
+          "psa10": 8,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 4,
+          "psa10": 2,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-103": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 759,
+          "psa10": 673,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 31,
+          "psa10": 15,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 6,
+          "psa10": 3,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-104": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 950,
+          "psa10": 860,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 69,
+          "psa10": 27,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 21,
+          "psa10": 6,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-105": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 743,
+          "psa10": 660,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 221,
+          "psa10": 102,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 38,
+          "psa10": 11,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-106": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 768,
+          "psa10": 676,
+          "updatedAt": "2026-09-18"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 26,
+          "psa10": 15,
+          "updatedAt": "2026-09-18"
+        },
+        {
+          "label": "",
+          "total": 12,
+          "psa10": 4,
+          "updatedAt": "2026-09-18"
+        }
+      ]
+    },
+    "sv3pt5-107": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 793,
+          "psa10": 720,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 31,
+          "psa10": 18,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 16,
+          "psa10": 3,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-108": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 780,
+          "psa10": 690,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 37,
+          "psa10": 17,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 16,
+          "psa10": 6,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-109": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 685,
+          "psa10": 621,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 26,
+          "psa10": 13,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 8,
+          "psa10": 3,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-110": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 608,
+          "psa10": 496,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 73,
+          "psa10": 27,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 36,
+          "psa10": 20,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-111": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 644,
+          "psa10": 575,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 33,
+          "psa10": 10,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 6,
+          "psa10": 3,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-112": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 1187,
+          "psa10": 1042,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 43,
+          "psa10": 13,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 5,
+          "psa10": 4,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-113": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 1839,
+          "psa10": 1563,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 208,
+          "psa10": 59,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 66,
+          "psa10": 33,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-114": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 1113,
+          "psa10": 984,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 31,
+          "psa10": 12,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 9,
+          "psa10": 2,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-115": {
+      "printings": [
+        {
+          "label": "",
+          "total": 337,
+          "psa10": 105,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-116": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 713,
+          "psa10": 619,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 38,
+          "psa10": 13,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 3,
+          "psa10": 0,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-117": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 692,
+          "psa10": 635,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 29,
+          "psa10": 13,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 2,
+          "psa10": 2,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-118": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 613,
+          "psa10": 555,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 34,
+          "psa10": 9,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 6,
+          "psa10": 2,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-119": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 595,
+          "psa10": 492,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 27,
+          "psa10": 10,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 5,
+          "psa10": 1,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-120": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 1298,
+          "psa10": 1145,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 31,
+          "psa10": 14,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 6,
+          "psa10": 3,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-121": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 1411,
+          "psa10": 1226,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 108,
+          "psa10": 40,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 32,
+          "psa10": 13,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-122": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 827,
+          "psa10": 729,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 145,
+          "psa10": 51,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 50,
+          "psa10": 27,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-123": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 946,
+          "psa10": 859,
+          "updatedAt": "2026-09-18"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 63,
+          "psa10": 16,
+          "updatedAt": "2026-09-18"
+        },
+        {
+          "label": "",
+          "total": 11,
+          "psa10": 4,
+          "updatedAt": "2026-09-18"
+        }
+      ]
+    },
+    "sv3pt5-124": {
+      "printings": [
+        {
+          "label": "",
+          "total": 327,
+          "psa10": 110,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-125": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 651,
+          "psa10": 562,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 341,
+          "psa10": 116,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 22,
+          "psa10": 10,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-126": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 741,
+          "psa10": 652,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 29,
+          "psa10": 7,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 5,
+          "psa10": 3,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-127": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 578,
+          "psa10": 533,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 30,
+          "psa10": 14,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 6,
+          "psa10": 4,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-128": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 621,
+          "psa10": 549,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 31,
+          "psa10": 10,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 9,
+          "psa10": 5,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-129": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 2743,
+          "psa10": 2427,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 109,
+          "psa10": 33,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 34,
+          "psa10": 10,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-130": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 2443,
+          "psa10": 2090,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 355,
+          "psa10": 141,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 102,
+          "psa10": 25,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-131": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 1131,
+          "psa10": 952,
+          "updatedAt": "2026-09-18"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 37,
+          "psa10": 13,
+          "updatedAt": "2026-09-18"
+        },
+        {
+          "label": "",
+          "total": 18,
+          "psa10": 3,
+          "updatedAt": "2026-09-18"
+        }
+      ]
+    },
+    "sv3pt5-132": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 1694,
+          "psa10": 1479,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 118,
+          "psa10": 68,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 55,
+          "psa10": 29,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-133": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 5439,
+          "psa10": 4861,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 208,
+          "psa10": 80,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 105,
+          "psa10": 46,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-134": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 4785,
+          "psa10": 4209,
+          "updatedAt": "2026-09-18"
+        },
+        {
+          "label": "",
+          "total": 314,
+          "psa10": 223,
+          "updatedAt": "2026-09-18"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 76,
+          "psa10": 20,
+          "updatedAt": "2026-09-18"
+        }
+      ]
+    },
+    "sv3pt5-135": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 4439,
+          "psa10": 3846,
+          "updatedAt": "2026-09-18"
+        },
+        {
+          "label": "",
+          "total": 315,
+          "psa10": 116,
+          "updatedAt": "2026-09-18"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 107,
+          "psa10": 42,
+          "updatedAt": "2026-09-18"
+        }
+      ]
+    },
+    "sv3pt5-136": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 4586,
+          "psa10": 4095,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 255,
+          "psa10": 104,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 72,
+          "psa10": 8,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-137": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 1397,
+          "psa10": 1249,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 50,
+          "psa10": 16,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 16,
+          "psa10": 9,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-138": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 651,
+          "psa10": 519,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 37,
+          "psa10": 11,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 6,
+          "psa10": 1,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-139": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 655,
+          "psa10": 558,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 95,
+          "psa10": 29,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 42,
+          "psa10": 23,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-140": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 687,
+          "psa10": 610,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 23,
+          "psa10": 8,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 6,
+          "psa10": 3,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-141": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 803,
+          "psa10": 703,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 100,
+          "psa10": 32,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 34,
+          "psa10": 18,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-142": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 1570,
+          "psa10": 1279,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 352,
+          "psa10": 125,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 87,
+          "psa10": 38,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-143": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 3661,
+          "psa10": 3124,
+          "updatedAt": "2026-09-18"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 136,
+          "psa10": 37,
+          "updatedAt": "2026-09-18"
+        },
+        {
+          "label": "",
+          "total": 90,
+          "psa10": 36,
+          "updatedAt": "2026-09-18"
+        }
+      ]
+    },
+    "sv3pt5-144": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 2630,
+          "psa10": 2307,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 206,
+          "psa10": 80,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 73,
+          "psa10": 34,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-145": {
+      "printings": [
+        {
+          "label": "",
+          "total": 829,
+          "psa10": 244,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-146": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 2410,
+          "psa10": 2073,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 122,
+          "psa10": 94,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 77,
+          "psa10": 37,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-147": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 1455,
+          "psa10": 1301,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 67,
+          "psa10": 22,
+          "updatedAt": "2026-09-20"
+        },
+        {
+          "label": "",
+          "total": 15,
+          "psa10": 5,
+          "updatedAt": "2026-09-20"
+        }
+      ]
+    },
+    "sv3pt5-148": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 1581,
+          "psa10": 1409,
+          "updatedAt": "2026-09-18"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 53,
+          "psa10": 11,
+          "updatedAt": "2026-09-18"
+        },
+        {
+          "label": "",
+          "total": 27,
+          "psa10": 9,
+          "updatedAt": "2026-09-18"
+        }
+      ]
+    },
+    "sv3pt5-149": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 3479,
+          "psa10": 2985,
+          "updatedAt": "2026-09-18"
+        },
+        {
+          "label": "",
+          "total": 528,
+          "psa10": 155,
+          "updatedAt": "2026-09-18"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 195,
+          "psa10": 33,
+          "updatedAt": "2026-09-18"
+        }
+      ]
+    },
+    "sv3pt5-150": {
+      "printings": [
+        {
+          "label": "Master Ball",
+          "total": 7555,
+          "psa10": 6493,
+          "updatedAt": "2026-09-18"
+        },
+        {
+          "label": "",
+          "total": 712,
+          "psa10": 518,
+          "updatedAt": "2026-09-18"
+        },
+        {
+          "label": "Reverse Holofoil",
+          "total": 466,
+          "psa10": 209,
+          "updatedAt": "2026-09-18"
+        }
+      ]
+    },
+    "sv3pt5-151": {
+      "printings": [
+        {
+          "label": "",
+          "total": 3202,
+          "psa10": 885,
+          "updatedAt": "2026-09-17"
+        }
+      ]
+    },
+    "sv3pt5-152": {
+      "printings": [
+        {
+          "label": "Reverse Holofoil",
+          "total": 37,
+          "psa10": 9,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 4,
+          "psa10": 1,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-153": {
+      "printings": [
+        {
+          "label": "Reverse Holofoil",
+          "total": 22,
+          "psa10": 3,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 3,
+          "psa10": 0,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-154": {
+      "printings": [
+        {
+          "label": "Reverse Holofoil",
+          "total": 27,
+          "psa10": 13,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 3,
+          "psa10": 2,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-155": {
+      "printings": [
+        {
+          "label": "Reverse Holofoil",
+          "total": 16,
+          "psa10": 5,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 4,
+          "psa10": 2,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-156": {
+      "printings": [
+        {
+          "label": "Reverse Holofoil",
+          "total": 17,
+          "psa10": 9,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 7,
+          "psa10": 4,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-157": {
+      "printings": [
+        {
+          "label": "Reverse Holofoil",
+          "total": 23,
+          "psa10": 7,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 4,
+          "psa10": 1,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-158": {
+      "printings": [
+        {
+          "label": "Reverse Holofoil",
+          "total": 20,
+          "psa10": 2,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 4,
+          "psa10": 1,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-159": {
+      "printings": [
+        {
+          "label": "Reverse Holofoil",
+          "total": 22,
+          "psa10": 4,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 4,
+          "psa10": 0,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-160": {
+      "printings": [
+        {
+          "label": "Reverse Holofoil",
+          "total": 33,
+          "psa10": 9,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 14,
+          "psa10": 5,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-161": {
+      "printings": [
+        {
+          "label": "Reverse Holofoil",
+          "total": 28,
+          "psa10": 5,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 3,
+          "psa10": 1,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-162": {
+      "printings": [
+        {
+          "label": "Reverse Holofoil",
+          "total": 18,
+          "psa10": 7,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 3,
+          "psa10": 0,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-163": {
+      "printings": [
+        {
+          "label": "Reverse Holofoil",
+          "total": 17,
+          "psa10": 7,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 5,
+          "psa10": 1,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-164": {
+      "printings": [
+        {
+          "label": "Reverse Holofoil",
+          "total": 19,
+          "psa10": 10,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 3,
+          "psa10": 1,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-165": {
+      "printings": [
+        {
+          "label": "Reverse Holofoil",
+          "total": 16,
+          "psa10": 6,
+          "updatedAt": "2026-09-19"
+        },
+        {
+          "label": "",
+          "total": 2,
+          "psa10": 1,
+          "updatedAt": "2026-09-19"
+        }
+      ]
+    },
+    "sv3pt5-166": {
+      "printings": [
+        {
+          "label": "",
+          "total": 28629,
+          "psa10": 8297,
+          "updatedAt": "2026-09-28"
+        }
+      ]
+    },
+    "sv3pt5-167": {
+      "printings": [
+        {
+          "label": "",
+          "total": 23274,
+          "psa10": 6346,
+          "updatedAt": "2026-09-17"
+        }
+      ]
+    },
+    "sv3pt5-168": {
+      "printings": [
+        {
+          "label": "",
+          "total": 36162,
+          "psa10": 8740,
+          "updatedAt": "2026-09-28"
+        }
+      ]
+    },
+    "sv3pt5-169": {
+      "printings": [
+        {
+          "label": "",
+          "total": 30897,
+          "psa10": 7512,
+          "updatedAt": "2026-09-17"
+        }
+      ]
+    },
+    "sv3pt5-170": {
+      "printings": [
+        {
+          "label": "",
+          "total": 33146,
+          "psa10": 8964,
+          "updatedAt": "2026-09-28"
+        }
+      ]
+    },
+    "sv3pt5-171": {
+      "printings": [
+        {
+          "label": "",
+          "total": 25760,
+          "psa10": 6603,
+          "updatedAt": "2026-09-17"
+        }
+      ]
+    },
+    "sv3pt5-172": {
+      "printings": [
+        {
+          "label": "",
+          "total": 5142,
+          "psa10": 1654,
+          "updatedAt": "2026-09-17"
+        }
+      ]
+    },
+    "sv3pt5-173": {
+      "printings": [
+        {
+          "label": "",
+          "total": 30980,
+          "psa10": 8663,
+          "updatedAt": "2026-09-28"
+        }
+      ]
+    },
+    "sv3pt5-174": {
+      "printings": [
+        {
+          "label": "",
+          "total": 8805,
+          "psa10": 3028,
+          "updatedAt": "2026-09-17"
+        }
+      ]
+    },
+    "sv3pt5-175": {
+      "printings": [
+        {
+          "label": "",
+          "total": 16407,
+          "psa10": 5123,
+          "updatedAt": "2026-09-17"
+        }
+      ]
+    },
+    "sv3pt5-176": {
+      "printings": [
+        {
+          "label": "",
+          "total": 15087,
+          "psa10": 4585,
+          "updatedAt": "2026-09-17"
+        }
+      ]
+    },
+    "sv3pt5-177": {
+      "printings": [
+        {
+          "label": "",
+          "total": 8781,
+          "psa10": 2565,
+          "updatedAt": "2026-09-17"
+        }
+      ]
+    },
+    "sv3pt5-178": {
+      "printings": [
+        {
+          "label": "",
+          "total": 4861,
+          "psa10": 1443,
+          "updatedAt": "2026-09-17"
+        }
+      ]
+    },
+    "sv3pt5-179": {
+      "printings": [
+        {
+          "label": "",
+          "total": 5586,
+          "psa10": 2000,
+          "updatedAt": "2026-09-17"
+        }
+      ]
+    },
+    "sv3pt5-180": {
+      "printings": [
+        {
+          "label": "",
+          "total": 4749,
+          "psa10": 1535,
+          "updatedAt": "2026-09-17"
+        }
+      ]
+    },
+    "sv3pt5-181": {
+      "printings": [
+        {
+          "label": "",
+          "total": 15049,
+          "psa10": 4611,
+          "updatedAt": "2026-09-17"
+        }
+      ]
+    },
+    "sv3pt5-182": {
+      "printings": [
+        {
+          "label": "",
+          "total": 6625,
+          "psa10": 2511,
+          "updatedAt": "2026-09-17"
+        }
+      ]
+    },
+    "sv3pt5-183": {
+      "printings": [
+        {
+          "label": "",
+          "total": 24443,
+          "psa10": 9024,
+          "updatedAt": "2026-09-17"
+        }
+      ]
+    },
+    "sv3pt5-184": {
+      "printings": [
+        {
+          "label": "",
+          "total": 9016,
+          "psa10": 3425,
+          "updatedAt": "2026-09-17"
+        }
+      ]
+    },
+    "sv3pt5-185": {
+      "printings": [
+        {
+          "label": "",
+          "total": 1705,
+          "psa10": 703,
+          "updatedAt": "2026-09-17"
+        }
+      ]
+    },
+    "sv3pt5-186": {
+      "printings": [
+        {
+          "label": "",
+          "total": 3595,
+          "psa10": 1323,
+          "updatedAt": "2026-09-17"
+        }
+      ]
+    },
+    "sv3pt5-187": {
+      "printings": [
+        {
+          "label": "",
+          "total": 1574,
+          "psa10": 623,
+          "updatedAt": "2026-09-17"
+        }
+      ]
+    },
+    "sv3pt5-188": {
+      "printings": [
+        {
+          "label": "",
+          "total": 3584,
+          "psa10": 1383,
+          "updatedAt": "2026-09-17"
+        }
+      ]
+    },
+    "sv3pt5-189": {
+      "printings": [
+        {
+          "label": "",
+          "total": 1496,
+          "psa10": 623,
+          "updatedAt": "2026-09-17"
+        }
+      ]
+    },
+    "sv3pt5-190": {
+      "printings": [
+        {
+          "label": "",
+          "total": 1529,
+          "psa10": 599,
+          "updatedAt": "2026-09-18"
+        }
+      ]
+    },
+    "sv3pt5-191": {
+      "printings": [
+        {
+          "label": "",
+          "total": 1344,
+          "psa10": 480,
+          "updatedAt": "2026-09-18"
+        }
+      ]
+    },
+    "sv3pt5-192": {
+      "printings": [
+        {
+          "label": "",
+          "total": 3995,
+          "psa10": 1540,
+          "updatedAt": "2026-09-17"
+        }
+      ]
+    },
+    "sv3pt5-193": {
+      "printings": [
+        {
+          "label": "",
+          "total": 8595,
+          "psa10": 3421,
+          "updatedAt": "2026-09-17"
+        }
+      ]
+    },
+    "sv3pt5-194": {
+      "printings": [
+        {
+          "label": "",
+          "total": 1127,
+          "psa10": 290,
+          "updatedAt": "2026-09-18"
+        }
+      ]
+    },
+    "sv3pt5-195": {
+      "printings": [
+        {
+          "label": "",
+          "total": 1445,
+          "psa10": 431,
+          "updatedAt": "2026-09-18"
+        }
+      ]
+    },
+    "sv3pt5-196": {
+      "printings": [
+        {
+          "label": "",
+          "total": 5541,
+          "psa10": 1725,
+          "updatedAt": "2026-09-18"
+        }
+      ]
+    },
+    "sv3pt5-197": {
+      "printings": [
+        {
+          "label": "",
+          "total": 2500,
+          "psa10": 685,
+          "updatedAt": "2026-09-18"
+        }
+      ]
+    },
+    "sv3pt5-198": {
+      "printings": [
+        {
+          "label": "",
+          "total": 52889,
+          "psa10": 15735,
+          "updatedAt": "2026-09-28"
+        }
+      ]
+    },
+    "sv3pt5-199": {
+      "printings": [
+        {
+          "label": "",
+          "total": 97426,
+          "psa10": 27631,
+          "updatedAt": "2026-09-28"
+        }
+      ]
+    },
+    "sv3pt5-200": {
+      "printings": [
+        {
+          "label": "",
+          "total": 59197,
+          "psa10": 18100,
+          "updatedAt": "2026-09-28"
+        }
+      ]
+    },
+    "sv3pt5-201": {
+      "printings": [
+        {
+          "label": "",
+          "total": 35851,
+          "psa10": 10790,
+          "updatedAt": "2026-09-28"
+        }
+      ]
+    },
+    "sv3pt5-202": {
+      "printings": [
+        {
+          "label": "",
+          "total": 43934,
+          "psa10": 13145,
+          "updatedAt": "2026-09-28"
+        }
+      ]
+    },
+    "sv3pt5-203": {
+      "printings": [
+        {
+          "label": "",
+          "total": 16687,
+          "psa10": 4692,
+          "updatedAt": "2026-09-17"
+        }
+      ]
+    },
+    "sv3pt5-204": {
+      "printings": [
+        {
+          "label": "",
+          "total": 12585,
+          "psa10": 3397,
+          "updatedAt": "2026-09-17"
+        }
+      ]
+    },
+    "sv3pt5-205": {
+      "printings": [
+        {
+          "label": "",
+          "total": 18217,
+          "psa10": 5563,
+          "updatedAt": "2026-09-17"
+        }
+      ]
+    },
+    "sv3pt5-206": {
+      "printings": [
+        {
+          "label": "",
+          "total": 2011,
+          "psa10": 497,
+          "updatedAt": "2026-09-18"
+        }
+      ]
+    }
+  }
+}

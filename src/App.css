@@ -1360,6 +1360,94 @@ textarea:focus {
   font-size: 0.75rem;
 }
 
+.tile-pop {
+  margin: 0.28rem 0 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--gold);
+}
+
+.tile-pop span,
+.tile-pop.is-thin {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.pop-hint {
+  margin: 0.85rem 0 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.pop-hint a {
+  color: var(--wanted);
+}
+
+.pop-block {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.pop-block-head h3 {
+  font-family: 'Syne', sans-serif;
+  margin: 0 0 0.25rem;
+  font-size: 1.05rem;
+}
+
+.pop-block-head p {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.pop-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.pop-table th,
+.pop-table td {
+  text-align: left;
+  padding: 0.45rem 0.35rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.pop-table th {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.pop-table th:nth-child(n + 2),
+.pop-table td:nth-child(n + 2) {
+  text-align: right;
+}
+
+.pop-table td small {
+  color: var(--muted);
+}
+
+.pop-table tr.is-compared td {
+  color: var(--gold);
+}
+
+.pop-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.pop-note a {
+  color: var(--wanted);
+}
+
+.pop-note strong {
+  color: var(--text, inherit);
+}
+
 .tile-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;

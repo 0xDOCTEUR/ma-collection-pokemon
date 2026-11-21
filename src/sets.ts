@@ -3,6 +3,7 @@ export interface SetInfo {
   name: string
   shortName: string
   dataUrl: string
+  populationUrl: string
   logo: string
   logoFallback?: string
 }
@@ -15,6 +16,7 @@ export const SETS: SetInfo[] = [
     name: 'Pokémon 151',
     shortName: '151',
     dataUrl: `${base}data/sets/sv03.5.json`,
+    populationUrl: `${base}data/population/sv03.5.json`,
     logo: 'https://assets.tcgdex.net/fr/sv/sv03.5/logo.webp',
     logoFallback: 'https://images.pokemontcg.io/sv3pt5/logo.png',
   },
@@ -23,6 +25,7 @@ export const SETS: SetInfo[] = [
     name: 'Règne Delta',
     shortName: 'Règne Delta',
     dataUrl: `${base}data/sets/me06.json`,
+    populationUrl: `${base}data/population/me06.json`,
     // Pas encore de logo officiel sur TCGdex : on affiche une carte du set
     logo: 'https://assets.tcgdex.net/fr/me/me06/084/high.webp',
   },

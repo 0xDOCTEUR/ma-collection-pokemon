@@ -1,5 +1,5 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react'
-import { euroValue, fetchSetCards } from './api/pokemon'
+import { euroValue, fetchPopulation, fetchSetCards } from './api/pokemon'
 import { BackupPanel } from './components/BackupPanel'
 import { CardDetailSheet } from './components/CardDetailSheet'
 import { CustomLists } from './components/CustomLists'
@@ -14,6 +14,13 @@ import { useCustomLists } from './hooks/useCustomLists'
 import { SETS, type AppTab } from './sets'
 import type { CardStatus, CardVariant, FilterStatus, PokemonCard, SortKey } from './types'
 import { sortRarities } from './utils/rarity'
+import {
+  formatCensusDate,
+  latestCensusDate,
+  populationSortGroup,
+  rankByPsa10,
+  type PopulationFile,
+} from './utils/population'
 import './App.css'
 
 function money(n: number) {
@@ -59,6 +66,7 @@ export default function App() {
   const [rarity, setRarity] = useState('all')
   const [sort, setSort] = useState<SortKey>('number')
   const [detailCard, setDetailCard] = useState<PokemonCard | null>(null)
+  const [populationBySet, setPopulationBySet] = useState<Record<string, PopulationFile | null>>({})
   const { getStatus, setStatus, markMany, resetSet, savedAt } = useCollection()
   const customLists = useCustomLists()
 
@@ -102,6 +110,25 @@ export default function App() {
     }
   }, [])
 
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      const entries = await Promise.all(
+        SETS.map(async (set) => {
+          try {
+            return [set.id, await fetchPopulation(set)] as const
+          } catch {
+            return [set.id, null] as const
+          }
+        }),
+      )
+      if (!cancelled) setPopulationBySet(Object.fromEntries(entries))
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   const activeSet = SETS.find((s) => s.id === tab) ?? null
   const cards = activeSet ? (cardsBySet[activeSet.id] ?? []) : []
 
@@ -115,6 +142,21 @@ export default function App() {
     const set = new Set(cards.map((c) => c.rarity))
     return sortRarities([...set])
   }, [cards])
+
+  const populationFile = activeSet ? (populationBySet[activeSet.id] ?? null) : null
+  const setHasPopulation = populationFile != null && Object.keys(populationFile.cards).length > 0
+  const populationRank = useMemo(() => {
+    if (!setHasPopulation || !populationFile) {
+      return { rankById: new Map<string, number>(), comparable: 0 }
+    }
+    return rankByPsa10(
+      cards.map((card) => ({
+        id: card.id,
+        printings: populationFile.cards[card.id]?.printings,
+      })),
+    )
+  }, [cards, populationFile, setHasPopulation])
+  const censusLabel = formatCensusDate(latestCensusDate(populationFile))
 
   const enriched = useMemo(() => {
     if (!activeSet) return []
@@ -191,14 +233,21 @@ export default function App() {
       )
     })
 
+    const populationFile = activeSet ? populationBySet[activeSet.id] : null
     list = [...list].sort((a, b) => {
       if (sort === 'name') return a.card.name.localeCompare(b.card.name, 'fr')
       if (sort === 'price-asc') return euroValue(a.card) - euroValue(b.card)
       if (sort === 'price-desc') return euroValue(b.card) - euroValue(a.card)
+      if (sort === 'pop-asc' || sort === 'pop-desc') {
+        const left = populationSortGroup(populationFile?.cards[a.card.id]?.printings)
+        const right = populationSortGroup(populationFile?.cards[b.card.id]?.printings)
+        if (left.group !== right.group) return left.group - right.group
+        return sort === 'pop-asc' ? left.psa10 - right.psa10 : right.psa10 - left.psa10
+      }
       return Number.parseInt(a.card.number, 10) - Number.parseInt(b.card.number, 10)
     })
     return list
-  }, [enriched, deferredQuery, filter, rarity, sort])
+  }, [enriched, deferredQuery, filter, rarity, sort, activeSet, populationBySet])
 
   useEffect(() => {
     setQuery('')
@@ -400,6 +449,8 @@ export default function App() {
                 <option value="name">Nom</option>
                 <option value="price-desc">Côte décroissante</option>
                 <option value="price-asc">Côte croissante</option>
+                <option value="pop-asc">PSA 10 : plus rares d’abord</option>
+                <option value="pop-desc">PSA 10 : plus courantes d’abord</option>
               </select>
             </label>
 
@@ -418,6 +469,24 @@ export default function App() {
               Réinitialiser
             </button>
           </section>
+
+          {populationFile && !setHasPopulation && activeSet && (
+            <p className="pop-hint">
+              Pas encore de population PSA pour {activeSet.name} : la série vient de sortir, les
+              chiffres ne sont pas publiés.
+            </p>
+          )}
+          {setHasPopulation && populationFile && (
+            <p className="pop-hint">
+              PSA 10 = cartes notées 10/10, version anglaise (le numéro est le même en français). Plus
+              le chiffre est petit, plus cette version est rare. Les cartes notées moins de 100 fois
+              restent en bas du tri « plus rares ».
+              {censusLabel ? ` Recensement du ${censusLabel}.` : ''}{' '}
+              <a href={populationFile.source} target="_blank" rel="noreferrer">
+                {populationFile.sourceName}
+              </a>
+            </p>
+          )}
 
           {loading && <p className="state-msg">Chargement des séries…</p>}
           {error && <p className="state-msg error">{error}</p>}
@@ -439,6 +508,11 @@ export default function App() {
                       setStatus(activeSet.id, card.id, status, variant)
                     }
                     onOpenDetail={() => setDetailCard(card)}
+                    population={
+                      setHasPopulation
+                        ? (populationFile?.cards[card.id]?.printings ?? [])
+                        : null
+                    }
                   />
                 ))}
               </div>
@@ -448,7 +522,24 @@ export default function App() {
       )}
 
       {detailCard && (
-        <CardDetailSheet card={detailCard} onClose={() => setDetailCard(null)} />
+        <CardDetailSheet
+          card={detailCard}
+          onClose={() => setDetailCard(null)}
+          population={
+            setHasPopulation && detailCard.setId === activeSet?.id
+              ? (populationFile?.cards[detailCard.id]?.printings ?? [])
+              : null
+          }
+          rank={
+            detailCard.setId === activeSet?.id
+              ? (populationRank.rankById.get(detailCard.id) ?? null)
+              : null
+          }
+          comparableCount={populationRank.comparable}
+          sourceUrl={populationFile?.source ?? null}
+          sourceName={populationFile?.sourceName ?? 'CardPrice'}
+          censusDate={latestCensusDate(populationFile)}
+        />
       )}
 
       <BackupPanel />
