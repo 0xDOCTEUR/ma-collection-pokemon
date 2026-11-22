@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "population": "node scripts/fetch-population.mjs"
+    "population": "node scripts/fetch-population.mjs",
+    "psa": "node scripts/fetch-psa-hunt.mjs"
   },
   "dependencies": {
     "react": "^19.3.1",

@@ -6,6 +6,7 @@ import { CustomLists } from './components/CustomLists'
 import { ExportPanel } from './components/ExportPanel'
 import { GlobalEstimate } from './components/GlobalEstimate'
 import { LotSearch } from './components/LotSearch'
+import { PsaHunt } from './components/PsaHunt'
 import { PokedocLogo } from './components/PokedocLogo'
 import { PokemonCardTile } from './components/PokemonCardTile'
 import { QuickAdd } from './components/QuickAdd'
@@ -297,6 +298,13 @@ export default function App() {
           </button>
           <button
             type="button"
+            className={tab === 'chasse' ? 'tab active' : 'tab'}
+            onClick={() => setTab('chasse')}
+          >
+            PSA 10
+          </button>
+          <button
+            type="button"
             className={tab === 'estimation' ? 'tab active' : 'tab'}
             onClick={() => setTab('estimation')}
           >
@@ -306,7 +314,9 @@ export default function App() {
         </nav>
       </header>
 
-      {tab === 'estimation' ? (
+      {tab === 'chasse' ? (
+        <PsaHunt />
+      ) : tab === 'estimation' ? (
         loading ? (
           <p className="state-msg">Chargement des séries…</p>
         ) : error ? (
@@ -547,9 +557,9 @@ export default function App() {
       <footer className="footer">
         <PokedocLogo compact />
         <p>
-          POKEDOC — séries Pokémon 151 et Règne Delta. Côtes TCGPlayer (converties en euros) et
-          Cardmarket. Collection sauvegardée dans ton navigateur. Pour le site en ligne, exporte puis
-          restaure ta sauvegarde.
+          POKEDOC — collection 151 et Règne Delta, plus un tri PSA 10 sur toutes les séries notées.
+          Côtes TCGPlayer (converties en euros) et Cardmarket. Collection sauvegardée dans ton
+          navigateur. Pour le site en ligne, exporte puis restaure ta sauvegarde.
         </p>
       </footer>
     </div>
