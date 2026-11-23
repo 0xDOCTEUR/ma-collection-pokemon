@@ -27,7 +27,7 @@ import {
 import { formatCount, formatGemRate, type PsaPrinting } from '../utils/population'
 
 type LanguageFilter = 'en' | 'ja' | 'fr' | 'all'
-type SortMode = 'upside' | 'price' | 'pop'
+type SortMode = 'upside' | 'price' | 'pop' | 'number'
 type CardView = 'small' | 'large' | 'list'
 
 const PAGE = 48
@@ -63,7 +63,7 @@ const DEFAULTS = {
   minPsa10: '',
   minGraded: '',
   pricedOnly: true,
-  sort: 'price' as SortMode,
+  sort: 'number' as SortMode,
 }
 
 function money(value: number | null): string {
@@ -86,6 +86,12 @@ function readNumber(value: string): number | null {
   if (!trimmed) return null
   const parsed = Number(trimmed)
   return Number.isFinite(parsed) ? parsed : null
+}
+
+function cardNumberValue(value: string): number {
+  const match = value.match(/\d+/)
+  if (!match) return Number.POSITIVE_INFINITY
+  return Number.parseInt(match[0], 10)
 }
 
 function formatTypedNumber(value: string): string | null {
@@ -290,6 +296,13 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
     })
 
     const bySort = (a: PsaHuntCard, b: PsaHuntCard) => {
+      if (sort === 'number') {
+        return (
+          cardNumberValue(a.number) - cardNumberValue(b.number) ||
+          a.name.localeCompare(b.name, 'en') ||
+          a.printing.localeCompare(b.printing, 'en')
+        )
+      }
       if (sort === 'pop') return a.psa10 - b.psa10 || a.total - b.total || a.name.localeCompare(b.name, 'fr')
       const priceA = toEur(a.psa10Usd)
       const priceB = toEur(b.psa10Usd)
@@ -310,6 +323,14 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
       if (focused) {
         const order = seriesOrder(a.set.series) - seriesOrder(b.set.series)
         if (order !== 0) return order
+      }
+      // Une série choisie : on garde l’ordre du set (numéro) sauf autre tri demandé.
+      if (setId !== 'all' && sort === 'number') {
+        return bySort(a, b)
+      }
+      if (!focused && setId === 'all' && sort === 'number') {
+        const setOrder = a.set.name.localeCompare(b.set.name, 'fr')
+        if (setOrder !== 0) return setOrder
       }
       return bySort(a, b)
     })
@@ -405,8 +426,32 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
             </select>
           </label>
           <label>
+            <span>Série</span>
+            <select
+              value={setId}
+              onChange={(event) => {
+                const next = event.target.value
+                setSetId(next)
+                if (next !== 'all') {
+                  setPokemon('')
+                  setQuery('')
+                  setSort('number')
+                  setMoreFilters(false)
+                }
+              }}
+            >
+              <option value="all">Toutes les séries ({setOptions.length})</option>
+              {setOptions.map((set) => (
+                <option key={set.id} value={set.id}>
+                  {set.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
             <span>Ordre</span>
             <select value={sort} onChange={(event) => setSort(event.target.value as SortMode)}>
+              <option value="number">Numéro dans la série</option>
               <option value="upside">Les plus intéressantes</option>
               <option value="price">Note 10 la moins chère</option>
               <option value="pop">Le moins de notes 10</option>
@@ -456,17 +501,6 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
                   {seriesOptions.map((id) => (
                     <option key={id} value={id}>
                       {seriesLabel(id)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                <span>Série</span>
-                <select value={setId} onChange={(event) => setSetId(event.target.value)}>
-                  <option value="all">Toutes les séries ({setOptions.length})</option>
-                  {setOptions.map((set) => (
-                    <option key={set.id} value={set.id}>
-                      {set.name}
                     </option>
                   ))}
                 </select>
@@ -552,7 +586,13 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
           <p className="hunt-count">
             <small>
               {countLabel(matches.length)}
-              {pokemon ? ` · ${pokemonName}` : query.trim() ? ` · « ${query.trim()} »` : ''}
+              {setId !== 'all'
+                ? ` · ${setOptions.find((set) => set.id === setId)?.name ?? 'série'}`
+                : pokemon
+                  ? ` · ${pokemonName}`
+                  : query.trim()
+                    ? ` · « ${query.trim()} »`
+                    : ''}
               {relaxed
                 ? ' · limites mises de côté'
                 : limitBits.length > 0
