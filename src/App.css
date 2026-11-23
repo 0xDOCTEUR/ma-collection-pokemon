@@ -1558,25 +1558,137 @@ textarea:focus {
   line-height: 1.45;
 }
 
+.hunt-legend {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0.8rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hunt-legend li {
+  padding: 0.5rem 0.7rem;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
+.hunt-legend strong {
+  color: var(--gold);
+}
+
+.hunt-source a {
+  color: var(--gold);
+  font-weight: 700;
+}
+
 .hunt-form {
   display: grid;
-  gap: 0.85rem;
+  gap: 1.15rem;
   padding: 1rem 1.1rem 0.9rem;
   margin: 0;
+}
+
+.hunt-group {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: grid;
+  gap: 0.7rem;
+  min-width: 0;
+}
+
+.hunt-group legend {
+  padding: 0;
+  font-family: 'Syne', sans-serif;
+  font-size: 1.05rem;
+  color: var(--text);
+}
+
+.hunt-group-help {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.4;
 }
 
 .hunt-form label {
   min-width: 0;
 }
 
+.hunt-form label > span {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.hunt-hint {
+  color: var(--muted);
+  font-size: 0.75rem;
+  line-height: 1.35;
+  font-weight: 400;
+}
+
 .hunt-row {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.75rem;
+  gap: 0.75rem 0.85rem;
+}
+
+.hunt-pick {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .hunt-limits {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.hunt-sort {
+  max-width: 28rem;
+}
+
+.hunt-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 14px;
+  background: rgba(240, 194, 75, 0.1);
+  border: 1px solid rgba(240, 194, 75, 0.35);
+}
+
+.hunt-notice p {
+  margin: 0;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.hunt-notice .btn {
+  padding: 0.5rem 0.9rem;
+  white-space: nowrap;
+}
+
+.hunt-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.85rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--line);
+}
+
+.hunt-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.hunt-actions .btn {
+  padding: 0.55rem 0.9rem;
 }
 
 .hunt-form input,
@@ -1587,12 +1699,19 @@ textarea:focus {
 }
 
 .hunt-count {
-  margin: 0.2rem 0 0;
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--line);
+  margin: 0;
   color: var(--text);
   font-size: 1.15rem;
   font-weight: 700;
+  line-height: 1.4;
+}
+
+.hunt-count small {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 500;
 }
 
 .hunt-results {
@@ -1670,23 +1789,42 @@ textarea:focus {
   font-weight: 700;
 }
 
+.hunt-pop {
+  margin: 0.35rem 0 0;
+  font-size: 0.86rem;
+  line-height: 1.35;
+}
+
+.hunt-pop span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
 .hunt-prices {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.5rem;
-  align-items: baseline;
-  margin: 0.25rem 0 0.35rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.45rem;
+  margin: 0.45rem 0 0.4rem;
+}
+
+.hunt-prices span {
+  display: grid;
+  gap: 0.05rem;
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+.hunt-prices small {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
 }
 
 .hunt-prices strong {
   font-family: 'Syne', sans-serif;
   color: var(--gold);
   font-size: 1.05rem;
-}
-
-.hunt-prices span {
-  color: var(--muted);
-  font-size: 0.8rem;
 }
 
 .hunt-more {
@@ -1709,10 +1847,8 @@ textarea:focus {
     grid-template-columns: 1fr 1fr;
   }
 
-  .hunt-row {
-    grid-template-columns: 1fr 1fr;
-  }
-
+  .hunt-row,
+  .hunt-pick,
   .hunt-limits {
     grid-template-columns: 1fr 1fr;
   }
@@ -1779,7 +1915,14 @@ textarea:focus {
   }
 
   .hunt-row,
+  .hunt-pick,
   .hunt-limits {
     grid-template-columns: 1fr;
+  }
+
+  .hunt-actions,
+  .hunt-actions .btn,
+  .hunt-notice .btn {
+    width: 100%;
   }
 }

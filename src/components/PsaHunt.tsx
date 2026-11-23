@@ -28,6 +28,22 @@ type SortMode = 'upside' | 'price' | 'pop'
 
 const PAGE = 48
 
+const DEFAULTS = {
+  language: 'en' as LanguageFilter,
+  generation: 'all',
+  series: 'all',
+  setId: 'all',
+  query: '',
+  pokemon: '',
+  maxPrice: '150',
+  minRaw: '8',
+  maxPsa10: '2500',
+  minPsa10: '40',
+  minGraded: '150',
+  pricedOnly: true,
+  sort: 'upside' as SortMode,
+}
+
 function money(value: number | null): string {
   if (value == null) return '—'
   return new Intl.NumberFormat('fr-FR', {
@@ -50,25 +66,44 @@ function readNumber(value: string): number | null {
   return Number.isFinite(parsed) ? parsed : null
 }
 
+function formatTypedNumber(value: string): string | null {
+  const parsed = readNumber(value)
+  if (parsed == null) return null
+  return parsed.toLocaleString('fr-FR')
+}
+
+function countLabel(count: number): string {
+  if (count === 0) return 'Aucune carte'
+  if (count === 1) return '1 carte'
+  return `${count.toLocaleString('fr-FR')} cartes`
+}
+
 function asPrinting(card: PsaHuntCard): PsaPrinting {
   return { label: card.printing, total: card.total, psa10: card.psa10, updatedAt: null }
+}
+
+function seriesOrder(series: string): number {
+  const index = SERIES_ORDER.indexOf(series)
+  return index === -1 ? 999 : index
 }
 
 export function PsaHunt() {
   const [data, setData] = useState<PsaHuntData | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [language, setLanguage] = useState<LanguageFilter>('en')
-  const [generation, setGeneration] = useState('all')
-  const [series, setSeries] = useState('all')
-  const [setId, setSetId] = useState('all')
-  const [query, setQuery] = useState('')
-  const [pokemon, setPokemon] = useState('')
-  const [maxPrice, setMaxPrice] = useState('150')
-  const [minRaw, setMinRaw] = useState('8')
-  const [maxPsa10, setMaxPsa10] = useState('2500')
-  const [minPsa10, setMinPsa10] = useState('40')
-  const [pricedOnly, setPricedOnly] = useState(true)
-  const [sort, setSort] = useState<SortMode>('upside')
+  const [language, setLanguage] = useState<LanguageFilter>(DEFAULTS.language)
+  const [generation, setGeneration] = useState(DEFAULTS.generation)
+  const [series, setSeries] = useState(DEFAULTS.series)
+  const [setId, setSetId] = useState(DEFAULTS.setId)
+  const [query, setQuery] = useState(DEFAULTS.query)
+  const [pokemon, setPokemon] = useState(DEFAULTS.pokemon)
+  const [maxPrice, setMaxPrice] = useState(DEFAULTS.maxPrice)
+  const [minRaw, setMinRaw] = useState(DEFAULTS.minRaw)
+  const [maxPsa10, setMaxPsa10] = useState(DEFAULTS.maxPsa10)
+  const [minPsa10, setMinPsa10] = useState(DEFAULTS.minPsa10)
+  const [minGraded, setMinGraded] = useState(DEFAULTS.minGraded)
+  const [pricedOnly, setPricedOnly] = useState(DEFAULTS.pricedOnly)
+  const [sort, setSort] = useState<SortMode>(DEFAULTS.sort)
+  const [keepLimits, setKeepLimits] = useState(false)
   const [shown, setShown] = useState(PAGE)
 
   useEffect(() => {
@@ -89,7 +124,22 @@ export function PsaHunt() {
 
   useEffect(() => {
     setShown(PAGE)
-  }, [language, generation, series, setId, query, pokemon, maxPrice, minRaw, maxPsa10, minPsa10, pricedOnly, sort])
+  }, [
+    language,
+    generation,
+    series,
+    setId,
+    query,
+    pokemon,
+    maxPrice,
+    minRaw,
+    maxPsa10,
+    minPsa10,
+    minGraded,
+    pricedOnly,
+    sort,
+    keepLimits,
+  ])
 
   const seriesOptions = useMemo(() => {
     if (!data) return []
@@ -139,6 +189,36 @@ export function PsaHunt() {
     setQuery('')
   }
 
+  function resetFilters() {
+    setLanguage(DEFAULTS.language)
+    setGeneration(DEFAULTS.generation)
+    setSeries(DEFAULTS.series)
+    setSetId(DEFAULTS.setId)
+    setQuery(DEFAULTS.query)
+    setPokemon(DEFAULTS.pokemon)
+    setMaxPrice(DEFAULTS.maxPrice)
+    setMinRaw(DEFAULTS.minRaw)
+    setMaxPsa10(DEFAULTS.maxPsa10)
+    setMinPsa10(DEFAULTS.minPsa10)
+    setMinGraded(DEFAULTS.minGraded)
+    setPricedOnly(DEFAULTS.pricedOnly)
+    setSort(DEFAULTS.sort)
+    setKeepLimits(false)
+  }
+
+  function clearLimits() {
+    setMaxPrice('')
+    setMinRaw('')
+    setMaxPsa10('')
+    setMinPsa10('')
+    setMinGraded('')
+    setPricedOnly(false)
+    setKeepLimits(true)
+  }
+
+  const precise = pokemon !== '' || query.trim() !== ''
+  const relaxed = precise && !keepLimits
+
   const matches = useMemo(() => {
     if (!data) return []
     const needles = searchNeedles(query)
@@ -147,20 +227,22 @@ export function PsaHunt() {
     const rawFloor = readNumber(minRaw)
     const popCap = readNumber(maxPsa10)
     const popFloor = readNumber(minPsa10)
-    const gradeFloor = 150
-
+    const gradedFloor = readNumber(minGraded)
     const focused = pokemon !== ''
+    const skipLimits = (focused || searching) && !keepLimits
+
     const list = data.cards.filter((card) => {
       if (language !== 'all' && card.set.language !== language) return false
-      if (focused) return cardHasSpecies(card.name, pokemon)
-      if (generation !== 'all' && !cardHasGeneration(card.name, Number(generation))) return false
+      if (focused && !cardHasSpecies(card.name, pokemon)) return false
+      if (!focused && generation !== 'all' && !cardHasGeneration(card.name, Number(generation))) return false
       if (series !== 'all' && card.set.series !== series) return false
       if (setId !== 'all' && card.set.id !== setId) return false
       if (searching) {
         const haystack = foldName(`${card.name} ${card.number} ${card.set.name}`)
-        return needles.some((needle) => haystack.includes(needle))
+        if (!needles.some((needle) => haystack.includes(needle))) return false
       }
-      if (card.total < gradeFloor) return false
+      if (skipLimits) return true
+      if (gradedFloor != null && card.total < gradedFloor) return false
       if (popFloor != null && card.psa10 < popFloor) return false
       const price = toEur(card.psa10Usd)
       const raw = toEur(card.rawUsd)
@@ -171,17 +253,7 @@ export function PsaHunt() {
       return true
     })
 
-    list.sort((a, b) => {
-      if (focused) {
-        const seriesA = SERIES_ORDER.indexOf(a.set.series)
-        const seriesB = SERIES_ORDER.indexOf(b.set.series)
-        const orderA = seriesA === -1 ? 999 : seriesA
-        const orderB = seriesB === -1 ? 999 : seriesB
-        if (orderA !== orderB) return orderA - orderB
-        const setOrder = a.set.name.localeCompare(b.set.name, 'fr')
-        if (setOrder !== 0) return setOrder
-        return a.number.localeCompare(b.number, 'fr', { numeric: true })
-      }
+    const bySort = (a: PsaHuntCard, b: PsaHuntCard) => {
       if (sort === 'pop') return a.psa10 - b.psa10 || a.total - b.total || a.name.localeCompare(b.name, 'fr')
       const priceA = toEur(a.psa10Usd)
       const priceB = toEur(b.psa10Usd)
@@ -196,11 +268,82 @@ export function PsaHunt() {
       const scoreA = priceA != null && rawA != null ? upsideScore(a.psa10, a.total, priceA, rawA) : -1
       const scoreB = priceB != null && rawB != null ? upsideScore(b.psa10, b.total, priceB, rawB) : -1
       return scoreB - scoreA || a.psa10 - b.psa10
+    }
+
+    list.sort((a, b) => {
+      if (focused) {
+        const order = seriesOrder(a.set.series) - seriesOrder(b.set.series)
+        if (order !== 0) return order
+      }
+      return bySort(a, b)
     })
     return list
-  }, [data, language, generation, series, setId, query, pokemon, maxPrice, minRaw, maxPsa10, minPsa10, pricedOnly, sort])
+  }, [
+    data,
+    language,
+    generation,
+    series,
+    setId,
+    query,
+    pokemon,
+    maxPrice,
+    minRaw,
+    maxPsa10,
+    minPsa10,
+    minGraded,
+    pricedOnly,
+    sort,
+    keepLimits,
+  ])
 
   const visible = matches.slice(0, shown)
+  const pokemonName = pokemon ? speciesLabel(pokemon) : ''
+
+  const limitBits = [
+    formatTypedNumber(maxPrice) ? `note 10 jusqu’à ${formatTypedNumber(maxPrice)} €` : '',
+    formatTypedNumber(minRaw) ? `sans note à partir de ${formatTypedNumber(minRaw)} €` : '',
+    formatTypedNumber(minPsa10) ? `au moins ${formatTypedNumber(minPsa10)} notes 10` : '',
+    formatTypedNumber(maxPsa10) ? `au plus ${formatTypedNumber(maxPsa10)} notes 10` : '',
+    formatTypedNumber(minGraded) ? `au moins ${formatTypedNumber(minGraded)} cartes notées` : '',
+    pricedOnly ? 'cartes sans prix cachées' : '',
+  ].filter(Boolean)
+
+  const sortClause =
+    sort === 'price'
+      ? 'la note 10 la moins chère arrive en premier'
+      : sort === 'pop'
+        ? 'le plus petit nombre d’exemplaires notés 10 arrive en premier'
+        : 'on met d’abord une carte déjà achetée, avec peu d’exemplaires notés 10, et dont la note 10 n’est pas déjà beaucoup plus chère que la carte sans note'
+  const sortHelp = pokemon
+    ? `Les cartes de ${pokemonName} sont regroupées par période. Dans chaque période, ${sortClause}.`
+    : `${sortClause.charAt(0).toUpperCase()}${sortClause.slice(1)}.`
+
+  const scope =
+    pokemon && series === 'all' && setId === 'all'
+      ? ' Toutes les périodes sont affichées.'
+      : ''
+
+  function emptyMessage(): string {
+    if (pokemon) {
+      if (!relaxed && limitBits.length > 0) {
+        return `Aucune carte de ${pokemonName} avec ces limites. Clique sur Voir toutes les versions, ou élargis les prix et les notes.`
+      }
+      return `Aucune carte de ${pokemonName} dans cette langue. Choisis Anglais et japonais dans Langue.`
+    }
+    if (query.trim()) {
+      if (!relaxed && limitBits.length > 0) {
+        return 'Aucune carte pour ce nom avec ces limites. Clique sur Voir toutes les versions, ou élargis les prix et les notes.'
+      }
+      if (generation !== 'all') {
+        return 'Aucune carte de cette génération pour ce nom. Remets Génération sur Toutes.'
+      }
+      return 'Aucune carte pour ce nom. Essaie le nom anglais, par exemple Charizard.'
+    }
+    if (generation !== 'all') {
+      return 'Aucune carte de cette génération avec ces limites. Les dresseurs et les énergies ne sont pas comptés. Remets Génération sur Toutes, ou clique sur Enlever les limites.'
+    }
+    return 'Aucune carte avec ces limites. Vide une case, monte le prix maximum, ou clique sur Enlever les limites.'
+  }
 
   if (error) return <p className="state-msg error">{error}</p>
   if (!data) return <p className="state-msg">Chargement des notes PSA…</p>
@@ -208,13 +351,27 @@ export function PsaHunt() {
   return (
     <section className="hunt">
       <div className="panel hunt-intro">
-        <h2>Cartes qui peuvent encore monter</h2>
+        <h2>Cartes notées 10 qui peuvent encore monter</h2>
         <p>
-          Personne ne peut promettre une hausse. En tête : une carte déjà demandée, avec peu de PSA
-          10, et une note 10 difficile à obtenir. Pas de liste à part pour le français : le numéro
-          est le même qu’en anglais. Choisis un Pokémon pour voir toutes ses cartes, série par
-          série. Prix en dollars,
-          convertis en euros. Relevés du {formatDay(data.fetchedAt)}.{' '}
+          Une PSA 10, c’est une carte notée 10 sur 10 : la note parfaite. La liste met en premier
+          les cartes que les gens achètent déjà, dont il reste peu d’exemplaires notés 10, et dont
+          cette note n’est pas déjà beaucoup plus chère que la même carte sans note. Personne ne
+          peut promettre que le prix va monter.
+        </p>
+        <ul className="hunt-legend">
+          <li>
+            <strong>Note 10</strong> — prix d’un exemplaire déjà noté 10.
+          </li>
+          <li>
+            <strong>Sans note</strong> — prix de la même carte, pas encore envoyée pour être notée.
+          </li>
+          <li>
+            <strong>Anglais</strong> — pas de liste à part pour le français. Le numéro de la carte
+            est le même.
+          </li>
+        </ul>
+        <p className="hunt-source">
+          Prix d’abord en dollars, puis convertis en euros. Relevés du {formatDay(data.fetchedAt)}.{' '}
           <a href={data.source} target="_blank" rel="noreferrer">
             {data.sourceName}
           </a>
@@ -222,223 +379,296 @@ export function PsaHunt() {
       </div>
 
       <form className="panel hunt-form" onSubmit={(event) => event.preventDefault()}>
-        <label className="hunt-search">
-          Recherche
-          <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Mewtwo, Dracaufeu, 199…"
-          />
-        </label>
-        <label className="hunt-search">
-          Pokémon
-          <select
-            value={pokemon}
-            onChange={(event) => {
-              const next = event.target.value
-              setPokemon(next)
-              if (next) {
-                setSeries('all')
-                setSetId('all')
-                setQuery('')
-              }
-            }}
-          >
-            <option value="">Toutes les cartes</option>
-            {choices.map((option) => (
-              <option key={option.phrase} value={option.phrase}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </label>
+        <fieldset className="hunt-group">
+          <legend>1. Quelles cartes afficher</legend>
+          <div className="hunt-row hunt-pick">
+            <label>
+              <span>Recherche</span>
+              <input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Dracaufeu, Mewtwo, 199…"
+              />
+              <small className="hunt-hint">Nom français, nom anglais, ou numéro.</small>
+            </label>
+            <label>
+              <span>Pokémon</span>
+              <select
+                value={pokemon}
+                onChange={(event) => {
+                  const next = event.target.value
+                  setPokemon(next)
+                  if (next) {
+                    setSeries('all')
+                    setSetId('all')
+                    setQuery('')
+                  }
+                }}
+              >
+                <option value="">Tous les Pokémon</option>
+                {choices.map((option) => (
+                  <option key={option.phrase} value={option.phrase}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <small className="hunt-hint">Affiche toutes ses cartes, période par période.</small>
+            </label>
+            <label>
+              <span>Langue</span>
+              <select value={language} onChange={(event) => setLanguage(event.target.value as LanguageFilter)}>
+                <option value="en">Anglais</option>
+                <option value="ja">Japonais</option>
+                <option value="all">Anglais et japonais</option>
+              </select>
+              <small className="hunt-hint">En français, utilise la liste anglaise : même numéro.</small>
+            </label>
+            <label>
+              <span>Génération</span>
+              <select value={generation} onChange={(event) => setGeneration(event.target.value)}>
+                <option value="all">Toutes</option>
+                {GENERATION_OPTIONS.map((option) => (
+                  <option key={option.id} value={String(option.id)}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <small className="hunt-hint">Dresseurs et énergies ne sont pas inclus.</small>
+            </label>
+            <label>
+              <span>Période</span>
+              <select value={series} onChange={(event) => setSeries(event.target.value)}>
+                <option value="all">Toutes les périodes</option>
+                {seriesOptions.map((id) => (
+                  <option key={id} value={id}>
+                    {seriesLabel(id)}
+                  </option>
+                ))}
+              </select>
+              <small className="hunt-hint">Un grand groupe, par exemple Écarlate et Violet.</small>
+            </label>
+            <label>
+              <span>Série</span>
+              <select value={setId} onChange={(event) => setSetId(event.target.value)}>
+                <option value="all">Toutes les séries ({setOptions.length})</option>
+                {setOptions.map((set) => (
+                  <option key={set.id} value={set.id}>
+                    {set.name}
+                  </option>
+                ))}
+              </select>
+              <small className="hunt-hint">Une série précise. Le chiffre, c’est combien il y en a.</small>
+            </label>
+          </div>
+        </fieldset>
 
-        <div className="hunt-row">
-          <label>
-            Langue
-            <select value={language} onChange={(event) => setLanguage(event.target.value as LanguageFilter)}>
-              <option value="en">Français et anglais</option>
-              <option value="ja">Japonais</option>
-              <option value="all">Les deux</option>
-            </select>
+        <fieldset className="hunt-group">
+          <legend>2. Limiter les prix et les notes</legend>
+          <p className="hunt-group-help">
+            Chaque case enlève des cartes. Laisse une case vide pour ne plus limiter sur ce point.
+            Les chiffres déjà remplis sont un réglage de départ : des cartes ni trop chères, ni trop
+            courantes.
+          </p>
+          <div className="hunt-row hunt-limits">
+            <label>
+              <span>Prix maximum de la note 10 (€)</span>
+              <input
+                inputMode="decimal"
+                value={maxPrice}
+                onChange={(event) => setMaxPrice(event.target.value)}
+                placeholder="Pas de maximum"
+              />
+              <small className="hunt-hint">On cache les exemplaires notés 10 plus chers.</small>
+            </label>
+            <label>
+              <span>Prix minimum sans note (€)</span>
+              <input
+                inputMode="decimal"
+                value={minRaw}
+                onChange={(event) => setMinRaw(event.target.value)}
+                placeholder="Pas de minimum"
+              />
+              <small className="hunt-hint">On cache les cartes que presque personne n’achète.</small>
+            </label>
+            <label>
+              <span>Notes 10, au moins</span>
+              <input
+                inputMode="numeric"
+                value={minPsa10}
+                onChange={(event) => setMinPsa10(event.target.value)}
+                placeholder="0"
+              />
+              <small className="hunt-hint">Nombre d’exemplaires déjà notés 10.</small>
+            </label>
+            <label>
+              <span>Notes 10, au plus</span>
+              <input
+                inputMode="numeric"
+                value={maxPsa10}
+                onChange={(event) => setMaxPsa10(event.target.value)}
+                placeholder="Pas de maximum"
+              />
+              <small className="hunt-hint">Au-delà, la carte est trop courante.</small>
+            </label>
+            <label>
+              <span>Cartes notées, au moins</span>
+              <input
+                inputMode="numeric"
+                value={minGraded}
+                onChange={(event) => setMinGraded(event.target.value)}
+                placeholder="0"
+              />
+              <small className="hunt-hint">
+                Toutes les notes, pas seulement les 10. Sous 150, le pourcentage n’est pas fiable.
+              </small>
+            </label>
+          </div>
+          <label className="hunt-check">
+            <input
+              type="checkbox"
+              checked={pricedOnly}
+              onChange={(event) => setPricedOnly(event.target.checked)}
+            />
+            Cacher les cartes dont on ne connaît pas le prix
           </label>
-          <label>
-            Génération
-            <select value={generation} onChange={(event) => setGeneration(event.target.value)}>
-              <option value="all">Toutes</option>
-              {GENERATION_OPTIONS.map((option) => (
-                <option key={option.id} value={String(option.id)}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Époque
-            <select value={series} onChange={(event) => setSeries(event.target.value)}>
-              <option value="all">Toutes</option>
-              {seriesOptions.map((id) => (
-                <option key={id} value={id}>
-                  {seriesLabel(id)}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Série
-            <select value={setId} onChange={(event) => setSetId(event.target.value)}>
-              <option value="all">Toutes ({setOptions.length})</option>
-              {setOptions.map((set) => (
-                <option key={set.id} value={set.id}>
-                  {set.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
+        </fieldset>
 
-        <div className="hunt-row hunt-limits">
-          <label>
-            Prix max de la PSA 10 (€)
-            <input
-              inputMode="decimal"
-              value={maxPrice}
-              onChange={(event) => setMaxPrice(event.target.value)}
-              placeholder="Aucune limite"
-            />
-          </label>
-          <label>
-            Prix min de la carte (€)
-            <input
-              inputMode="decimal"
-              value={minRaw}
-              onChange={(event) => setMinRaw(event.target.value)}
-              placeholder="Aucun minimum"
-            />
-          </label>
-          <label>
-            Notes 10, de
-            <input
-              inputMode="numeric"
-              value={minPsa10}
-              onChange={(event) => setMinPsa10(event.target.value)}
-              placeholder="0"
-            />
-          </label>
-          <label>
-            Notes 10, à
-            <input
-              inputMode="numeric"
-              value={maxPsa10}
-              onChange={(event) => setMaxPsa10(event.target.value)}
-              placeholder="Aucune limite"
-            />
-          </label>
-          <label>
-            Tri
+        {precise && relaxed && (
+          <div className="hunt-notice">
+            <p>
+              Tu cherches une carte précise : les limites de l’étape 2 sont mises de côté, pour
+              montrer toutes les versions.
+            </p>
+            <button type="button" className="btn ghost" onClick={() => setKeepLimits(true)}>
+              Garder les limites
+            </button>
+          </div>
+        )}
+        {precise && keepLimits && (
+          <div className="hunt-notice">
+            <p>Les limites de prix et de notes restent actives pour cette recherche.</p>
+            <button type="button" className="btn ghost" onClick={() => setKeepLimits(false)}>
+              Voir toutes les versions
+            </button>
+          </div>
+        )}
+
+        <fieldset className="hunt-group">
+          <legend>3. Dans quel ordre</legend>
+          <label className="hunt-sort">
+            <span>Ordre de la liste</span>
             <select value={sort} onChange={(event) => setSort(event.target.value as SortMode)}>
-              <option value="upside">Peuvent encore monter</option>
-              <option value="price">Moins chères d’abord</option>
-              <option value="pop">Moins de notes 10 d’abord</option>
+              <option value="upside">Les plus intéressantes d’abord</option>
+              <option value="price">Note 10 la moins chère d’abord</option>
+              <option value="pop">Le moins d’exemplaires notés 10 d’abord</option>
             </select>
           </label>
+          <p className="hunt-group-help">{sortHelp}</p>
+        </fieldset>
+
+        <div className="hunt-foot">
+          <p className="hunt-count">
+            {pokemon
+              ? `${countLabel(matches.length)} de ${pokemonName}.`
+              : query.trim()
+                ? `${countLabel(matches.length)} pour « ${query.trim()} ».`
+                : `${countLabel(matches.length)}.`}
+            {scope}
+            {matches.length > visible.length
+              ? ` ${countLabel(visible.length)} à l’écran, le bouton en bas charge la suite.`
+              : ''}
+            <small>
+              {relaxed
+                ? 'Limites de prix et de notes mises de côté.'
+                : limitBits.length > 0
+                  ? `Limites : ${limitBits.join(' · ')}.`
+                  : 'Aucune limite de prix ni de notes.'}
+            </small>
+          </p>
+          <div className="hunt-actions">
+            <button type="button" className="btn ghost" onClick={clearLimits}>
+              Enlever les limites
+            </button>
+            <button type="button" className="btn ghost" onClick={resetFilters}>
+              Filtres d’origine
+            </button>
+          </div>
         </div>
-
-        <label className="hunt-check">
-          <input
-            type="checkbox"
-            checked={pricedOnly}
-            onChange={(event) => setPricedOnly(event.target.checked)}
-          />
-          Cacher les cartes sans prix. Une recherche ou un Pokémon choisi ignore les limites ci-dessus.
-        </label>
-
-        <p className="hunt-count">
-          {pokemon
-            ? `${matches.length.toLocaleString('fr-FR')} ${matches.length > 1 ? 'cartes' : 'carte'} de ${speciesLabel(pokemon)}, toutes les séries`
-            : query.trim()
-              ? `${matches.length.toLocaleString('fr-FR')} ${matches.length > 1 ? 'cartes' : 'carte'} pour « ${query.trim()} »`
-              : `${matches.length.toLocaleString('fr-FR')} ${matches.length > 1 ? 'cartes' : 'carte'}`}
-          {matches.length > visible.length
-            ? ` · ${visible.length.toLocaleString('fr-FR')} affichées, descends pour la suite`
-            : ''}
-        </p>
       </form>
 
       {matches.length === 0 ? (
-        <p className="panel state-msg">
-          {pokemon
-            ? `Aucune carte de ${speciesLabel(pokemon)} dans cette langue. Essaie Les deux dans Langue.`
-            : query.trim()
-            ? generation !== 'all'
-              ? 'Aucune carte de cette génération pour cette recherche. Remets Génération sur Toutes pour revoir les autres.'
-              : 'Aucune carte pour cette recherche. Essaie le nom anglais si le français ne suffit pas, par exemple Charizard.'
-            : generation !== 'all'
-              ? 'Aucune carte de cette génération avec ces limites. Les dresseurs et les énergies ne sont pas comptés. Remets Génération sur Toutes, ou élargis les prix.'
-              : 'Aucune carte avec ces filtres. Vide le prix minimum, ou monte le prix maximum de la PSA 10.'}
-        </p>
+        <p className="panel state-msg">{emptyMessage()}</p>
       ) : (
         <div className="panel hunt-results">
-        <div className="hunt-grid">
-          {visible.map((card, index) => {
-            const image = cardImageUrl(card.cardId)
-            const psaPrice = toEur(card.psa10Usd)
-            const rawPrice = toEur(card.rawUsd)
-            const seriesChanged = pokemon !== '' && (index === 0 || visible[index - 1].set.series !== card.set.series)
-            const seriesTotal = seriesChanged
-              ? matches.filter((item) => item.set.series === card.set.series).length
-              : 0
-            return (
-              <Fragment key={card.key}>
-                {seriesChanged && (
-                  <h3 className="hunt-series">
-                    {seriesLabel(card.set.series)} · {seriesTotal.toLocaleString('fr-FR')}{' '}
-                    {seriesTotal > 1 ? 'cartes' : 'carte'}
-                  </h3>
-                )}
-                <article className="hunt-card">
-                  {image ? (
-                    <img src={image} alt="" loading="lazy" />
-                  ) : (
-                    <div className="hunt-fallback" aria-hidden="true" />
+          <div className="hunt-grid">
+            {visible.map((card, index) => {
+              const image = cardImageUrl(card.cardId)
+              const psaPrice = toEur(card.psa10Usd)
+              const rawPrice = toEur(card.rawUsd)
+              const species = mainSpecies(card.name)
+              const seriesChanged =
+                pokemon !== '' && (index === 0 || visible[index - 1].set.series !== card.set.series)
+              const seriesTotal = seriesChanged
+                ? matches.filter((item) => item.set.series === card.set.series).length
+                : 0
+              return (
+                <Fragment key={card.key}>
+                  {seriesChanged && (
+                    <h3 className="hunt-series">
+                      {seriesLabel(card.set.series)} · {countLabel(seriesTotal)}
+                    </h3>
                   )}
-                  <div className="hunt-body">
-                    <p className="tile-num">
-                      #{card.number || '—'} · {card.set.name}
-                      {language === 'all' ? ` · ${languageLabel(card.set.language)}` : ''}
-                    </p>
-                    <h3>{card.name}</h3>
-                    <p className="tile-meta">
-                      {seriesLabel(card.set.series)} · {huntPrintingLabel(card.printing)}
-                    </p>
-                    <p className="tile-pop">
-                      PSA 10 : {formatCount(card.psa10)}
-                      <span> · {formatGemRate(asPrinting(card))} des notes</span>
-                    </p>
-                    <p className="hunt-prices">
-                      <strong>{money(psaPrice)}</strong>
-                      <span>brute {money(rawPrice)}</span>
-                    </p>
-                    <a href={cardPageUrl(card.slug)} target="_blank" rel="noreferrer">
-                      Voir la fiche
-                    </a>
-                    {mainSpecies(card.name) && mainSpecies(card.name) !== pokemon && (
-                      <button type="button" className="hunt-all-series" onClick={() => showAllSeries(card.name)}>
-                        Toutes les séries
-                      </button>
+                  <article className="hunt-card">
+                    {image ? (
+                      <img src={image} alt="" loading="lazy" />
+                    ) : (
+                      <div className="hunt-fallback" aria-hidden="true" />
                     )}
-                  </div>
-                </article>
-              </Fragment>
-            )
-          })}
-        </div>
+                    <div className="hunt-body">
+                      <p className="tile-num">
+                        #{card.number || '—'} · {card.set.name}
+                        {language === 'all' ? ` · ${languageLabel(card.set.language)}` : ''}
+                      </p>
+                      <h3>{card.name}</h3>
+                      <p className="tile-meta">
+                        {seriesLabel(card.set.series)} · {huntPrintingLabel(card.printing)}
+                      </p>
+                      <p className="hunt-pop">
+                        {formatCount(card.psa10)} exemplaires notés 10
+                        <span>
+                          sur {formatCount(card.total)} cartes notées ({formatGemRate(asPrinting(card))})
+                        </span>
+                      </p>
+                      <p className="hunt-prices">
+                        <span>
+                          <small>Exemplaire noté 10</small>
+                          <strong>{money(psaPrice)}</strong>
+                        </span>
+                        <span>
+                          <small>Carte sans note</small>
+                          {money(rawPrice)}
+                        </span>
+                      </p>
+                      <a href={cardPageUrl(card.slug)} target="_blank" rel="noreferrer">
+                        Ouvrir la fiche
+                      </a>
+                      {species && species !== pokemon && (
+                        <button type="button" className="hunt-all-series" onClick={() => showAllSeries(card.name)}>
+                          Toutes les cartes de {speciesLabel(species)}
+                        </button>
+                      )}
+                    </div>
+                  </article>
+                </Fragment>
+              )
+            })}
+          </div>
         </div>
       )}
 
       {shown < matches.length && (
         <button type="button" className="btn ghost hunt-more" onClick={() => setShown((count) => count + PAGE)}>
-          Afficher {Math.min(PAGE, matches.length - shown)} cartes de plus
+          Afficher {Math.min(PAGE, matches.length - shown).toLocaleString('fr-FR')} cartes de plus
         </button>
       )}
     </section>
