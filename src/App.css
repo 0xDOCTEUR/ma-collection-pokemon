@@ -1893,6 +1893,93 @@ textarea:focus {
   line-height: 1.4;
 }
 
+.hunt-indicators {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.hunt-indicators-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-right: 0.2rem;
+}
+
+.hunt-indicator {
+  border: 1px solid transparent;
+  border-radius: 999px;
+  padding: 0.32rem 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1.2;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--muted);
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.hunt-indicator.is-all.is-on {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--text);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.hunt-indicator.is-open {
+  background: rgba(182, 243, 160, 0.14);
+  color: #b6f3a0;
+}
+
+.hunt-indicator.is-open.is-on {
+  background: #b6f3a0;
+  color: #12380c;
+  box-shadow: 0 4px 12px rgba(182, 243, 160, 0.25);
+}
+
+.hunt-indicator.is-watch {
+  background: rgba(255, 213, 106, 0.14);
+  color: #ffd56a;
+}
+
+.hunt-indicator.is-watch.is-on {
+  background: #ffd56a;
+  color: #4a3200;
+  box-shadow: 0 4px 12px rgba(255, 213, 106, 0.25);
+}
+
+.hunt-indicator.is-narrow {
+  background: rgba(255, 180, 174, 0.14);
+  color: #ffb4ae;
+}
+
+.hunt-indicator.is-narrow.is-on {
+  background: #ffb4ae;
+  color: #5c1410;
+  box-shadow: 0 4px 12px rgba(255, 180, 174, 0.25);
+}
+
+.hunt-indicator.is-unknown {
+  background: rgba(213, 221, 230, 0.12);
+  color: #d5dde6;
+}
+
+.hunt-indicator.is-unknown.is-on {
+  background: #d5dde6;
+  color: #243040;
+}
+
+.hunt-indicator:hover:not(.is-on) {
+  border-color: rgba(255, 255, 255, 0.16);
+  color: var(--text);
+}
+
 @media (max-width: 720px) {
   .hunt-series-bar {
     grid-template-columns: 1fr;

@@ -164,6 +164,19 @@ export interface CardPotential {
   reason: string
 }
 
+/** Pastilles du catalogue, pour filtrer facilement. */
+export const INDICATOR_FILTERS = [
+  { id: 'all', label: 'Tous les indicateurs', level: null },
+  { id: 'Marge ouverte', label: 'Marge ouverte', level: 'open' as PotentialLevel },
+  { id: 'À suivre', label: 'À suivre', level: 'watch' as PotentialLevel },
+  { id: 'Déjà chère', label: 'Déjà chère', level: 'narrow' as PotentialLevel },
+  { id: 'Déjà courante', label: 'Déjà courante', level: 'narrow' as PotentialLevel },
+  { id: 'Peu demandée', label: 'Peu demandée', level: 'narrow' as PotentialLevel },
+  { id: 'Pas assez d’infos', label: 'Pas assez d’infos', level: 'unknown' as PotentialLevel },
+] as const
+
+export type IndicatorFilterId = (typeof INDICATOR_FILTERS)[number]['id']
+
 /**
  * Lecture d’aujourd’hui, pas une promesse de hausse.
  * Marge ouverte = les trois signes ensemble : la carte sans note se vend déjà,

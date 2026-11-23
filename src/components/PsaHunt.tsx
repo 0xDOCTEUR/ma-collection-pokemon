@@ -5,11 +5,13 @@ import {
   cardPotential,
   huntImageUrl,
   huntPrintingLabel,
+  INDICATOR_FILTERS,
   languageLabel,
   loadPsaHunt,
   SERIES_ORDER,
   seriesLabel,
   toEur,
+  type IndicatorFilterId,
   type PsaHuntCard,
   type PsaHuntData,
 } from '../utils/psaHunt'
@@ -64,6 +66,7 @@ const DEFAULTS = {
   minGraded: '',
   pricedOnly: true,
   sort: 'number' as SortMode,
+  indicator: 'all' as IndicatorFilterId,
 }
 
 function money(value: number | null): string {
@@ -131,6 +134,7 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
   const [minGraded, setMinGraded] = useState(DEFAULTS.minGraded)
   const [pricedOnly, setPricedOnly] = useState(DEFAULTS.pricedOnly)
   const [sort, setSort] = useState<SortMode>(DEFAULTS.sort)
+  const [indicator, setIndicator] = useState<IndicatorFilterId>(DEFAULTS.indicator)
   const [keepLimits, setKeepLimits] = useState(false)
   const [moreFilters, setMoreFilters] = useState(false)
   const [view, setView] = useState<CardView>(readCardView)
@@ -176,6 +180,7 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
     minGraded,
     pricedOnly,
     sort,
+    indicator,
     keepLimits,
   ])
 
@@ -241,6 +246,7 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
     setMinGraded(DEFAULTS.minGraded)
     setPricedOnly(DEFAULTS.pricedOnly)
     setSort(DEFAULTS.sort)
+    setIndicator(DEFAULTS.indicator)
     setKeepLimits(false)
   }
 
@@ -290,6 +296,15 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
       if (searching) {
         const haystack = foldName(`${card.name} ${card.number} ${card.set.name}`)
         if (!needles.some((needle) => haystack.includes(needle))) return false
+      }
+      if (indicator !== 'all') {
+        const potential = cardPotential(
+          card.psa10,
+          card.total,
+          toEur(card.psa10Usd),
+          toEur(card.rawUsd),
+        )
+        if (potential.title !== indicator) return false
       }
       if (skipLimits) return true
       if (gradedFloor != null && card.total < gradedFloor) return false
@@ -361,6 +376,7 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
     activeSort,
     keepLimits,
     browsingSet,
+    indicator,
   ])
 
   const visible = matches.slice(0, shown)
@@ -452,6 +468,27 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
               Cartes de la série dans l’ordre des numéros (1, 2, 3…).
             </p>
           )}
+        </div>
+
+        <div className="hunt-indicators" role="group" aria-label="Filtrer par indicateur">
+          <span className="hunt-indicators-label">Indicateur</span>
+          {INDICATOR_FILTERS.map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              className={[
+                'hunt-indicator',
+                option.level ? `is-${option.level}` : 'is-all',
+                indicator === option.id ? 'is-on' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              aria-pressed={indicator === option.id}
+              onClick={() => setIndicator(option.id)}
+            >
+              {option.label}
+            </button>
+          ))}
         </div>
 
         <div className="hunt-row hunt-main">
@@ -627,6 +664,7 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
                   : query.trim()
                     ? ` · « ${query.trim()} »`
                     : ''}
+              {indicator !== 'all' ? ` · ${indicator}` : ''}
               {relaxed
                 ? ' · limites mises de côté'
                 : limitBits.length > 0
