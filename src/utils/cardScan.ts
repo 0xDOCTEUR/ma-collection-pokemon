@@ -1,5 +1,6 @@
 import { createWorker, type Worker } from 'tesseract.js'
 import { LOOSE_CONDITIONS } from './advicePrice'
+import { FRENCH_NAMES, foldName } from './frenchNames'
 import type { PokemonCard } from '../types'
 
 export type LooseConditionId = (typeof LOOSE_CONDITIONS)[number]['id']
@@ -8,6 +9,7 @@ export interface ScanMatch {
   card: PokemonCard
   number: string
   score: number
+  why: string
 }
 
 export interface ConditionGuess {
@@ -22,9 +24,17 @@ export interface ScanResult {
   matches: ScanMatch[]
   condition: ConditionGuess
   previewUrl: string
+  ocrText: string
 }
 
 let workerPromise: Promise<Worker> | null = null
+
+/** Anglais lu sur la carte → nom français de la série. */
+const ENGLISH_TO_FRENCH = new Map<string, string>()
+for (const [french, english] of Object.entries(FRENCH_NAMES)) {
+  const key = foldName(english)
+  if (!ENGLISH_TO_FRENCH.has(key)) ENGLISH_TO_FRENCH.set(key, french)
+}
 
 async function getWorker(): Promise<Worker> {
   if (!workerPromise) {
@@ -52,70 +62,217 @@ function loadImage(source: Blob | string): Promise<HTMLImageElement> {
   })
 }
 
-/** Zone basse de la carte : c’est là que se trouve le numéro. */
-async function cropBottom(image: HTMLImageElement): Promise<HTMLCanvasElement> {
-  const canvas = document.createElement('canvas')
-  const width = Math.min(1200, image.naturalWidth || image.width)
-  const height = Math.round(width * ((image.naturalHeight || image.height) / (image.naturalWidth || image.width)))
-  canvas.width = width
-  canvas.height = Math.max(80, Math.round(height * 0.28))
-  const context = canvas.getContext('2d')
-  if (!context) throw new Error('Canvas indisponible.')
-  const sourceH = image.naturalHeight || image.height
-  const sourceW = image.naturalWidth || image.width
-  const cropH = sourceH * 0.28
-  context.drawImage(image, 0, sourceH - cropH, sourceW, cropH, 0, 0, canvas.width, canvas.height)
-  // Renforcer le contraste pour l’OCR
-  const pixels = context.getImageData(0, 0, canvas.width, canvas.height)
-  for (let i = 0; i < pixels.data.length; i += 4) {
+function binarize(context: CanvasRenderingContext2D, width: number, height: number) {
+  const pixels = context.getImageData(0, 0, width, height)
+  let sum = 0
+  const grays = new Uint8Array(width * height)
+  for (let i = 0, p = 0; i < pixels.data.length; i += 4, p += 1) {
     const gray = 0.299 * pixels.data[i] + 0.587 * pixels.data[i + 1] + 0.114 * pixels.data[i + 2]
-    const value = gray > 140 ? 255 : gray < 90 ? 0 : gray
+    grays[p] = gray
+    sum += gray
+  }
+  const mean = sum / grays.length
+  // Seuil un peu bas : le brillant holo crée des blancs trompeurs.
+  const threshold = Math.min(170, Math.max(95, mean * 0.92))
+  for (let i = 0, p = 0; i < pixels.data.length; i += 4, p += 1) {
+    const value = grays[p] > threshold ? 255 : 0
     pixels.data[i] = value
     pixels.data[i + 1] = value
     pixels.data[i + 2] = value
   }
   context.putImageData(pixels, 0, 0)
+}
+
+type CropKind = 'bottom' | 'top' | 'numberCorner'
+
+function cropRegion(image: HTMLImageElement, kind: CropKind): HTMLCanvasElement {
+  const sourceW = image.naturalWidth || image.width
+  const sourceH = image.naturalHeight || image.height
+  const canvas = document.createElement('canvas')
+  const context = canvas.getContext('2d')
+  if (!context) throw new Error('Canvas indisponible.')
+
+  let sx = 0
+  let sy = 0
+  let sw = sourceW
+  let sh = sourceH
+
+  if (kind === 'bottom') {
+    sy = sourceH * 0.72
+    sh = sourceH * 0.28
+  } else if (kind === 'top') {
+    sh = sourceH * 0.22
+  } else {
+    // Coin bas droit : numéro + total imprimés
+    sx = sourceW * 0.35
+    sy = sourceH * 0.78
+    sw = sourceW * 0.65
+    sh = sourceH * 0.22
+  }
+
+  const outW = Math.min(1100, Math.round(sw))
+  const outH = Math.max(64, Math.round((outW * sh) / sw))
+  canvas.width = outW
+  canvas.height = outH
+  context.fillStyle = '#fff'
+  context.fillRect(0, 0, outW, outH)
+  context.drawImage(image, sx, sy, sw, sh, 0, 0, outW, outH)
+  binarize(context, outW, outH)
   return canvas
 }
 
-function extractNumbers(text: string): string[] {
-  const primary: string[] = []
-  const secondary: string[] = []
-  const seen = new Set<string>()
-  const denominators = new Set<string>()
+interface NumberHit {
+  number: string
+  total: string | null
+  trusted: boolean
+}
 
-  for (const match of text.matchAll(/(\d{1,3})\s*[/|\\]\s*(\d{2,3})/g)) {
-    const left = String(Number.parseInt(match[1], 10))
-    const right = String(Number.parseInt(match[2], 10))
-    denominators.add(right)
-    if (!seen.has(left)) {
-      seen.add(left)
-      primary.push(left)
+function extractNumberHits(text: string, printedTotals: Set<string>): NumberHit[] {
+  const hits: NumberHit[] = []
+  const seen = new Set<string>()
+
+  for (const match of text.matchAll(/(\d{1,3})\s*[/|Il]\s*(\d{2,3})/gi)) {
+    const number = String(Number.parseInt(match[1], 10))
+    const total = String(Number.parseInt(match[2], 10))
+    if (seen.has(number)) continue
+    seen.add(number)
+    hits.push({
+      number,
+      total,
+      trusted: printedTotals.has(total) || Number(total) >= 100,
+    })
+  }
+
+  // Sans fraction fiable, on n’accepte plus les petits chiffres isolés :
+  // le brillant holo invente trop de 2, 5, 9…
+  return hits
+}
+
+function speciesKey(name: string): string {
+  return foldName(name)
+    .replace(/-ex\b/g, '')
+    .replace(/-gx\b/g, '')
+    .replace(/-v\b/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+}
+
+function englishForFrenchSpecies(french: string): string | null {
+  const direct = FRENCH_NAMES[french]
+  if (direct) return foldName(direct)
+  const first = french.split(' ')[0]
+  return first ? FRENCH_NAMES[first] ?? null : null
+}
+
+/** Mot entier seulement : « mew » ne doit pas matcher dans « mewtwo ». */
+function hasWord(haystack: string, phrase: string): boolean {
+  const word = foldName(phrase).trim()
+  if (word.length < 3) return false
+  const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '[^a-z0-9]+')
+  return new RegExp(`(?:^|[^a-z0-9])${escaped}(?:[^a-z0-9]|$)`).test(haystack)
+}
+
+function findNameMatches(text: string, cards: PokemonCard[]): ScanMatch[] {
+  const folded = foldName(text)
+  const matches: ScanMatch[] = []
+  const seen = new Set<string>()
+
+  // Les noms les plus longs d’abord : Mewtwo avant Mew.
+  const ordered = [...cards].sort(
+    (a, b) => speciesKey(b.name).length - speciesKey(a.name).length || a.name.localeCompare(b.name, 'fr'),
+  )
+
+  for (const card of ordered) {
+    const french = speciesKey(card.name)
+    if (!french || french.length < 3) continue
+
+    let why = ''
+    if (hasWord(folded, french)) {
+      why = `Nom lu : ${card.name}`
+    } else {
+      const english = englishForFrenchSpecies(french)
+      if (english && hasWord(folded, english)) {
+        why = `Nom lu : ${english}`
+      } else {
+        for (const token of folded.split(/[^a-z0-9]+/)) {
+          if (token.length < 4) continue
+          const mapped = ENGLISH_TO_FRENCH.get(token)
+          if (mapped && (french === mapped || french.replace(/ /g, '') === mapped.replace(/ /g, ''))) {
+            why = `Nom lu : ${token}`
+            break
+          }
+          if (french === token) {
+            why = `Nom lu : ${card.name}`
+            break
+          }
+        }
+      }
+    }
+
+    if (!why || seen.has(card.id)) continue
+    // Si un nom plus long a déjà matché la même espèce (mewtwo), ignorer « mew »
+    const blocked = [...seen].some((id) => {
+      const other = cards.find((item) => item.id === id)
+      if (!other) return false
+      const otherKey = speciesKey(other.name)
+      return otherKey !== french && (otherKey.includes(french) || french.includes(otherKey))
+    })
+    if (blocked && french.length <= 4) continue
+
+    seen.add(card.id)
+    const secret = Number(card.number) > card.printedTotal
+    matches.push({
+      card,
+      number: card.number,
+      score: 82 + Math.min(12, french.length) - (secret ? 3 : 0),
+      why,
+    })
+  }
+
+  return matches
+}
+
+function scoreMatches(
+  cards: PokemonCard[],
+  numberHits: NumberHit[],
+  nameMatches: ScanMatch[],
+): ScanMatch[] {
+  const byNumber = new Map(cards.map((card) => [card.number, card]))
+  const best = new Map<string, ScanMatch>()
+
+  function keep(match: ScanMatch) {
+    const current = best.get(match.card.id)
+    if (!current || match.score > current.score) best.set(match.card.id, match)
+  }
+
+  for (const hit of numberHits) {
+    const card = byNumber.get(hit.number)
+    if (!card) continue
+    keep({
+      card,
+      number: hit.number,
+      score: hit.trusted ? 95 : 35,
+      why: hit.total ? `Numéro lu : ${hit.number}/${hit.total}` : `Numéro lu : ${hit.number}`,
+    })
+  }
+
+  for (const match of nameMatches) {
+    const existing = best.get(match.card.id)
+    if (existing) {
+      keep({
+        ...existing,
+        score: existing.score + 40,
+        why: `${match.why} · ${existing.why}`,
+      })
+    } else {
+      keep(match)
     }
   }
 
-  for (const match of text.matchAll(/\b(\d{1,3})\b/g)) {
-    const value = Number.parseInt(match[1], 10)
-    if (value < 1 || value > 300) continue
-    const number = String(value)
-    if (seen.has(number) || denominators.has(number)) continue
-    seen.add(number)
-    secondary.push(number)
-  }
-
-  // Le numéro avant le « / » compte d’abord ; le total après le « / » est ignoré.
-  return [...primary, ...secondary]
-}
-
-function matchCards(cards: PokemonCard[], numbers: string[]): ScanMatch[] {
-  const byNumber = new Map(cards.map((card) => [card.number, card]))
-  const matches: ScanMatch[] = []
-  numbers.forEach((number, index) => {
-    const card = byNumber.get(number)
-    if (!card) return
-    matches.push({ card, number, score: 100 - index * 8 })
-  })
-  return matches.sort((a, b) => b.score - a.score)
+  // Si un nom fort et un numéro faible divergent, le nom gagne.
+  return [...best.values()]
+    .filter((match) => match.score >= 70)
+    .sort((a, b) => b.score - a.score || Number(a.number) - Number(b.number))
 }
 
 /**
@@ -209,12 +366,27 @@ export async function scanCardPhoto(
   const previewUrl = typeof source === 'string' ? source : URL.createObjectURL(source)
   const image = await loadImage(previewUrl)
   const condition = guessCondition(image)
-  const crop = await cropBottom(image)
+  const printedTotals = new Set(cards.map((card) => String(card.printedTotal)))
   const worker = await getWorker()
-  const { data } = await worker.recognize(crop, undefined, { text: true })
-  const numbers = extractNumbers(data.text || '')
-  const matches = matchCards(cards, numbers)
-  return { numbers, matches, condition, previewUrl }
+
+  const regions = [cropRegion(image, 'top'), cropRegion(image, 'numberCorner'), cropRegion(image, 'bottom')]
+  const texts: string[] = []
+  for (const region of regions) {
+    const { data } = await worker.recognize(region, undefined, { text: true })
+    if (data.text) texts.push(data.text)
+  }
+  const ocrText = texts.join('\n')
+  const numberHits = extractNumberHits(ocrText, printedTotals)
+  const nameMatches = findNameMatches(ocrText, cards)
+  const matches = scoreMatches(cards, numberHits, nameMatches)
+
+  return {
+    numbers: numberHits.map((hit) => hit.number),
+    matches,
+    condition,
+    previewUrl,
+    ocrText,
+  }
 }
 
 export function conditionLabel(id: LooseConditionId): string {

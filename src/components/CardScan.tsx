@@ -91,9 +91,7 @@ export function CardScan({ cards, setName, onClose, onConfirm }: Props) {
       setConditionReason(result.condition.reason)
       if (result.matches.length === 0) {
         setMessage(
-          result.numbers.length
-            ? `Numéros lus : ${result.numbers.join(', ')}. Aucun ne correspond à ${setName}. Tape le numéro à la main.`
-            : 'Le numéro n’a pas été lu. Recadre la carte, ou tape le numéro à la main.',
+          'Pas de correspondance assez sûre. Cadre le nom en haut et le numéro en bas à droite, sans trop de reflet, ou tape le numéro.',
         )
       }
       setStep('result')
@@ -132,7 +130,7 @@ export function CardScan({ cards, setName, onClose, onConfirm }: Props) {
       setMessage(`Aucune carte n° ${number} dans ${setName}.`)
       return
     }
-    setMatches([{ card, number, score: 100 }])
+    setMatches([{ card, number, score: 100, why: 'Numéro saisi à la main' }])
     setSelectedId(card.id)
     setMessage(null)
   }
@@ -153,8 +151,9 @@ export function CardScan({ cards, setName, onClose, onConfirm }: Props) {
             <p className="card-sheet-num">Scan</p>
             <h2 id={titleId}>Reconnaître une carte</h2>
             <p className="muted">
-              Photo dans la série {setName}. La photo reste sur ton appareil. L’état proposé est une
-              estimation : tu confirmes avant le prix.
+              Photo dans la série {setName}. Cadre le nom en haut et le numéro en bas à droite. La
+              photo reste sur ton appareil. L’état proposé est une estimation : tu confirmes avant
+              le prix.
             </p>
           </div>
           <button type="button" className="btn ghost" onClick={onClose}>
@@ -205,7 +204,7 @@ export function CardScan({ cards, setName, onClose, onConfirm }: Props) {
               )}
               {message && <p className="state-msg">{message}</p>}
 
-              {matches.length > 0 && (
+              {matches.length > 0 ? (
                 <div className="scan-matches">
                   <p className="stat-label">Carte reconnue</p>
                   {matches.slice(0, 4).map((match) => (
@@ -221,11 +220,18 @@ export function CardScan({ cards, setName, onClose, onConfirm }: Props) {
                         <strong>
                           #{match.card.number} · {match.card.name}
                         </strong>
-                        <small>{match.card.rarity}</small>
+                        <small>
+                          {match.card.rarity} · {match.why}
+                        </small>
                       </span>
                     </label>
                   ))}
                 </div>
+              ) : (
+                <p className="state-msg">
+                  Aucune carte assez sûre dans {setName}. Cadre le nom en haut et le numéro en bas
+                  à droite, ou tape le numéro.
+                </p>
               )}
 
               <div className="scan-manual">
