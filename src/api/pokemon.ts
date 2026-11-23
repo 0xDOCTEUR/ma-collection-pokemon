@@ -9,7 +9,7 @@ import type { SetInfo } from '../sets'
 import type { PopulationFile } from '../utils/population'
 
 /** Change ce numéro quand les fichiers de côtes sont mis à jour, pour éviter un vieux cache. */
-const DATA_VERSION = '2026-11-19-cm'
+const DATA_VERSION = '2026-11-23-fr'
 
 const TCGDEX_CARD_URL = 'https://api.tcgdex.net/v2/fr/cards'
 
@@ -26,13 +26,45 @@ export async function fetchSetCards(set: SetInfo): Promise<PokemonCard[]> {
   return (await response.json()) as PokemonCard[]
 }
 
-export async function fetchPopulation(set: SetInfo): Promise<PopulationFile> {
-  const url = `${set.populationUrl}${set.populationUrl.includes('?') ? '&' : '?'}v=${DATA_VERSION}`
-  const response = await fetch(url, { cache: 'no-cache' })
+async function fetchJson<T>(url: string): Promise<T> {
+  const versioned = `${url}${url.includes('?') ? '&' : '?'}v=${DATA_VERSION}`
+  const response = await fetch(versioned, { cache: 'no-cache' })
   if (!response.ok) {
-    throw new Error(`Impossible de charger la population de ${set.name} (code ${response.status})`)
+    throw new Error(`code ${response.status}`)
   }
-  return (await response.json()) as PopulationFile
+  return (await response.json()) as T
+}
+
+export async function fetchPopulation(set: SetInfo): Promise<PopulationFile> {
+  let file: PopulationFile
+  try {
+    file = await fetchJson<PopulationFile>(set.populationUrl)
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : 'erreur'
+    throw new Error(`Impossible de charger la population de ${set.name} (${detail})`)
+  }
+
+  if (!set.frenchPopulationUrl) return file
+  try {
+    const french = await fetchJson<PopulationFile>(set.frenchPopulationUrl)
+    file.frenchSource = french.source
+    file.frenchSourceName = french.sourceName
+    file.frenchFetchedAt = french.fetchedAt
+    for (const [id, card] of Object.entries(french.cards)) {
+      const existing = file.cards[id]
+      if (!existing) {
+        file.cards[id] = card
+        continue
+      }
+      const labels = new Set(existing.printings.map((printing) => printing.label))
+      for (const printing of card.printings) {
+        if (!labels.has(printing.label)) existing.printings.push(printing)
+      }
+    }
+  } catch {
+    /* le recensement français est un complément : la série reste utilisable sans lui */
+  }
+  return file
 }
 
 export function formatPrices(prices: CardPrices): string {

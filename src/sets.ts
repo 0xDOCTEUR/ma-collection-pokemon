@@ -4,6 +4,8 @@ export interface SetInfo {
   shortName: string
   dataUrl: string
   populationUrl: string
+  /** Recensement PSA des cartes françaises, même numéro que la série. */
+  frenchPopulationUrl?: string
   logo: string
   logoFallback?: string
 }
@@ -17,6 +19,7 @@ export const SETS: SetInfo[] = [
     shortName: '151',
     dataUrl: `${base}data/sets/sv03.5.json`,
     populationUrl: `${base}data/population/sv03.5.json`,
+    frenchPopulationUrl: `${base}data/population/sv03.5-fr.json`,
     logo: 'https://assets.tcgdex.net/fr/sv/sv03.5/logo.webp',
     logoFallback: 'https://images.pokemontcg.io/sv3pt5/logo.png',
   },

@@ -488,13 +488,25 @@ export default function App() {
           )}
           {setHasPopulation && populationFile && (
             <p className="pop-hint">
-              PSA 10 = cartes notées 10/10, version anglaise (le numéro est le même en français). Plus
-              le chiffre est petit, plus cette version est rare. Les cartes notées moins de 100 fois
-              restent en bas du tri « plus rares ».
-              {censusLabel ? ` Recensement du ${censusLabel}.` : ''}{' '}
+              PSA 10 = cartes notées 10/10. Le chiffre « anglais » sert au tri : plus il est petit,
+              plus cette version anglaise est rare. Les cartes notées moins de 100 fois restent en
+              bas du tri « plus rares ».
+              {censusLabel ? ` Recensement anglais du ${censusLabel}.` : ''}{' '}
               <a href={populationFile.source} target="_blank" rel="noreferrer">
                 {populationFile.sourceName}
               </a>
+              {populationFile.frenchFetchedAt && (
+                <>
+                  {' '}
+                  Le chiffre « français » compte seulement les cartes françaises, pas la même quantité.
+                  {` Recensement français du ${formatCensusDate(populationFile.frenchFetchedAt)}.`}{' '}
+                  {populationFile.frenchSource && (
+                    <a href={populationFile.frenchSource} target="_blank" rel="noreferrer">
+                      {populationFile.frenchSourceName ?? 'GemRate'}
+                    </a>
+                  )}
+                </>
+              )}
             </p>
           )}
 
@@ -549,6 +561,9 @@ export default function App() {
           sourceUrl={populationFile?.source ?? null}
           sourceName={populationFile?.sourceName ?? 'CardPrice'}
           censusDate={latestCensusDate(populationFile)}
+          frenchSourceUrl={populationFile?.frenchSource ?? null}
+          frenchSourceName={populationFile?.frenchSourceName ?? null}
+          frenchCensusDate={populationFile?.frenchFetchedAt ?? null}
         />
       )}
 

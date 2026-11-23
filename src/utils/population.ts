@@ -17,6 +17,10 @@ export interface PopulationFile {
   source: string
   sourceName: string
   fetchedAt: string
+  /** Recensement des cartes françaises, quand il existe pour cette série. */
+  frenchSource?: string
+  frenchSourceName?: string
+  frenchFetchedAt?: string
   cards: Record<string, CardPopulation>
 }
 
@@ -27,10 +31,25 @@ export function printingLabel(label: string): string {
   return label
 }
 
+/** Ligne venue du recensement des cartes françaises, pas de la version anglaise. */
+export function isFrenchPrinting(label: string): boolean {
+  return label.startsWith('Français')
+}
+
 /** Version la plus envoyée chez PSA : c’est celle qu’on compare entre les cartes. */
 export function primaryPrinting(printings: PsaPrinting[] | undefined): PsaPrinting | null {
   if (!printings || printings.length === 0) return null
-  return printings.reduce((best, row) => (row.total > best.total ? row : best))
+  const english = printings.filter((row) => !isFrenchPrinting(row.label))
+  const pool = english.length > 0 ? english : printings
+  return pool.reduce((best, row) => (row.total > best.total ? row : best))
+}
+
+/** Version française la plus envoyée chez PSA, pour l’afficher à côté de l’anglaise. */
+export function frenchPrinting(printings: PsaPrinting[] | undefined): PsaPrinting | null {
+  if (!printings || printings.length === 0) return null
+  const french = printings.filter((row) => isFrenchPrinting(row.label))
+  if (french.length === 0) return null
+  return french.reduce((best, row) => (row.total > best.total ? row : best))
 }
 
 export function hasEnoughGrades(printing: PsaPrinting | null): boolean {
@@ -64,6 +83,7 @@ export function latestCensusDate(file: PopulationFile | null | undefined): strin
   let latest: string | null = null
   for (const card of Object.values(file.cards)) {
     for (const printing of card.printings) {
+      if (isFrenchPrinting(printing.label)) continue
       if (printing.updatedAt && (latest == null || printing.updatedAt > latest)) {
         latest = printing.updatedAt
       }

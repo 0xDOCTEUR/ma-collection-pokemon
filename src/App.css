@@ -1373,6 +1373,10 @@ textarea:focus {
   font-weight: 500;
 }
 
+.tile-pop.is-fr {
+  color: var(--wanted);
+}
+
 .pop-hint {
   margin: 0.85rem 0 0;
   color: var(--muted);
@@ -1897,7 +1901,8 @@ textarea:focus {
   grid-template-areas:
     'num pop price'
     'name pop price'
-    'meta links price';
+    'meta links price'
+    'potential potential potential';
   gap: 0.15rem 1rem;
   align-items: center;
 }
@@ -1931,6 +1936,11 @@ textarea:focus {
   grid-area: links;
 }
 
+.hunt-grid.is-list .hunt-potential {
+  grid-area: potential;
+  margin: 0;
+}
+
 .hunt-pop {
   margin: 0.35rem 0 0;
   font-size: 0.86rem;
@@ -1941,6 +1951,33 @@ textarea:focus {
   display: block;
   color: var(--muted);
   font-size: 0.8rem;
+}
+
+.hunt-potential {
+  margin: 0.45rem 0 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.hunt-potential strong {
+  display: inline-block;
+  margin: 0 0.4rem 0.15rem 0;
+  padding: 0.08rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.hunt-potential.is-open strong {
+  background: color-mix(in srgb, var(--gold) 24%, transparent);
+  color: var(--gold);
+}
+
+.hunt-potential.is-watch strong {
+  background: color-mix(in srgb, var(--wanted) 22%, transparent);
+  color: var(--wanted);
 }
 
 .hunt-prices {
@@ -2100,6 +2137,7 @@ textarea:focus {
       'meta'
       'pop'
       'price'
+      'potential'
       'links';
   }
 }

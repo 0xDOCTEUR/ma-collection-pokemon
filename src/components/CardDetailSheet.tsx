@@ -13,6 +13,7 @@ import {
   formatCensusDate,
   formatCount,
   formatGemRate,
+  isFrenchPrinting,
   primaryPrinting,
   printingLabel,
   type PsaPrinting,
@@ -27,6 +28,9 @@ interface Props {
   sourceUrl: string | null
   sourceName: string
   censusDate: string | null
+  frenchSourceUrl?: string | null
+  frenchSourceName?: string | null
+  frenchCensusDate?: string | null
 }
 
 export function CardDetailSheet({
@@ -38,6 +42,9 @@ export function CardDetailSheet({
   sourceUrl,
   sourceName,
   censusDate,
+  frenchSourceUrl = null,
+  frenchSourceName = null,
+  frenchCensusDate = null,
 }: Props) {
   const titleId = useId()
   const [range, setRange] = useState<PriceRangeDays>(30)
@@ -187,6 +194,9 @@ export function CardDetailSheet({
               sourceUrl={sourceUrl}
               sourceName={sourceName}
               censusDate={censusDate}
+              frenchSourceUrl={frenchSourceUrl}
+              frenchSourceName={frenchSourceName}
+              frenchCensusDate={frenchCensusDate}
             />
 
             <PriceTrendChart points={points} range={range} onRangeChange={setRange} />
@@ -204,6 +214,9 @@ function PopulationBlock({
   sourceUrl,
   sourceName,
   censusDate,
+  frenchSourceUrl,
+  frenchSourceName,
+  frenchCensusDate,
 }: {
   printings: PsaPrinting[] | null
   rank: number | null
@@ -211,12 +224,17 @@ function PopulationBlock({
   sourceUrl: string | null
   sourceName: string
   censusDate: string | null
+  frenchSourceUrl: string | null
+  frenchSourceName: string | null
+  frenchCensusDate: string | null
 }) {
   if (printings == null) return null
 
   const primary = primaryPrinting(printings)
   const rows = [...printings].sort((a, b) => a.psa10 - b.psa10 || a.total - b.total)
+  const hasFrench = rows.some((row) => isFrenchPrinting(row.label))
   const censusLabel = formatCensusDate(censusDate)
+  const frenchCensusLabel = formatCensusDate(frenchCensusDate)
 
   return (
     <section className="pop-block">
@@ -275,13 +293,34 @@ function PopulationBlock({
       )}
 
       <p className="pop-note">
-        Chiffres de la version anglaise ({sourceName}
-        {censusLabel ? `, recensement du ${censusLabel}` : ''}). Le numéro est le même en français.{' '}
+        {hasFrench
+          ? 'Les lignes « Français » comptent les cartes françaises. Les autres lignes comptent les cartes anglaises. Ce n’est pas la même quantité imprimée. '
+          : 'Ces chiffres comptent les cartes anglaises. Le numéro est le même en français, pas la quantité imprimée. '}
+        Source anglaise : {sourceName}
+        {censusLabel ? `, recensement du ${censusLabel}` : ''}
         {sourceUrl && (
-          <a href={sourceUrl} target="_blank" rel="noreferrer">
-            Voir la source
-          </a>
+          <>
+            .{' '}
+            <a href={sourceUrl} target="_blank" rel="noreferrer">
+              Voir la source anglaise
+            </a>
+          </>
         )}
+        {hasFrench && frenchSourceName && (
+          <>
+            . Source française : {frenchSourceName}
+            {frenchCensusLabel ? `, recensement du ${frenchCensusLabel}` : ''}
+            {frenchSourceUrl && (
+              <>
+                .{' '}
+                <a href={frenchSourceUrl} target="_blank" rel="noreferrer">
+                  Voir la source française
+                </a>
+              </>
+            )}
+          </>
+        )}
+        .
       </p>
     </section>
   )

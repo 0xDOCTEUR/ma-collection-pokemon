@@ -3,8 +3,8 @@ import { printingLabel } from './population'
 /** Même conversion que le reste de l’appli : les prix de la source sont en dollars. */
 export const USD_TO_EUR = 0.92
 
-/** À changer quand public/data/psa-hunt.json est régénéré. */
-export const PSA_HUNT_VERSION = '2026-11-22'
+/** À changer quand public/data/psa-hunt.json ou psa-french.json est régénéré. */
+export const PSA_HUNT_VERSION = '2026-11-23'
 
 export interface PsaHuntSet {
   id: string
@@ -53,6 +53,9 @@ export interface PsaHuntData {
   source: string
   sourceName: string
   fetchedAt: string
+  frenchSource?: string
+  frenchSourceName?: string
+  frenchFetchedAt?: string
   sets: PsaHuntSet[]
   cards: PsaHuntCard[]
 }
@@ -128,6 +131,7 @@ export function huntPrintingLabel(label: string): string {
 export function languageLabel(language: string): string {
   if (language === 'ja') return 'Japonais'
   if (language === 'en') return 'Anglais'
+  if (language === 'fr') return 'Français'
   return language
 }
 
@@ -152,12 +156,104 @@ export function upsideScore(psa10: number, total: number, psaEur: number, rawEur
   return scarcity * lock * demand * room
 }
 
+export type PotentialLevel = 'open' | 'watch' | 'narrow' | 'unknown'
+
+export interface CardPotential {
+  level: PotentialLevel
+  title: string
+  reason: string
+}
+
+/**
+ * Lecture d’aujourd’hui, pas une promesse de hausse.
+ * Marge ouverte = les trois signes ensemble : la carte sans note se vend déjà,
+ * les notes 10 restent peu nombreuses, et la note 10 n’est pas encore hors de prix.
+ */
+export function cardPotential(
+  psa10: number,
+  total: number,
+  psaEur: number | null,
+  rawEur: number | null,
+): CardPotential {
+  if (psaEur == null || rawEur == null || psaEur <= 0 || rawEur <= 0 || total <= 0) {
+    return {
+      level: 'unknown',
+      title: 'Pas assez d’infos',
+      reason: 'Il manque un prix. Sans le prix de la note 10 et celui de la carte sans note, on ne voit pas s’il reste de la marge.',
+    }
+  }
+
+  const premium = psaEur / rawEur
+  const rate = psa10 / total
+  const wanted = rawEur >= 8
+  const scarce = psa10 <= 500 && rate <= 0.6
+  const room = premium >= 1.2 && premium <= 5
+
+  if (!wanted) {
+    return {
+      level: 'narrow',
+      title: 'Peu demandée',
+      reason: 'La carte sans note se vend encore peu. Une note 10 prend de la valeur seulement si des gens la cherchent déjà.',
+    }
+  }
+  if (premium > 6) {
+    return {
+      level: 'narrow',
+      title: 'Déjà chère',
+      reason: 'La note 10 coûte déjà plusieurs fois la carte sans note. Une grande partie de la hausse possible est déjà dans le prix.',
+    }
+  }
+  if (psa10 > 2500) {
+    return {
+      level: 'narrow',
+      title: 'Déjà courante',
+      reason: 'Beaucoup d’exemplaires sont déjà notés 10. Le côté rare de la note parfaite est en grande partie passé.',
+    }
+  }
+  if (wanted && scarce && room) {
+    return {
+      level: 'open',
+      title: 'Marge ouverte',
+      reason: 'La carte sans note se vend déjà, les notes 10 restent peu nombreuses, et cette note n’est pas encore hors de prix.',
+    }
+  }
+  if (premium < 1.2) {
+    return {
+      level: 'watch',
+      title: 'À suivre',
+      reason: 'Les notes 10 ne se vendent pas plus cher que la carte sans note. Le marché ne paie pas encore cette note.',
+    }
+  }
+  if (premium > 5) {
+    return {
+      level: 'watch',
+      title: 'À suivre',
+      reason: 'La carte sans note se vend déjà, mais la note 10 est déjà bien plus chère. La marge est plus petite.',
+    }
+  }
+  return {
+    level: 'watch',
+    title: 'À suivre',
+    reason: 'La carte sans note se vend déjà, mais les notes 10 sont déjà assez nombreuses.',
+  }
+}
+
 export function cardImageUrl(cardId: string): string | null {
-  if (!cardId) return null
+  if (!cardId || cardId.startsWith('fr:')) return null
   return `https://api.cardprice.com/images/cards/${encodeURIComponent(cardId)}.png`
 }
 
+/** Image française quand on connaît la série. Sinon l’image de la source anglaise. */
+export function huntImageUrl(card: PsaHuntCard): string | null {
+  if (card.set.id === 'french-mew-fr-151' && /^\d+$/.test(card.number)) {
+    const localId = card.number.padStart(3, '0')
+    return `https://assets.tcgdex.net/fr/sv/sv03.5/${localId}/low.webp`
+  }
+  return cardImageUrl(card.cardId)
+}
+
 export function cardPageUrl(slug: string): string {
+  if (slug.startsWith('http://') || slug.startsWith('https://')) return slug
   return `https://cardprice.com/card/${slug}`
 }
 
@@ -191,15 +287,31 @@ function expand(file: PsaHuntFile): PsaHuntData {
 
 let pending: Promise<PsaHuntData> | null = null
 
+async function loadHuntFile(url: string): Promise<PsaHuntFile> {
+  const response = await fetch(url, { cache: 'no-cache' })
+  if (!response.ok) {
+    throw new Error('Le fichier des notes PSA est introuvable.')
+  }
+  return (await response.json()) as PsaHuntFile
+}
+
 export function loadPsaHunt(): Promise<PsaHuntData> {
   if (pending) return pending
   const base = import.meta.env.BASE_URL
-  pending = fetch(`${base}data/psa-hunt.json?v=${PSA_HUNT_VERSION}`, { cache: 'no-cache' })
-    .then(async (response) => {
-      if (!response.ok) {
-        throw new Error('Le fichier des notes PSA est introuvable.')
-      }
-      return expand((await response.json()) as PsaHuntFile)
+  pending = Promise.all([
+    loadHuntFile(`${base}data/psa-hunt.json?v=${PSA_HUNT_VERSION}`),
+    loadHuntFile(`${base}data/psa-french.json?v=${PSA_HUNT_VERSION}`).catch(() => null),
+  ])
+    .then(([file, french]) => {
+      const data = expand(file)
+      if (!french) return data
+      const extra = expand(french)
+      data.cards.push(...extra.cards)
+      data.sets.push(...extra.sets)
+      data.frenchSource = french.source
+      data.frenchSourceName = french.sourceName
+      data.frenchFetchedAt = french.fetchedAt
+      return data
     })
     .catch((error: unknown) => {
       pending = null

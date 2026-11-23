@@ -2,7 +2,9 @@ import { formatPrice } from '../api/pokemon'
 import type { CardStatus, CardVariant, PokemonCard } from '../types'
 import {
   formatCount,
+  frenchPrinting,
   hasEnoughGrades,
+  isFrenchPrinting,
   primaryPrinting,
   printingLabel,
   type PsaPrinting,
@@ -28,20 +30,38 @@ function nextToggle(current: CardStatus, target: 'owned' | 'wanted'): CardStatus
   return current === target ? 'missing' : target
 }
 
+function versionName(label: string): string | null {
+  if (!label || label === 'Français') return null
+  return printingLabel(label).replace(/^Français · /, '')
+}
+
 function PopulationLine({ printings }: { printings: PsaPrinting[] | null }) {
   if (printings == null) return null
   const primary = primaryPrinting(printings)
   if (!primary) {
     return <p className="tile-pop is-thin">PSA : pas de chiffre</p>
   }
+  const french = frenchPrinting(printings)
   const thin = !hasEnoughGrades(primary)
-  const version = primary.label ? printingLabel(primary.label) : null
+  const version = versionName(primary.label)
+  const frenchVersion = french ? versionName(french.label) : null
+  const frenchCount = printings.filter((row) => isFrenchPrinting(row.label)).length
+  const englishLabel = isFrenchPrinting(primary.label) ? 'français' : 'anglais'
   return (
-    <p className={thin ? 'tile-pop is-thin' : 'tile-pop'}>
-      PSA 10 : {formatCount(primary.psa10)}
-      {version ? <span> · {version}</span> : null}
-      {thin ? <span> · peu notée</span> : null}
-    </p>
+    <>
+      <p className={thin ? 'tile-pop is-thin' : 'tile-pop'}>
+        PSA 10 {englishLabel} : {formatCount(primary.psa10)}
+        {version ? <span> · {version}</span> : null}
+        {thin ? <span> · peu notée</span> : null}
+      </p>
+      {french && !isFrenchPrinting(primary.label) && (
+        <p className="tile-pop is-fr">
+          PSA 10 français : {formatCount(french.psa10)}
+          {frenchVersion ? <span> · {frenchVersion}</span> : null}
+          {frenchCount > 1 ? <span> · autres versions dans la fiche</span> : null}
+        </p>
+      )}
+    </>
   )
 }
 

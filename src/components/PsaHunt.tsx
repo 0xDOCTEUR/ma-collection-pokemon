@@ -1,8 +1,9 @@
 import { Fragment, useEffect, useMemo, useState } from 'react'
 import {
   upsideScore,
-  cardImageUrl,
   cardPageUrl,
+  cardPotential,
+  huntImageUrl,
   huntPrintingLabel,
   languageLabel,
   loadPsaHunt,
@@ -23,7 +24,7 @@ import {
 } from '../utils/generations'
 import { formatCount, formatGemRate, type PsaPrinting } from '../utils/population'
 
-type LanguageFilter = 'en' | 'ja' | 'all'
+type LanguageFilter = 'en' | 'ja' | 'fr' | 'all'
 type SortMode = 'upside' | 'price' | 'pop'
 type CardView = 'small' | 'large' | 'list'
 
@@ -258,8 +259,10 @@ export function PsaHunt() {
     const gradedFloor = readNumber(minGraded)
     const focused = pokemon !== ''
     const skipLimits = (focused || searching) && !keepLimits
+    const frenchView = language === 'fr'
 
     const list = data.cards.filter((card) => {
+      if (language === 'all' && card.set.language === 'fr') return false
       if (language !== 'all' && card.set.language !== language) return false
       if (focused && !cardHasSpecies(card.name, pokemon)) return false
       if (!focused && generation !== 'all' && !cardHasGeneration(card.name, Number(generation))) return false
@@ -272,11 +275,13 @@ export function PsaHunt() {
       if (skipLimits) return true
       if (gradedFloor != null && card.total < gradedFloor) return false
       if (popFloor != null && card.psa10 < popFloor) return false
-      const price = toEur(card.psa10Usd)
-      const raw = toEur(card.rawUsd)
-      if (pricedOnly && price == null) return false
-      if (priceCap != null && (price == null || price > priceCap)) return false
-      if (rawFloor != null && (raw == null || raw < rawFloor)) return false
+      if (!frenchView) {
+        const price = toEur(card.psa10Usd)
+        const raw = toEur(card.rawUsd)
+        if (pricedOnly && price == null) return false
+        if (priceCap != null && (price == null || price > priceCap)) return false
+        if (rawFloor != null && (raw == null || raw < rawFloor)) return false
+      }
       if (popCap != null && card.psa10 > popCap) return false
       return true
     })
@@ -327,13 +332,14 @@ export function PsaHunt() {
   const visible = matches.slice(0, shown)
   const pokemonName = pokemon ? speciesLabel(pokemon) : ''
 
+  const frenchView = language === 'fr'
   const limitBits = [
-    formatTypedNumber(maxPrice) ? `note 10 jusqu’à ${formatTypedNumber(maxPrice)} €` : '',
-    formatTypedNumber(minRaw) ? `sans note à partir de ${formatTypedNumber(minRaw)} €` : '',
+    !frenchView && formatTypedNumber(maxPrice) ? `note 10 jusqu’à ${formatTypedNumber(maxPrice)} €` : '',
+    !frenchView && formatTypedNumber(minRaw) ? `sans note à partir de ${formatTypedNumber(minRaw)} €` : '',
     formatTypedNumber(minPsa10) ? `au moins ${formatTypedNumber(minPsa10)} notes 10` : '',
     formatTypedNumber(maxPsa10) ? `au plus ${formatTypedNumber(maxPsa10)} notes 10` : '',
     formatTypedNumber(minGraded) ? `au moins ${formatTypedNumber(minGraded)} cartes notées` : '',
-    pricedOnly ? 'cartes sans prix cachées' : '',
+    !frenchView && pricedOnly ? 'cartes sans prix cachées' : '',
   ].filter(Boolean)
 
   const scope =
@@ -346,7 +352,7 @@ export function PsaHunt() {
       if (!relaxed && limitBits.length > 0) {
         return `Aucune carte de ${pokemonName} avec ces limites. Ouvre Filtres pour les élargir, ou clique sur Voir toutes les versions.`
       }
-      return `Aucune carte de ${pokemonName} dans cette langue. Choisis Les deux dans Langue.`
+      return `Aucune carte de ${pokemonName} dans cette langue. Choisis Anglais et japonais dans Langue.`
     }
     if (query.trim()) {
       if (!relaxed && limitBits.length > 0) {
@@ -378,15 +384,29 @@ export function PsaHunt() {
         </p>
         <ul className="hunt-legend">
           <li>
+            <strong>Marge ouverte</strong> — les trois signes en même temps : des gens achètent déjà
+            la carte sans note, les notes 10 restent peu nombreuses, et cette note n’est pas encore
+            hors de prix. Ce n’est pas une promesse que le prix va monter.
+          </li>
+          <li>
+            <strong>À suivre</strong> — un de ces signes manque.
+          </li>
+          <li>
+            <strong>Déjà chère, déjà courante ou peu demandée</strong> — la hausse facile est moins
+            probable.
+          </li>
+          <li>
             <strong>Note 10</strong> — prix d’un exemplaire déjà noté 10.
           </li>
           <li>
             <strong>Sans note</strong> — prix de la même carte, pas encore envoyée pour être notée.
           </li>
           <li>
-            <strong>Anglais</strong> — les notes et les prix sont ceux des cartes anglaises. Le
-            français a le même numéro, mais pas la même quantité imprimée. Ce chiffre n’est pas
-            dedans.
+            <strong>Anglais</strong> — notes et prix des cartes anglaises.
+          </li>
+          <li>
+            <strong>Français</strong> — nombre de notes PSA des cartes françaises. Pas de prix dans
+            cette source. La quantité imprimée n’est pas la même qu’en anglais.
           </li>
         </ul>
         <p className="hunt-source">
@@ -394,6 +414,15 @@ export function PsaHunt() {
           <a href={data.source} target="_blank" rel="noreferrer">
             {data.sourceName}
           </a>
+          {data.frenchFetchedAt && data.frenchSource && (
+            <>
+              {' '}
+              Notes françaises du {formatDay(data.frenchFetchedAt)}.{' '}
+              <a href={data.frenchSource} target="_blank" rel="noreferrer">
+                {data.frenchSourceName ?? 'GemRate'}
+              </a>
+            </>
+          )}
         </p>
       </div>
 
@@ -434,7 +463,8 @@ export function PsaHunt() {
             <select value={language} onChange={(event) => setLanguage(event.target.value as LanguageFilter)}>
               <option value="en">Anglais</option>
               <option value="ja">Japonais</option>
-              <option value="all">Les deux</option>
+              <option value="fr">Français</option>
+              <option value="all">Anglais et japonais</option>
             </select>
           </label>
           <label>
@@ -447,6 +477,15 @@ export function PsaHunt() {
           </label>
         </div>
 
+        {language === 'fr' && (
+          <div className="hunt-notice">
+            <p>
+              Langue française : on a le nombre de notes PSA, pas les prix. Les limites de prix sont
+              mises de côté. Les limites de nombre de notes restent. Sans prix, l’ordre « les plus
+              intéressantes » classe par le plus petit nombre de notes 10.
+            </p>
+          </div>
+        )}
         {precise && relaxed && (
           <div className="hunt-notice">
             <p>Recherche précise : les limites de prix et de notes sont mises de côté.</p>
@@ -630,9 +669,11 @@ export function PsaHunt() {
           </div>
           <div className={`hunt-grid is-${view}`}>
             {visible.map((card, index) => {
-              const image = cardImageUrl(card.cardId)
+              const image = huntImageUrl(card)
+              const pageUrl = cardPageUrl(card.slug)
               const psaPrice = toEur(card.psa10Usd)
               const rawPrice = toEur(card.rawUsd)
+              const potential = cardPotential(card.psa10, card.total, psaPrice, rawPrice)
               const species = mainSpecies(card.name)
               const seriesChanged =
                 pokemon !== '' && (index === 0 || visible[index - 1].set.series !== card.set.series)
@@ -677,9 +718,13 @@ export function PsaHunt() {
                           {money(rawPrice)}
                         </span>
                       </p>
+                      <p className={`hunt-potential is-${potential.level}`}>
+                        <strong>{potential.title}</strong>
+                        <span>{potential.reason}</span>
+                      </p>
                       <div className="hunt-links">
-                        <a href={cardPageUrl(card.slug)} target="_blank" rel="noreferrer">
-                          Ouvrir la fiche
+                        <a href={pageUrl} target="_blank" rel="noreferrer">
+                          {pageUrl.includes('better-pop.com') ? 'Voir le recensement' : 'Ouvrir la fiche'}
                         </a>
                         {species && species !== pokemon && (
                           <button type="button" className="hunt-all-series" onClick={() => showAllSeries(card.name)}>
