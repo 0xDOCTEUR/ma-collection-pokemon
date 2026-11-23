@@ -8,6 +8,7 @@ import {
 import type { CardmarketLiveStats, PokemonCard, PriceRangeDays } from '../types'
 import { buildTrendPoints, recordPriceSnapshot } from '../utils/priceHistory'
 import { PriceTrendChart } from './PriceTrendChart'
+import { AdvicePrices } from './AdvicePrices'
 import { PotentialStamp } from './PotentialStamp'
 import type { CardPotential } from '../utils/psaHunt'
 import {
@@ -190,6 +191,8 @@ export function CardDetailSheet({
                 )}
               </>
             )}
+
+            <AdvicePrices card={card} stats={stats} />
 
             <PopulationBlock
               printings={population}

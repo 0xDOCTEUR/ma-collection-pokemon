@@ -1446,6 +1446,29 @@ textarea:focus {
   gap: 0.7rem;
 }
 
+.advice-block {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 0.4rem;
+}
+
+.advice-block h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.advice-block .muted {
+  margin: 0.2rem 0 0;
+}
+
+.advice-block small {
+  display: block;
+  margin-top: 0.12rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
 .pop-block-head h3 {
   font-family: 'Syne', sans-serif;
   margin: 0 0 0.25rem;
