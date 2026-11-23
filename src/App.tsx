@@ -9,9 +9,11 @@ import { LotSearch } from './components/LotSearch'
 import { PsaHunt } from './components/PsaHunt'
 import { PokedocLogo } from './components/PokedocLogo'
 import { CardScan } from './components/CardScan'
+import { CatalogCardSheet } from './components/CatalogCardSheet'
 import { PokemonCardTile } from './components/PokemonCardTile'
 import { QuickAdd } from './components/QuickAdd'
 import type { LooseConditionId } from './utils/cardScan'
+import { buildScanTargets, type ScanTarget } from './utils/scanTargets'
 import { useCollection } from './hooks/useCollection'
 import { useCustomLists } from './hooks/useCustomLists'
 import { SETS, type AppTab } from './sets'
@@ -75,7 +77,7 @@ export default function App() {
   const [rarity, setRarity] = useState('all')
   const [sort, setSort] = useState<SortKey>('number')
   const [detailCard, setDetailCard] = useState<PokemonCard | null>(null)
-  const [scanOpen, setScanOpen] = useState(false)
+  const [catalogTarget, setCatalogTarget] = useState<ScanTarget | null>(null)
   const [scannedCondition, setScannedCondition] = useState<LooseConditionId | null>(null)
   const [populationBySet, setPopulationBySet] = useState<Record<string, PopulationFile | null>>({})
   const [hunt, setHunt] = useState<PsaHuntData | null>(null)
@@ -210,6 +212,8 @@ export default function App() {
 
   const censusLabel = formatCensusDate(latestCensusDate(populationFile))
 
+  const scanTargets = useMemo(() => buildScanTargets(cardsBySet, hunt), [cardsBySet, hunt])
+
   const enriched = useMemo(() => {
     if (!activeSet) return []
     return cards.map((card) => ({
@@ -322,51 +326,86 @@ export default function App() {
 
       <header className="site-top">
         <PokedocLogo />
-        <nav className="tabs" aria-label="Séries">
-          {SETS.map((set) => (
+        <nav className="tabs" aria-label="Navigation">
+          <div className="nav-group" role="group" aria-label="Collection">
+            <span className="nav-group-label">Collection</span>
+            {SETS.map((set) => (
+              <button
+                key={set.id}
+                type="button"
+                className={tab === set.id ? 'tab active' : 'tab'}
+                onClick={() => setTab(set.id)}
+              >
+                {set.shortName}
+              </button>
+            ))}
+          </div>
+          <div className="nav-group" role="group" aria-label="Côtes">
+            <span className="nav-group-label">Côtes</span>
             <button
-              key={set.id}
               type="button"
-              className={tab === set.id ? 'tab active' : 'tab'}
-              onClick={() => setTab(set.id)}
+              className={tab === 'catalogue' ? 'tab active' : 'tab'}
+              onClick={() => setTab('catalogue')}
             >
-              {set.shortName}
+              Catalogue
             </button>
-          ))}
-          <button
-            type="button"
-            className={tab === 'listes' ? 'tab active' : 'tab'}
-            onClick={() => setTab('listes')}
-          >
-            Mes listes
-          </button>
-          <button
-            type="button"
-            className={tab === 'lots' ? 'tab active' : 'tab'}
-            onClick={() => setTab('lots')}
-          >
-            Chercher des lots
-          </button>
-          <button
-            type="button"
-            className={tab === 'chasse' ? 'tab active' : 'tab'}
-            onClick={() => setTab('chasse')}
-          >
-            PSA 10
-          </button>
-          <button
-            type="button"
-            className={tab === 'estimation' ? 'tab active' : 'tab'}
-            onClick={() => setTab('estimation')}
-          >
-            Estimation
-            <span className="tab-value">{money(globalOwnedValue)}</span>
-          </button>
+            <button
+              type="button"
+              className={tab === 'scan' ? 'tab active' : 'tab'}
+              onClick={() => setTab('scan')}
+            >
+              Scanner
+            </button>
+          </div>
+          <div className="nav-group" role="group" aria-label="Outils">
+            <span className="nav-group-label">Outils</span>
+            <button
+              type="button"
+              className={tab === 'listes' ? 'tab active' : 'tab'}
+              onClick={() => setTab('listes')}
+            >
+              Mes listes
+            </button>
+            <button
+              type="button"
+              className={tab === 'lots' ? 'tab active' : 'tab'}
+              onClick={() => setTab('lots')}
+            >
+              Lots
+            </button>
+            <button
+              type="button"
+              className={tab === 'estimation' ? 'tab active' : 'tab'}
+              onClick={() => setTab('estimation')}
+            >
+              Estimation
+              <span className="tab-value">{money(globalOwnedValue)}</span>
+            </button>
+          </div>
         </nav>
       </header>
 
-      {tab === 'chasse' ? (
+      {tab === 'catalogue' ? (
         <PsaHunt />
+      ) : tab === 'scan' ? (
+        loading ? (
+          <p className="state-msg">Chargement des séries pour le scan…</p>
+        ) : (
+          <CardScan
+            targets={scanTargets}
+            embedded
+            onConfirm={(target, conditionId) => {
+              setScannedCondition(conditionId)
+              if (target.collectionCard) {
+                setCatalogTarget(null)
+                setDetailCard(target.collectionCard)
+              } else {
+                setDetailCard(null)
+                setCatalogTarget(target)
+              }
+            }}
+          />
+        )
       ) : tab === 'estimation' ? (
         loading ? (
           <p className="state-msg">Chargement des séries…</p>
@@ -463,25 +502,6 @@ export default function App() {
               cards={cards}
               onApply={(ids, status, variant) => markMany(activeSet.id, ids, status, variant)}
             />
-          )}
-
-          {activeSet && cards.length > 0 && (
-            <section className="scan panel">
-              <div className="export-head">
-                <div>
-                  <h2>Scanner une carte</h2>
-                  <p className="muted">
-                    Prends une photo : l’appli lit le numéro, propose un état, et ouvre le prix
-                    conseillé. Tu confirmes toujours l’état.
-                  </p>
-                </div>
-              </div>
-              <div className="export-actions">
-                <button type="button" className="btn primary" onClick={() => setScanOpen(true)}>
-                  Ouvrir le scan
-                </button>
-              </div>
-            </section>
           )}
 
           {activeSet && (
@@ -619,15 +639,13 @@ export default function App() {
         </>
       )}
 
-      {scanOpen && activeSet && (
-        <CardScan
-          cards={cards}
-          setName={activeSet.name}
-          onClose={() => setScanOpen(false)}
-          onConfirm={(card, conditionId) => {
-            setScanOpen(false)
-            setScannedCondition(conditionId)
-            setDetailCard(card)
+      {catalogTarget && scannedCondition && (
+        <CatalogCardSheet
+          target={catalogTarget}
+          conditionId={scannedCondition}
+          onClose={() => {
+            setCatalogTarget(null)
+            setScannedCondition(null)
           }}
         />
       )}
@@ -640,27 +658,23 @@ export default function App() {
             setScannedCondition(null)
           }}
           population={
-            setHasPopulation && detailCard.setId === activeSet?.id
-              ? (populationFile?.cards[detailCard.id]?.printings ?? [])
-              : null
+            populationBySet[detailCard.setId]?.cards[detailCard.id]?.printings ?? null
           }
           rank={
             detailCard.setId === activeSet?.id
               ? (populationRank.rankById.get(detailCard.id) ?? null)
               : null
           }
-          comparableCount={populationRank.comparable}
-          sourceUrl={populationFile?.source ?? null}
-          sourceName={populationFile?.sourceName ?? 'CardPrice'}
-          censusDate={latestCensusDate(populationFile)}
-          frenchSourceUrl={populationFile?.frenchSource ?? null}
-          frenchSourceName={populationFile?.frenchSourceName ?? null}
-          frenchCensusDate={populationFile?.frenchFetchedAt ?? null}
-          potential={
-            detailCard.setId === activeSet?.id
-              ? (potentialByCardId.get(detailCard.id) ?? null)
-              : null
+          comparableCount={
+            detailCard.setId === activeSet?.id ? populationRank.comparable : 0
           }
+          sourceUrl={populationBySet[detailCard.setId]?.source ?? null}
+          sourceName={populationBySet[detailCard.setId]?.sourceName ?? 'CardPrice'}
+          censusDate={latestCensusDate(populationBySet[detailCard.setId] ?? null)}
+          frenchSourceUrl={populationBySet[detailCard.setId]?.frenchSource ?? null}
+          frenchSourceName={populationBySet[detailCard.setId]?.frenchSourceName ?? null}
+          frenchCensusDate={populationBySet[detailCard.setId]?.frenchFetchedAt ?? null}
+          potential={potentialByCardId.get(detailCard.id) ?? null}
           scannedCondition={scannedCondition}
         />
       )}
@@ -670,9 +684,9 @@ export default function App() {
       <footer className="footer">
         <PokedocLogo compact />
         <p>
-          POKEDOC — collection 151 et Règne Delta, plus un tri PSA 10 sur toutes les séries notées.
-          Côtes TCGPlayer (converties en euros) et Cardmarket. Collection sauvegardée dans ton
-          navigateur. Pour le site en ligne, exporte puis restaure ta sauvegarde.
+          POKEDOC — ta collection, le catalogue des côtes sur toutes les séries, et le scan pour
+          reconnaître une carte. Côtes TCGPlayer (converties en euros) et Cardmarket. Collection
+          sauvegardée dans ton navigateur. Pour le site en ligne, exporte puis restaure ta sauvegarde.
         </p>
       </footer>
     </div>

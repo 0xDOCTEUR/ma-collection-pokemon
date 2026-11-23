@@ -1,12 +1,12 @@
 import { createWorker, type Worker } from 'tesseract.js'
 import { LOOSE_CONDITIONS } from './advicePrice'
 import { FRENCH_NAMES, foldName } from './frenchNames'
-import type { PokemonCard } from '../types'
+import type { ScanTarget } from './scanTargets'
 
 export type LooseConditionId = (typeof LOOSE_CONDITIONS)[number]['id']
 
 export interface ScanMatch {
-  card: PokemonCard
+  target: ScanTarget
   number: string
   score: number
   why: string
@@ -172,23 +172,23 @@ function hasWord(haystack: string, phrase: string): boolean {
   return new RegExp(`(?:^|[^a-z0-9])${escaped}(?:[^a-z0-9]|$)`).test(haystack)
 }
 
-function findNameMatches(text: string, cards: PokemonCard[]): ScanMatch[] {
+function findNameMatches(text: string, targets: ScanTarget[]): ScanMatch[] {
   const folded = foldName(text)
   const matches: ScanMatch[] = []
   const seen = new Set<string>()
 
   // Les noms les plus longs d’abord : Mewtwo avant Mew.
-  const ordered = [...cards].sort(
+  const ordered = [...targets].sort(
     (a, b) => speciesKey(b.name).length - speciesKey(a.name).length || a.name.localeCompare(b.name, 'fr'),
   )
 
-  for (const card of ordered) {
-    const french = speciesKey(card.name)
+  for (const target of ordered) {
+    const french = speciesKey(target.name)
     if (!french || french.length < 3) continue
 
     let why = ''
     if (hasWord(folded, french)) {
-      why = `Nom lu : ${card.name}`
+      why = `Nom lu : ${target.name}`
     } else {
       const english = englishForFrenchSpecies(french)
       if (english && hasWord(folded, english)) {
@@ -202,29 +202,28 @@ function findNameMatches(text: string, cards: PokemonCard[]): ScanMatch[] {
             break
           }
           if (french === token) {
-            why = `Nom lu : ${card.name}`
+            why = `Nom lu : ${target.name}`
             break
           }
         }
       }
     }
 
-    if (!why || seen.has(card.id)) continue
-    // Si un nom plus long a déjà matché la même espèce (mewtwo), ignorer « mew »
+    if (!why || seen.has(target.id)) continue
     const blocked = [...seen].some((id) => {
-      const other = cards.find((item) => item.id === id)
+      const other = targets.find((item) => item.id === id)
       if (!other) return false
       const otherKey = speciesKey(other.name)
       return otherKey !== french && (otherKey.includes(french) || french.includes(otherKey))
     })
     if (blocked && french.length <= 4) continue
 
-    seen.add(card.id)
-    const secret = Number(card.number) > card.printedTotal
+    seen.add(target.id)
+    const secret = Number(target.number) > target.printedTotal
     matches.push({
-      card,
-      number: card.number,
-      score: 82 + Math.min(12, french.length) - (secret ? 3 : 0),
+      target,
+      number: target.number,
+      score: 82 + Math.min(12, french.length) - (secret ? 3 : 0) + (target.collectionCard ? 4 : 0),
       why,
     })
   }
@@ -233,31 +232,41 @@ function findNameMatches(text: string, cards: PokemonCard[]): ScanMatch[] {
 }
 
 function scoreMatches(
-  cards: PokemonCard[],
+  targets: ScanTarget[],
   numberHits: NumberHit[],
   nameMatches: ScanMatch[],
 ): ScanMatch[] {
-  const byNumber = new Map(cards.map((card) => [card.number, card]))
   const best = new Map<string, ScanMatch>()
+  const namedIds = new Set(nameMatches.map((match) => match.target.id))
 
   function keep(match: ScanMatch) {
-    const current = best.get(match.card.id)
-    if (!current || match.score > current.score) best.set(match.card.id, match)
+    const current = best.get(match.target.id)
+    if (!current || match.score > current.score) best.set(match.target.id, match)
   }
 
   for (const hit of numberHits) {
-    const card = byNumber.get(hit.number)
-    if (!card) continue
-    keep({
-      card,
-      number: hit.number,
-      score: hit.trusted ? 95 : 35,
-      why: hit.total ? `Numéro lu : ${hit.number}/${hit.total}` : `Numéro lu : ${hit.number}`,
-    })
+    let candidates = targets.filter((target) => target.number === hit.number)
+    if (hit.total) {
+      const withTotal = candidates.filter((target) => String(target.printedTotal) === hit.total)
+      if (withTotal.length > 0) candidates = withTotal
+    }
+    // Sans nom, un numéro seul sur tout le catalogue est trop ambigu.
+    if (candidates.length > 6 && namedIds.size === 0) {
+      candidates = candidates.filter((target) => target.collectionCard)
+    }
+    for (const target of candidates) {
+      const nameBoost = namedIds.has(target.id) ? 20 : 0
+      keep({
+        target,
+        number: hit.number,
+        score: (hit.trusted ? 70 : 30) + nameBoost + (target.collectionCard ? 5 : 0),
+        why: hit.total ? `Numéro lu : ${hit.number}/${hit.total}` : `Numéro lu : ${hit.number}`,
+      })
+    }
   }
 
   for (const match of nameMatches) {
-    const existing = best.get(match.card.id)
+    const existing = best.get(match.target.id)
     if (existing) {
       keep({
         ...existing,
@@ -269,7 +278,6 @@ function scoreMatches(
     }
   }
 
-  // Si un nom fort et un numéro faible divergent, le nom gagne.
   return [...best.values()]
     .filter((match) => match.score >= 70)
     .sort((a, b) => b.score - a.score || Number(a.number) - Number(b.number))
@@ -361,12 +369,12 @@ export function guessCondition(image: HTMLImageElement): ConditionGuess {
 
 export async function scanCardPhoto(
   source: Blob | string,
-  cards: PokemonCard[],
+  targets: ScanTarget[],
 ): Promise<ScanResult> {
   const previewUrl = typeof source === 'string' ? source : URL.createObjectURL(source)
   const image = await loadImage(previewUrl)
   const condition = guessCondition(image)
-  const printedTotals = new Set(cards.map((card) => String(card.printedTotal)))
+  const printedTotals = new Set(targets.map((target) => String(target.printedTotal)))
   const worker = await getWorker()
 
   const regions = [cropRegion(image, 'top'), cropRegion(image, 'numberCorner'), cropRegion(image, 'bottom')]
@@ -377,8 +385,8 @@ export async function scanCardPhoto(
   }
   const ocrText = texts.join('\n')
   const numberHits = extractNumberHits(ocrText, printedTotals)
-  const nameMatches = findNameMatches(ocrText, cards)
-  const matches = scoreMatches(cards, numberHits, nameMatches)
+  const nameMatches = findNameMatches(ocrText, targets)
+  const matches = scoreMatches(targets, numberHits, nameMatches)
 
   return {
     numbers: numberHits.map((hit) => hit.number),

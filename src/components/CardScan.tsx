@@ -1,5 +1,4 @@
 import { useEffect, useId, useRef, useState } from 'react'
-import type { PokemonCard } from '../types'
 import { LOOSE_CONDITIONS } from '../utils/advicePrice'
 import {
   conditionLabel,
@@ -7,17 +6,19 @@ import {
   type LooseConditionId,
   type ScanMatch,
 } from '../utils/cardScan'
+import type { ScanTarget } from '../utils/scanTargets'
 
 interface Props {
-  cards: PokemonCard[]
-  setName: string
-  onClose: () => void
-  onConfirm: (card: PokemonCard, conditionId: LooseConditionId) => void
+  targets: ScanTarget[]
+  /** Mode page (onglet) : pas de bouton Fermer obligatoire. */
+  embedded?: boolean
+  onClose?: () => void
+  onConfirm: (target: ScanTarget, conditionId: LooseConditionId) => void
 }
 
 type Step = 'capture' | 'reading' | 'result' | 'error'
 
-export function CardScan({ cards, setName, onClose, onConfirm }: Props) {
+export function CardScan({ targets, embedded = false, onClose, onConfirm }: Props) {
   const titleId = useId()
   const videoRef = useRef<HTMLVideoElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -31,8 +32,10 @@ export function CardScan({ cards, setName, onClose, onConfirm }: Props) {
   const [conditionReason, setConditionReason] = useState('')
   const [cameraReady, setCameraReady] = useState(false)
   const [manualNumber, setManualNumber] = useState('')
+  const [manualName, setManualName] = useState('')
 
   useEffect(() => {
+    if (!onClose) return
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose()
     }
@@ -83,15 +86,15 @@ export function CardScan({ cards, setName, onClose, onConfirm }: Props) {
     setStep('reading')
     setMessage(null)
     try {
-      const result = await scanCardPhoto(blob, cards)
+      const result = await scanCardPhoto(blob, targets)
       setPreviewUrl(result.previewUrl)
       setMatches(result.matches)
-      setSelectedId(result.matches[0]?.card.id ?? null)
+      setSelectedId(result.matches[0]?.target.id ?? null)
       setConditionId(result.condition.id)
       setConditionReason(result.condition.reason)
       if (result.matches.length === 0) {
         setMessage(
-          'Pas de correspondance assez sûre. Cadre le nom en haut et le numéro en bas à droite, sans trop de reflet, ou tape le numéro.',
+          'Pas de correspondance assez sûre dans toutes les séries. Cadre le nom en haut et le numéro en bas à droite, ou cherche à la main.',
         )
       }
       setStep('result')
@@ -119,23 +122,201 @@ export function CardScan({ cards, setName, onClose, onConfirm }: Props) {
     void analyze(file)
   }
 
-  function applyManualNumber() {
+  function applyManual() {
     const number = String(Number.parseInt(manualNumber.trim(), 10))
-    if (!number || number === 'NaN') {
-      setMessage('Entre un numéro, par exemple 199.')
+    const nameNeedle = manualName.trim().toLowerCase()
+    let list = targets
+    if (number && number !== 'NaN') list = list.filter((target) => target.number === number)
+    if (nameNeedle) {
+      list = list.filter((target) => target.name.toLowerCase().includes(nameNeedle))
+    }
+    if (list.length === 0) {
+      setMessage('Aucune carte trouvée avec ce numéro / ce nom.')
       return
     }
-    const card = cards.find((item) => item.number === number)
-    if (!card) {
-      setMessage(`Aucune carte n° ${number} dans ${setName}.`)
-      return
-    }
-    setMatches([{ card, number, score: 100, why: 'Numéro saisi à la main' }])
-    setSelectedId(card.id)
+    const next = list.slice(0, 12).map((target) => ({
+      target,
+      number: target.number,
+      score: 100,
+      why: 'Recherche à la main',
+    }))
+    setMatches(next)
+    setSelectedId(next[0]?.target.id ?? null)
     setMessage(null)
+    setStep('result')
   }
 
-  const selected = matches.find((match) => match.card.id === selectedId)?.card ?? null
+  const selected = matches.find((match) => match.target.id === selectedId)?.target ?? null
+
+  const body = (
+    <>
+      <header className="card-sheet-head">
+        <div>
+          <p className="card-sheet-num">Scan</p>
+          <h2 id={titleId}>Reconnaître une carte</h2>
+          <p className="muted">
+            Toutes les séries du catalogue. Cadre le nom en haut et le numéro en bas à droite. La
+            photo reste sur ton appareil. L’état proposé est une estimation : tu confirmes avant le
+            prix.
+          </p>
+        </div>
+        {onClose && (
+          <button type="button" className="btn ghost" onClick={onClose}>
+            Fermer
+          </button>
+        )}
+      </header>
+
+      <div className="scan-body">
+        {step === 'capture' && (
+          <>
+            <div className="scan-camera">
+              <video ref={videoRef} playsInline muted autoPlay />
+              <div className="scan-frame" aria-hidden="true" />
+            </div>
+            <div className="scan-actions">
+              <button
+                type="button"
+                className="btn primary"
+                disabled={!cameraReady}
+                onClick={() => void captureFrame()}
+              >
+                Prendre la photo
+              </button>
+              <button type="button" className="btn ghost" onClick={() => fileRef.current?.click()}>
+                Choisir une photo
+              </button>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                hidden
+                onChange={(event) => onFile(event.target.files?.[0])}
+              />
+            </div>
+            {message && <p className="state-msg">{message}</p>}
+          </>
+        )}
+
+        {step === 'reading' && (
+          <p className="state-msg">Lecture du nom, du numéro et estimation de l’état…</p>
+        )}
+
+        {(step === 'result' || step === 'error') && (
+          <>
+            {previewUrl && <img className="scan-preview" src={previewUrl} alt="Photo scannée" />}
+            {message && <p className="state-msg">{message}</p>}
+
+            {matches.length > 0 ? (
+              <div className="scan-matches">
+                <p className="stat-label">Carte reconnue</p>
+                {matches.slice(0, 8).map((match) => (
+                  <label key={match.target.id} className="scan-match">
+                    <input
+                      type="radio"
+                      name="scan-card"
+                      checked={selectedId === match.target.id}
+                      onChange={() => setSelectedId(match.target.id)}
+                    />
+                    {match.target.imageSmall ? (
+                      <img src={match.target.imageSmall} alt="" width={48} height={68} />
+                    ) : (
+                      <span className="scan-match-fallback" aria-hidden="true" />
+                    )}
+                    <span>
+                      <strong>
+                        #{match.target.number} · {match.target.name}
+                      </strong>
+                      <small>
+                        {match.target.setLabel} · {match.why}
+                      </small>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            ) : (
+              <p className="state-msg">
+                Aucune carte assez sûre. Cherche à la main ci-dessous, ou reprends une photo.
+              </p>
+            )}
+
+            <div className="scan-manual">
+              <label>
+                Numéro
+                <input
+                  value={manualNumber}
+                  onChange={(event) => setManualNumber(event.target.value)}
+                  placeholder="150"
+                  inputMode="numeric"
+                />
+              </label>
+              <label>
+                Nom
+                <input
+                  value={manualName}
+                  onChange={(event) => setManualName(event.target.value)}
+                  placeholder="Mewtwo"
+                />
+              </label>
+              <button type="button" className="btn ghost" onClick={applyManual}>
+                Chercher
+              </button>
+            </div>
+
+            <div className="scan-condition">
+              <p className="stat-label">État estimé — à confirmer</p>
+              {conditionReason && <p className="muted">{conditionReason}</p>}
+              <div className="scan-condition-list">
+                {LOOSE_CONDITIONS.map((condition) => (
+                  <button
+                    key={condition.id}
+                    type="button"
+                    className={conditionId === condition.id ? 'chip active-owned' : 'chip'}
+                    onClick={() => setConditionId(condition.id)}
+                  >
+                    {condition.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="scan-actions">
+              <button
+                type="button"
+                className="btn primary"
+                disabled={!selected}
+                onClick={() => selected && onConfirm(selected, conditionId)}
+              >
+                Voir le prix pour {conditionLabel(conditionId)}
+              </button>
+              <button
+                type="button"
+                className="btn ghost"
+                onClick={() => {
+                  setStep('capture')
+                  setMatches([])
+                  setSelectedId(null)
+                  setPreviewUrl(null)
+                  setMessage(null)
+                }}
+              >
+                Reprendre une photo
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </>
+  )
+
+  if (embedded) {
+    return (
+      <section className="scan-page" aria-labelledby={titleId}>
+        <div className="panel scan-sheet is-embedded">{body}</div>
+      </section>
+    )
+  }
 
   return (
     <div className="card-sheet-backdrop" onClick={onClose} role="presentation">
@@ -146,152 +327,7 @@ export function CardScan({ cards, setName, onClose, onConfirm }: Props) {
         aria-labelledby={titleId}
         onClick={(event) => event.stopPropagation()}
       >
-        <header className="card-sheet-head">
-          <div>
-            <p className="card-sheet-num">Scan</p>
-            <h2 id={titleId}>Reconnaître une carte</h2>
-            <p className="muted">
-              Photo dans la série {setName}. Cadre le nom en haut et le numéro en bas à droite. La
-              photo reste sur ton appareil. L’état proposé est une estimation : tu confirmes avant
-              le prix.
-            </p>
-          </div>
-          <button type="button" className="btn ghost" onClick={onClose}>
-            Fermer
-          </button>
-        </header>
-
-        <div className="scan-body">
-          {step === 'capture' && (
-            <>
-              <div className="scan-camera">
-                <video ref={videoRef} playsInline muted autoPlay />
-                <div className="scan-frame" aria-hidden="true" />
-              </div>
-              <div className="scan-actions">
-                <button
-                  type="button"
-                  className="btn"
-                  disabled={!cameraReady}
-                  onClick={() => void captureFrame()}
-                >
-                  Prendre la photo
-                </button>
-                <button type="button" className="btn ghost" onClick={() => fileRef.current?.click()}>
-                  Choisir une photo
-                </button>
-                <input
-                  ref={fileRef}
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  hidden
-                  onChange={(event) => onFile(event.target.files?.[0])}
-                />
-              </div>
-              {message && <p className="state-msg">{message}</p>}
-            </>
-          )}
-
-          {step === 'reading' && (
-            <p className="state-msg">Lecture du numéro et estimation de l’état…</p>
-          )}
-
-          {(step === 'result' || step === 'error') && (
-            <>
-              {previewUrl && (
-                <img className="scan-preview" src={previewUrl} alt="Photo scannée" />
-              )}
-              {message && <p className="state-msg">{message}</p>}
-
-              {matches.length > 0 ? (
-                <div className="scan-matches">
-                  <p className="stat-label">Carte reconnue</p>
-                  {matches.slice(0, 4).map((match) => (
-                    <label key={match.card.id} className="scan-match">
-                      <input
-                        type="radio"
-                        name="scan-card"
-                        checked={selectedId === match.card.id}
-                        onChange={() => setSelectedId(match.card.id)}
-                      />
-                      <img src={match.card.imageSmall} alt="" width={48} height={68} />
-                      <span>
-                        <strong>
-                          #{match.card.number} · {match.card.name}
-                        </strong>
-                        <small>
-                          {match.card.rarity} · {match.why}
-                        </small>
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              ) : (
-                <p className="state-msg">
-                  Aucune carte assez sûre dans {setName}. Cadre le nom en haut et le numéro en bas
-                  à droite, ou tape le numéro.
-                </p>
-              )}
-
-              <div className="scan-manual">
-                <label>
-                  Numéro à la main
-                  <input
-                    value={manualNumber}
-                    onChange={(event) => setManualNumber(event.target.value)}
-                    placeholder="199"
-                    inputMode="numeric"
-                  />
-                </label>
-                <button type="button" className="btn ghost" onClick={applyManualNumber}>
-                  Utiliser ce numéro
-                </button>
-              </div>
-
-              <div className="scan-condition">
-                <p className="stat-label">État estimé — à confirmer</p>
-                {conditionReason && <p className="muted">{conditionReason}</p>}
-                <div className="scan-condition-list">
-                  {LOOSE_CONDITIONS.map((condition) => (
-                    <button
-                      key={condition.id}
-                      type="button"
-                      className={conditionId === condition.id ? 'chip active-owned' : 'chip'}
-                      onClick={() => setConditionId(condition.id)}
-                    >
-                      {condition.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="scan-actions">
-                <button
-                  type="button"
-                  className="btn"
-                  disabled={!selected}
-                  onClick={() => selected && onConfirm(selected, conditionId)}
-                >
-                  Voir le prix pour {conditionLabel(conditionId)}
-                </button>
-                <button
-                  type="button"
-                  className="btn ghost"
-                  onClick={() => {
-                    setStep('capture')
-                    setMatches([])
-                    setSelectedId(null)
-                    setPreviewUrl(null)
-                    setMessage(null)
-                  }}
-                >
-                  Reprendre une photo
-                </button>
-              </div>
-            </>
-          )}
-        </div>
+        {body}
       </aside>
     </div>
   )

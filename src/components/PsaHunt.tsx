@@ -49,19 +49,19 @@ function readCardView(): CardView {
 }
 
 const DEFAULTS = {
-  language: 'en' as LanguageFilter,
+  language: 'all' as LanguageFilter,
   generation: 'all',
   series: 'all',
   setId: 'all',
   query: '',
   pokemon: '',
-  maxPrice: '150',
-  minRaw: '8',
-  maxPsa10: '2500',
-  minPsa10: '40',
-  minGraded: '150',
+  maxPrice: '',
+  minRaw: '',
+  maxPsa10: '',
+  minPsa10: '',
+  minGraded: '',
   pricedOnly: true,
-  sort: 'upside' as SortMode,
+  sort: 'price' as SortMode,
 }
 
 function money(value: number | null): string {
@@ -376,12 +376,11 @@ export function PsaHunt() {
   return (
     <section className="hunt">
       <div className="panel hunt-intro">
-        <h2>Cartes notées 10 qui peuvent encore monter</h2>
+        <h2>Catalogue des côtes</h2>
         <p>
-          Une PSA 10, c’est une carte notée 10 sur 10 : la note parfaite. La liste met en premier
-          les cartes que les gens achètent déjà, dont il reste peu d’exemplaires notés 10, et dont
-          cette note n’est pas déjà beaucoup plus chère que la même carte sans note. Personne ne
-          peut promettre que le prix va monter.
+          Toutes les séries, tous les Pokémon. Cherche un nom ou un numéro : tu vois le prix sans
+          note et le prix noté 10 (PSA 10 = note parfaite). Tu peux aussi filtrer pour repérer les
+          cartes où la marge semble encore ouverte. Personne ne peut promettre que le prix va monter.
         </p>
         <ul className="hunt-legend">
           <li>

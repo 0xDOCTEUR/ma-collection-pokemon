@@ -68,7 +68,8 @@
 .tabs {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  align-items: center;
+  gap: 0.45rem 0.65rem;
   flex: 1;
   min-width: min(100%, 280px);
   padding: 0.1rem;
@@ -77,12 +78,34 @@
   backdrop-filter: none;
 }
 
+.nav-group {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.15rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid transparent;
+}
+
+.nav-group-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 0 0.35rem 0 0.55rem;
+  opacity: 0.85;
+  white-space: nowrap;
+}
+
 .tab {
   border: 0;
   border-radius: 999px;
   background: transparent;
   color: var(--muted);
-  padding: 0.65rem 1rem;
+  padding: 0.55rem 0.9rem;
   cursor: pointer;
   font-weight: 600;
   display: inline-flex;
@@ -1448,8 +1471,30 @@ textarea:focus {
   gap: 0.7rem;
 }
 
+.scan-page {
+  animation: rise 0.55s ease both;
+}
+
+.scan-page .scan-sheet.is-embedded {
+  max-width: min(720px, 100%);
+  margin: 0 auto;
+  padding: 1.15rem 1.25rem 1.4rem;
+  border-radius: 22px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+}
+
 .scan-sheet {
   max-width: min(560px, calc(100vw - 1.2rem));
+}
+
+.scan-match-fallback {
+  display: block;
+  width: 48px;
+  height: 68px;
+  border-radius: 6px;
+  background: #070a0f;
+  border: 1px solid var(--line);
 }
 
 .scan-body {
