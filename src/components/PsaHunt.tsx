@@ -256,6 +256,8 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
 
   const precise = pokemon !== '' || query.trim() !== ''
   const relaxed = precise && !keepLimits
+  const browsingSet = setId !== 'all'
+  const activeSort: SortMode = browsingSet ? 'number' : sort
 
   const matches = useMemo(() => {
     if (!data) return []
@@ -267,14 +269,22 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
     const popFloor = readNumber(minPsa10)
     const gradedFloor = readNumber(minGraded)
     const focused = pokemon !== ''
-    const skipLimits = (focused || searching) && !keepLimits
+    // Une série choisie : on montre toute la série, sans cacher les cartes sans prix.
+    const skipLimits = browsingSet || ((focused || searching) && !keepLimits)
     const frenchView = language === 'fr'
 
     const list = data.cards.filter((card) => {
       if (language === 'all' && card.set.language === 'fr') return false
       if (language !== 'all' && card.set.language !== language) return false
       if (focused && !cardHasSpecies(card.name, pokemon)) return false
-      if (!focused && generation !== 'all' && !cardHasGeneration(card.name, Number(generation))) return false
+      if (
+        !focused &&
+        !browsingSet &&
+        generation !== 'all' &&
+        !cardHasGeneration(card.name, Number(generation))
+      ) {
+        return false
+      }
       if (series !== 'all' && card.set.series !== series) return false
       if (setId !== 'all' && card.set.id !== setId) return false
       if (searching) {
@@ -296,19 +306,21 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
     })
 
     const bySort = (a: PsaHuntCard, b: PsaHuntCard) => {
-      if (sort === 'number') {
+      if (activeSort === 'number') {
         return (
           cardNumberValue(a.number) - cardNumberValue(b.number) ||
-          a.name.localeCompare(b.name, 'en') ||
-          a.printing.localeCompare(b.printing, 'en')
+          a.printing.localeCompare(b.printing, 'en') ||
+          a.name.localeCompare(b.name, 'en')
         )
       }
-      if (sort === 'pop') return a.psa10 - b.psa10 || a.total - b.total || a.name.localeCompare(b.name, 'fr')
+      if (activeSort === 'pop') {
+        return a.psa10 - b.psa10 || a.total - b.total || a.name.localeCompare(b.name, 'fr')
+      }
       const priceA = toEur(a.psa10Usd)
       const priceB = toEur(b.psa10Usd)
       const rawA = toEur(a.rawUsd)
       const rawB = toEur(b.rawUsd)
-      if (sort === 'price') {
+      if (activeSort === 'price') {
         if (priceA == null && priceB == null) return a.psa10 - b.psa10
         if (priceA == null) return 1
         if (priceB == null) return -1
@@ -320,15 +332,12 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
     }
 
     list.sort((a, b) => {
+      if (browsingSet) return bySort(a, b)
       if (focused) {
         const order = seriesOrder(a.set.series) - seriesOrder(b.set.series)
         if (order !== 0) return order
       }
-      // Une série choisie : on garde l’ordre du set (numéro) sauf autre tri demandé.
-      if (setId !== 'all' && sort === 'number') {
-        return bySort(a, b)
-      }
-      if (!focused && setId === 'all' && sort === 'number') {
+      if (!focused && activeSort === 'number') {
         const setOrder = a.set.name.localeCompare(b.set.name, 'fr')
         if (setOrder !== 0) return setOrder
       }
@@ -349,8 +358,9 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
     minPsa10,
     minGraded,
     pricedOnly,
-    sort,
+    activeSort,
     keepLimits,
+    browsingSet,
   ])
 
   const visible = matches.slice(0, shown)
@@ -394,6 +404,56 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
   return (
     <section className="hunt">
       <form className="panel hunt-form" onSubmit={(event) => event.preventDefault()}>
+        <div className="hunt-series-bar">
+          <label className="hunt-series-pick">
+            <span>Série</span>
+            <select
+              value={setId}
+              onChange={(event) => {
+                const next = event.target.value
+                setSetId(next)
+                if (next !== 'all') {
+                  setPokemon('')
+                  setQuery('')
+                  setGeneration('all')
+                  setSort('number')
+                  setPricedOnly(false)
+                  setKeepLimits(false)
+                }
+              }}
+            >
+              <option value="all">Toutes les séries ({setOptions.length})</option>
+              {setOptions.map((set) => (
+                <option key={set.id} value={set.id}>
+                  {set.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            <span>Période</span>
+            <select
+              value={series}
+              onChange={(event) => {
+                setSeries(event.target.value)
+                setSetId('all')
+              }}
+            >
+              <option value="all">Toutes les périodes</option>
+              {seriesOptions.map((id) => (
+                <option key={id} value={id}>
+                  {seriesLabel(id)}
+                </option>
+              ))}
+            </select>
+          </label>
+          {browsingSet && (
+            <p className="hunt-series-hint">
+              Cartes de la série dans l’ordre des numéros (1, 2, 3…).
+            </p>
+          )}
+        </div>
+
         <div className="hunt-row hunt-main">
           <label>
             <span>Recherche</span>
@@ -426,31 +486,12 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
             </select>
           </label>
           <label>
-            <span>Série</span>
-            <select
-              value={setId}
-              onChange={(event) => {
-                const next = event.target.value
-                setSetId(next)
-                if (next !== 'all') {
-                  setPokemon('')
-                  setQuery('')
-                  setSort('number')
-                  setMoreFilters(false)
-                }
-              }}
-            >
-              <option value="all">Toutes les séries ({setOptions.length})</option>
-              {setOptions.map((set) => (
-                <option key={set.id} value={set.id}>
-                  {set.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
             <span>Ordre</span>
-            <select value={sort} onChange={(event) => setSort(event.target.value as SortMode)}>
+            <select
+              value={activeSort}
+              disabled={browsingSet}
+              onChange={(event) => setSort(event.target.value as SortMode)}
+            >
               <option value="number">Numéro dans la série</option>
               <option value="upside">Les plus intéressantes</option>
               <option value="price">Note 10 la moins chère</option>
@@ -485,22 +526,15 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
             <div className="hunt-row hunt-pick">
               <label>
                 <span>Génération</span>
-                <select value={generation} onChange={(event) => setGeneration(event.target.value)}>
+                <select
+                  value={generation}
+                  disabled={browsingSet}
+                  onChange={(event) => setGeneration(event.target.value)}
+                >
                   <option value="all">Toutes</option>
                   {GENERATION_OPTIONS.map((option) => (
                     <option key={option.id} value={String(option.id)}>
                       {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                <span>Période</span>
-                <select value={series} onChange={(event) => setSeries(event.target.value)}>
-                  <option value="all">Toutes les périodes</option>
-                  {seriesOptions.map((id) => (
-                    <option key={id} value={id}>
-                      {seriesLabel(id)}
                     </option>
                   ))}
                 </select>

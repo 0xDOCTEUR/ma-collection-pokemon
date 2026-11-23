@@ -1870,6 +1870,35 @@ textarea:focus {
   margin: 0;
 }
 
+.hunt-series-bar {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 0.75rem 0.85rem;
+  align-items: end;
+  padding: 0.85rem 0.95rem;
+  border-radius: 16px;
+  background: rgba(255, 213, 106, 0.06);
+  border: 1px solid rgba(255, 213, 106, 0.22);
+}
+
+.hunt-series-pick span {
+  color: var(--gold) !important;
+}
+
+.hunt-series-hint {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.4;
+}
+
+@media (max-width: 720px) {
+  .hunt-series-bar {
+    grid-template-columns: 1fr;
+  }
+}
+
 .hunt-group {
   margin: 0;
   padding: 0;
@@ -1913,6 +1942,10 @@ textarea:focus {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.75rem 0.85rem;
+}
+
+.hunt-main {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .hunt-form .hunt-group {
