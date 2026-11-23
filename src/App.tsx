@@ -466,17 +466,21 @@ export default function App() {
           )}
 
           {activeSet && cards.length > 0 && (
-            <section className="panel scan-entry">
-              <div>
-                <h2>Scanner une carte</h2>
-                <p className="muted">
-                  Prends une photo : l’appli lit le numéro, propose un état, et ouvre le prix
-                  conseillé. Tu confirmes toujours l’état.
-                </p>
+            <section className="scan panel">
+              <div className="export-head">
+                <div>
+                  <h2>Scanner une carte</h2>
+                  <p className="muted">
+                    Prends une photo : l’appli lit le numéro, propose un état, et ouvre le prix
+                    conseillé. Tu confirmes toujours l’état.
+                  </p>
+                </div>
               </div>
-              <button type="button" className="btn" onClick={() => setScanOpen(true)}>
-                Ouvrir le scan
-              </button>
+              <div className="export-actions">
+                <button type="button" className="btn primary" onClick={() => setScanOpen(true)}>
+                  Ouvrir le scan
+                </button>
+              </div>
             </section>
           )}
 

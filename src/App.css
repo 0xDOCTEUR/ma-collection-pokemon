@@ -875,7 +875,8 @@
 }
 
 .export,
-.quick {
+.quick,
+.scan {
   padding: 1.35rem 1.5rem;
   margin-bottom: 1rem;
   animation: rise 0.8s ease 0.15s both;
@@ -894,6 +895,7 @@
 }
 
 .export h2,
+.scan h2,
 .controls h2 {
   font-family: 'Syne', sans-serif;
   margin: 0 0 0.25rem;
@@ -1444,24 +1446,6 @@ textarea:focus {
 .pop-block {
   display: grid;
   gap: 0.7rem;
-}
-
-.scan-entry {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.85rem 1.2rem;
-}
-
-.scan-entry h2 {
-  margin: 0 0 0.25rem;
-  font-size: 1.05rem;
-}
-
-.scan-entry .muted {
-  margin: 0;
-  max-width: 42rem;
 }
 
 .scan-sheet {
