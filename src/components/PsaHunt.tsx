@@ -384,8 +384,9 @@ export function PsaHunt() {
             <strong>Sans note</strong> — prix de la même carte, pas encore envoyée pour être notée.
           </li>
           <li>
-            <strong>Français</strong> — pas de liste à part. Le numéro est le même qu’en anglais,
-            donc ces cartes sont dans « Français et anglais ».
+            <strong>Anglais</strong> — les notes et les prix sont ceux des cartes anglaises. Le
+            français a le même numéro, mais pas la même quantité imprimée. Ce chiffre n’est pas
+            dedans.
           </li>
         </ul>
         <p className="hunt-source">
@@ -431,7 +432,7 @@ export function PsaHunt() {
           <label>
             <span>Langue</span>
             <select value={language} onChange={(event) => setLanguage(event.target.value as LanguageFilter)}>
-              <option value="en">Français et anglais</option>
+              <option value="en">Anglais</option>
               <option value="ja">Japonais</option>
               <option value="all">Les deux</option>
             </select>
