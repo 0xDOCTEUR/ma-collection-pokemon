@@ -13,6 +13,7 @@ import {
   type PsaHuntCard,
   type PsaHuntData,
 } from '../utils/psaHunt'
+import { PotentialStamp } from './PotentialStamp'
 import { foldName, searchNeedles } from '../utils/frenchNames'
 import {
   cardHasGeneration,
@@ -688,6 +689,7 @@ export function PsaHunt() {
                     </h3>
                   )}
                   <article className="hunt-card">
+                    <PotentialStamp potential={potential} />
                     {image ? (
                       <img src={image} alt="" loading="lazy" />
                     ) : (

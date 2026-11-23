@@ -1097,6 +1097,59 @@ textarea:focus {
   border: 1px solid var(--line);
 }
 
+.potential-stamp {
+  position: absolute;
+  z-index: 2;
+  top: 0.45rem;
+  left: 0.45rem;
+  max-width: calc(100% - 0.9rem);
+  padding: 0.28rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1.15;
+  pointer-events: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.potential-stamp.is-open {
+  background: #b6f3a0;
+  color: #12380c;
+}
+
+.potential-stamp.is-watch {
+  background: #ffd56a;
+  color: #4a3200;
+}
+
+.potential-stamp.is-narrow {
+  background: #ffb4ae;
+  color: #5c1410;
+}
+
+.potential-stamp.is-unknown {
+  background: #d5dde6;
+  color: #243040;
+}
+
+.potential-stamp.is-inline {
+  position: static;
+  display: inline-block;
+  max-width: none;
+  margin: 0 0.35rem 0.15rem 0;
+  vertical-align: middle;
+}
+
+.hunt-card {
+  position: relative;
+}
+
+.hunt-card .potential-stamp {
+  top: 0.85rem;
+  left: 0.85rem;
+  max-width: 7.2rem;
+}
+
 .tile-detail-hint {
   position: absolute;
   right: 0.55rem;
@@ -1971,13 +2024,23 @@ textarea:focus {
 }
 
 .hunt-potential.is-open strong {
-  background: color-mix(in srgb, var(--gold) 24%, transparent);
-  color: var(--gold);
+  background: #b6f3a0;
+  color: #12380c;
 }
 
 .hunt-potential.is-watch strong {
-  background: color-mix(in srgb, var(--wanted) 22%, transparent);
-  color: var(--wanted);
+  background: #ffd56a;
+  color: #4a3200;
+}
+
+.hunt-potential.is-narrow strong {
+  background: #ffb4ae;
+  color: #5c1410;
+}
+
+.hunt-potential.is-unknown strong {
+  background: #d5dde6;
+  color: #243040;
 }
 
 .hunt-prices {

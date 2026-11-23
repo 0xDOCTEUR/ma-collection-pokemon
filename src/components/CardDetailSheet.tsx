@@ -8,6 +8,8 @@ import {
 import type { CardmarketLiveStats, PokemonCard, PriceRangeDays } from '../types'
 import { buildTrendPoints, recordPriceSnapshot } from '../utils/priceHistory'
 import { PriceTrendChart } from './PriceTrendChart'
+import { PotentialStamp } from './PotentialStamp'
+import type { CardPotential } from '../utils/psaHunt'
 import {
   MIN_POPULATION_SAMPLE,
   formatCensusDate,
@@ -31,6 +33,7 @@ interface Props {
   frenchSourceUrl?: string | null
   frenchSourceName?: string | null
   frenchCensusDate?: string | null
+  potential?: CardPotential | null
 }
 
 export function CardDetailSheet({
@@ -45,6 +48,7 @@ export function CardDetailSheet({
   frenchSourceUrl = null,
   frenchSourceName = null,
   frenchCensusDate = null,
+  potential = null,
 }: Props) {
   const titleId = useId()
   const [range, setRange] = useState<PriceRangeDays>(30)
@@ -197,6 +201,7 @@ export function CardDetailSheet({
               frenchSourceUrl={frenchSourceUrl}
               frenchSourceName={frenchSourceName}
               frenchCensusDate={frenchCensusDate}
+              potential={potential}
             />
 
             <PriceTrendChart points={points} range={range} onRangeChange={setRange} />
@@ -217,6 +222,7 @@ function PopulationBlock({
   frenchSourceUrl,
   frenchSourceName,
   frenchCensusDate,
+  potential,
 }: {
   printings: PsaPrinting[] | null
   rank: number | null
@@ -227,6 +233,7 @@ function PopulationBlock({
   frenchSourceUrl: string | null
   frenchSourceName: string | null
   frenchCensusDate: string | null
+  potential: CardPotential | null
 }) {
   if (printings == null) return null
 
@@ -244,6 +251,11 @@ function PopulationBlock({
           Nombre d’exemplaires déjà notés par PSA. La note 10 est la note parfaite. Moins il y en a,
           plus cette version est rare parmi les cartes notées.
         </p>
+        {potential && (
+          <p className="pop-note">
+            <PotentialStamp potential={potential} inline /> {potential.reason}
+          </p>
+        )}
       </div>
 
       {rows.length === 0 ? (

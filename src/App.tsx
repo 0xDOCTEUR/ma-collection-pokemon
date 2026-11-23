@@ -19,9 +19,11 @@ import {
   formatCensusDate,
   latestCensusDate,
   populationSortGroup,
+  primaryPrinting,
   rankByPsa10,
   type PopulationFile,
 } from './utils/population'
+import { cardPotential, loadPsaHunt, toEur, type CardPotential, type PsaHuntData } from './utils/psaHunt'
 import './App.css'
 
 function money(n: number) {
@@ -56,6 +58,10 @@ function trackSlot(
   }
 }
 
+const COLLECTION_HUNT_SET: Record<string, string> = {
+  'sv03.5': 'sv3pt5',
+}
+
 export default function App() {
   const [tab, setTab] = useState<AppTab>('sv03.5')
   const [cardsBySet, setCardsBySet] = useState<Record<string, PokemonCard[]>>({})
@@ -68,6 +74,7 @@ export default function App() {
   const [sort, setSort] = useState<SortKey>('number')
   const [detailCard, setDetailCard] = useState<PokemonCard | null>(null)
   const [populationBySet, setPopulationBySet] = useState<Record<string, PopulationFile | null>>({})
+  const [hunt, setHunt] = useState<PsaHuntData | null>(null)
   const { getStatus, setStatus, markMany, resetSet, savedAt } = useCollection()
   const customLists = useCustomLists()
 
@@ -130,6 +137,18 @@ export default function App() {
     }
   }, [])
 
+  useEffect(() => {
+    let cancelled = false
+    loadPsaHunt()
+      .then((data) => {
+        if (!cancelled) setHunt(data)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   const activeSet = SETS.find((s) => s.id === tab) ?? null
   const cards = activeSet ? (cardsBySet[activeSet.id] ?? []) : []
 
@@ -157,6 +176,34 @@ export default function App() {
       })),
     )
   }, [cards, populationFile, setHasPopulation])
+
+  const potentialByCardId = useMemo(() => {
+    const map = new Map<string, CardPotential>()
+    const huntSetId = activeSet ? COLLECTION_HUNT_SET[activeSet.id] : undefined
+    if (!hunt || !huntSetId) return map
+    const byNumber = new Map<string, PsaHuntData['cards']>()
+    for (const row of hunt.cards) {
+      if (row.set.id !== huntSetId || row.set.language !== 'en') continue
+      const list = byNumber.get(row.number) ?? []
+      list.push(row)
+      byNumber.set(row.number, list)
+    }
+    for (const card of cards) {
+      const rows = byNumber.get(card.number)
+      if (!rows?.length) continue
+      const primary = primaryPrinting(populationFile?.cards[card.id]?.printings)
+      const match = (primary ? rows.find((row) => row.printing === primary.label) : null) ?? rows[0]
+      const potential = cardPotential(
+        match.psa10,
+        match.total,
+        toEur(match.psa10Usd),
+        toEur(match.rawUsd),
+      )
+      if (potential.level !== 'unknown') map.set(card.id, potential)
+    }
+    return map
+  }, [hunt, activeSet, cards, populationFile])
+
   const censusLabel = formatCensusDate(latestCensusDate(populationFile))
 
   const enriched = useMemo(() => {
@@ -506,7 +553,9 @@ export default function App() {
                     </a>
                   )}
                 </>
-              )}
+              )}{' '}
+              La pastille sur l’image dit s’il reste de la marge : verte pour une marge ouverte,
+              jaune pour à suivre, rouge quand la hausse facile est moins probable.
             </p>
           )}
 
@@ -535,6 +584,7 @@ export default function App() {
                         ? (populationFile?.cards[card.id]?.printings ?? [])
                         : null
                     }
+                    potential={potentialByCardId.get(card.id) ?? null}
                   />
                 ))}
               </div>
@@ -564,6 +614,11 @@ export default function App() {
           frenchSourceUrl={populationFile?.frenchSource ?? null}
           frenchSourceName={populationFile?.frenchSourceName ?? null}
           frenchCensusDate={populationFile?.frenchFetchedAt ?? null}
+          potential={
+            detailCard.setId === activeSet?.id
+              ? (potentialByCardId.get(detailCard.id) ?? null)
+              : null
+          }
         />
       )}
 

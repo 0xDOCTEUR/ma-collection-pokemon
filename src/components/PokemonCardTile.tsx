@@ -1,5 +1,7 @@
 import { formatPrice } from '../api/pokemon'
 import type { CardStatus, CardVariant, PokemonCard } from '../types'
+import { PotentialStamp } from './PotentialStamp'
+import type { CardPotential } from '../utils/psaHunt'
 import {
   formatCount,
   frenchPrinting,
@@ -24,6 +26,7 @@ interface Props {
   onOpenDetail: () => void
   /** null = la série n’a pas de population. Tableau vide = cette carte n’en a pas. */
   population: PsaPrinting[] | null
+  potential?: CardPotential | null
 }
 
 function nextToggle(current: CardStatus, target: 'owned' | 'wanted'): CardStatus {
@@ -72,6 +75,7 @@ export function PokemonCardTile({
   onSetStatus,
   onOpenDetail,
   population,
+  potential = null,
 }: Props) {
   const overall: CardStatus =
     normalStatus === 'owned' || (card.hasReverse && reverseStatus === 'owned')
@@ -89,6 +93,7 @@ export function PokemonCardTile({
         title="Voir la cote, la population et le graphique"
       >
         <img src={card.imageSmall} alt={card.name} loading="lazy" width={245} height={342} />
+        {potential && <PotentialStamp potential={potential} />}
         <span className="tile-badge">{STATUS_LABEL[overall]}</span>
         <span className="tile-detail-hint">Cote</span>
       </button>
