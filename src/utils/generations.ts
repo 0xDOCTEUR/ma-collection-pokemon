@@ -69,6 +69,20 @@ export function speciesLabel(phrase: string): string {
   return FRENCH_LABEL.get(phrase) ?? titlePhrase(phrase)
 }
 
+/** Nom de carte du catalogue (souvent anglais) → affichage français. */
+export function frenchCardName(name: string): string {
+  const species = mainSpecies(name)
+  if (!species) return name
+  const french = speciesLabel(species)
+  const flexible = species
+    .split(' ')
+    .map((part) => escapeRegExp(part))
+    .join('[.\\s’\'-]+')
+  const regex = new RegExp(flexible, 'i')
+  if (regex.test(name)) return name.replace(regex, french)
+  return french
+}
+
 const SPECIES_TEST = new Map<string, RegExp>()
 
 export function cardHasSpecies(name: string, phrase: string): boolean {

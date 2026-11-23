@@ -18,6 +18,7 @@ import { foldName, searchNeedles } from '../utils/frenchNames'
 import {
   cardHasGeneration,
   cardHasSpecies,
+  frenchCardName,
   GENERATION_OPTIONS,
   mainSpecies,
   pokemonOptions,
@@ -49,7 +50,8 @@ function readCardView(): CardView {
 }
 
 const DEFAULTS = {
-  language: 'all' as LanguageFilter,
+  /** Anglais = côtes CardPrice. Le français n’a que le nombre de notes. */
+  language: 'en' as LanguageFilter,
   generation: 'all',
   series: 'all',
   setId: 'all',
@@ -343,17 +345,12 @@ export function PsaHunt() {
     !frenchView && pricedOnly ? 'cartes sans prix cachées' : '',
   ].filter(Boolean)
 
-  const scope =
-    pokemon && series === 'all' && setId === 'all'
-      ? ' Toutes les périodes sont affichées.'
-      : ''
-
   function emptyMessage(): string {
     if (pokemon) {
       if (!relaxed && limitBits.length > 0) {
         return `Aucune carte de ${pokemonName} avec ces limites. Ouvre Filtres pour les élargir, ou clique sur Voir toutes les versions.`
       }
-      return `Aucune carte de ${pokemonName} dans cette langue. Choisis Anglais et japonais dans Langue.`
+      return `Aucune carte de ${pokemonName} pour cette version. Ouvre Filtres et change Version (impression).`
     }
     if (query.trim()) {
       if (!relaxed && limitBits.length > 0) {
@@ -362,7 +359,7 @@ export function PsaHunt() {
       if (generation !== 'all') {
         return 'Aucune carte de cette génération pour ce nom. Remets Génération sur Toutes.'
       }
-      return 'Aucune carte pour ce nom. Essaie le nom anglais, par exemple Charizard.'
+      return 'Aucune carte pour ce nom. Essaie Dracaufeu, Mewtwo, ou un numéro.'
     }
     if (generation !== 'all') {
       return 'Aucune carte de cette génération avec ces limites. Ouvre Filtres et remets Génération sur Toutes, ou clique sur Enlever les limites.'
@@ -375,57 +372,6 @@ export function PsaHunt() {
 
   return (
     <section className="hunt">
-      <div className="panel hunt-intro">
-        <h2>Catalogue des côtes</h2>
-        <p>
-          Toutes les séries, tous les Pokémon. Cherche un nom ou un numéro : tu vois le prix sans
-          note et le prix noté 10 (PSA 10 = note parfaite). Tu peux aussi filtrer pour repérer les
-          cartes où la marge semble encore ouverte. Personne ne peut promettre que le prix va monter.
-        </p>
-        <ul className="hunt-legend">
-          <li>
-            <strong>Marge ouverte</strong> — les trois signes en même temps : des gens achètent déjà
-            la carte sans note, les notes 10 restent peu nombreuses, et cette note n’est pas encore
-            hors de prix. Ce n’est pas une promesse que le prix va monter.
-          </li>
-          <li>
-            <strong>À suivre</strong> — un de ces signes manque.
-          </li>
-          <li>
-            <strong>Déjà chère, déjà courante ou peu demandée</strong> — la hausse facile est moins
-            probable.
-          </li>
-          <li>
-            <strong>Note 10</strong> — prix d’un exemplaire déjà noté 10.
-          </li>
-          <li>
-            <strong>Sans note</strong> — prix de la même carte, pas encore envoyée pour être notée.
-          </li>
-          <li>
-            <strong>Anglais</strong> — notes et prix des cartes anglaises.
-          </li>
-          <li>
-            <strong>Français</strong> — nombre de notes PSA des cartes françaises. Pas de prix dans
-            cette source. La quantité imprimée n’est pas la même qu’en anglais.
-          </li>
-        </ul>
-        <p className="hunt-source">
-          Prix d’abord en dollars, puis convertis en euros. Relevés du {formatDay(data.fetchedAt)}.{' '}
-          <a href={data.source} target="_blank" rel="noreferrer">
-            {data.sourceName}
-          </a>
-          {data.frenchFetchedAt && data.frenchSource && (
-            <>
-              {' '}
-              Notes françaises du {formatDay(data.frenchFetchedAt)}.{' '}
-              <a href={data.frenchSource} target="_blank" rel="noreferrer">
-                {data.frenchSourceName ?? 'GemRate'}
-              </a>
-            </>
-          )}
-        </p>
-      </div>
-
       <form className="panel hunt-form" onSubmit={(event) => event.preventDefault()}>
         <div className="hunt-row hunt-main">
           <label>
@@ -459,15 +405,6 @@ export function PsaHunt() {
             </select>
           </label>
           <label>
-            <span>Langue</span>
-            <select value={language} onChange={(event) => setLanguage(event.target.value as LanguageFilter)}>
-              <option value="en">Anglais</option>
-              <option value="ja">Japonais</option>
-              <option value="fr">Français</option>
-              <option value="all">Anglais et japonais</option>
-            </select>
-          </label>
-          <label>
             <span>Ordre</span>
             <select value={sort} onChange={(event) => setSort(event.target.value as SortMode)}>
               <option value="upside">Les plus intéressantes</option>
@@ -477,15 +414,6 @@ export function PsaHunt() {
           </label>
         </div>
 
-        {language === 'fr' && (
-          <div className="hunt-notice">
-            <p>
-              Langue française : on a le nombre de notes PSA, pas les prix. Les limites de prix sont
-              mises de côté. Les limites de nombre de notes restent. Sans prix, l’ordre « les plus
-              intéressantes » classe par le plus petit nombre de notes 10.
-            </p>
-          </div>
-        )}
         {precise && relaxed && (
           <div className="hunt-notice">
             <p>Recherche précise : les limites de prix et de notes sont mises de côté.</p>
@@ -543,7 +471,25 @@ export function PsaHunt() {
                   ))}
                 </select>
               </label>
+              <label>
+                <span>Version (impression)</span>
+                <select
+                  value={language}
+                  onChange={(event) => setLanguage(event.target.value as LanguageFilter)}
+                >
+                  <option value="en">Anglaise — avec côtes</option>
+                  <option value="ja">Japonaise — avec côtes</option>
+                  <option value="all">Anglaise et japonaise</option>
+                  <option value="fr">Française — notes seulement, sans côtes</option>
+                </select>
+              </label>
             </div>
+            {language === 'fr' && (
+              <p className="hunt-group-help">
+                La version française donne le nombre de notes PSA, pas les prix marché. Pour voir les
+                côtes, choisis la version anglaise.
+              </p>
+            )}
             <div className="hunt-row hunt-limits">
               <label>
                 <span>Prix max, note 10 (€)</span>
@@ -604,21 +550,16 @@ export function PsaHunt() {
 
         <div className="hunt-foot">
           <p className="hunt-count">
-            {pokemon
-              ? `${countLabel(matches.length)} de ${pokemonName}.`
-              : query.trim()
-                ? `${countLabel(matches.length)} pour « ${query.trim()} ».`
-                : `${countLabel(matches.length)}.`}
-            {scope}
-            {matches.length > visible.length
-              ? ` ${countLabel(visible.length)} à l’écran, le bouton en bas charge la suite.`
-              : ''}
             <small>
+              {countLabel(matches.length)}
+              {pokemon ? ` · ${pokemonName}` : query.trim() ? ` · « ${query.trim()} »` : ''}
               {relaxed
-                ? 'Limites de prix et de notes mises de côté.'
+                ? ' · limites mises de côté'
                 : limitBits.length > 0
-                  ? `Limites : ${limitBits.join(' · ')}.`
-                  : 'Aucune limite de prix ni de notes.'}
+                  ? ` · ${limitBits.join(' · ')}`
+                  : ''}
+              {' · '}
+              Relevés du {formatDay(data.fetchedAt)} ({data.sourceName})
             </small>
           </p>
           <div className="hunt-actions">
@@ -699,7 +640,7 @@ export function PsaHunt() {
                         #{card.number || '—'} · {card.set.name}
                         {language === 'all' ? ` · ${languageLabel(card.set.language)}` : ''}
                       </p>
-                      <h3>{card.name}</h3>
+                      <h3>{frenchCardName(card.name)}</h3>
                       <p className="tile-meta">
                         {seriesLabel(card.set.series)} · {huntPrintingLabel(card.printing)}
                       </p>
@@ -711,12 +652,12 @@ export function PsaHunt() {
                       </p>
                       <p className="hunt-prices">
                         <span>
-                          <small>Exemplaire noté 10</small>
+                          <small>Côte notée 10</small>
                           <strong>{money(psaPrice)}</strong>
                         </span>
                         <span>
-                          <small>Carte sans note</small>
-                          {money(rawPrice)}
+                          <small>Côte sans note</small>
+                          <strong>{money(rawPrice)}</strong>
                         </span>
                       </p>
                       <p className={`hunt-potential is-${potential.level}`}>

@@ -6,6 +6,7 @@ import {
   type LooseConditionId,
   type ScanMatch,
 } from '../utils/cardScan'
+import { frenchCardName } from '../utils/generations'
 import type { ScanTarget } from '../utils/scanTargets'
 
 interface Props {
@@ -226,7 +227,7 @@ export function CardScan({ targets, embedded = false, onClose, onConfirm }: Prop
                     )}
                     <span>
                       <strong>
-                        #{match.target.number} · {match.target.name}
+                        #{match.target.number} · {frenchCardName(match.target.name)}
                       </strong>
                       <small>
                         {match.target.setLabel} · {match.why}

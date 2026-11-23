@@ -3,6 +3,7 @@ import { loosePrices } from '../utils/advicePrice'
 import { cardPageUrl, huntPrintingLabel, languageLabel, toEur } from '../utils/psaHunt'
 import type { LooseConditionId } from '../utils/cardScan'
 import type { ScanTarget } from '../utils/scanTargets'
+import { frenchCardName } from '../utils/generations'
 import { PotentialStamp } from './PotentialStamp'
 import { cardPotential } from '../utils/psaHunt'
 
@@ -31,7 +32,7 @@ export function CatalogCardSheet({ target, conditionId, onClose }: Props) {
             <p className="card-sheet-num">
               #{target.number} · {target.setLabel}
             </p>
-            <h2>{target.name}</h2>
+            <h2>{frenchCardName(target.name)}</h2>
             <p className="muted">
               {hunt
                 ? `${languageLabel(hunt.set.language)} · ${huntPrintingLabel(hunt.printing)}`
