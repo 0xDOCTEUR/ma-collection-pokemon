@@ -327,8 +327,7 @@ export default function App() {
       <header className="site-top">
         <PokedocLogo />
         <nav className="tabs" aria-label="Navigation">
-          <div className="nav-group" role="group" aria-label="Collection">
-            <span className="nav-group-label">Collection</span>
+          <div className="nav-cluster" role="group" aria-label="Collection">
             {SETS.map((set) => (
               <button
                 key={set.id}
@@ -340,8 +339,8 @@ export default function App() {
               </button>
             ))}
           </div>
-          <div className="nav-group" role="group" aria-label="Côtes">
-            <span className="nav-group-label">Côtes</span>
+          <span className="nav-sep" aria-hidden="true" />
+          <div className="nav-cluster" role="group" aria-label="Côtes">
             <button
               type="button"
               className={tab === 'catalogue' ? 'tab active' : 'tab'}
@@ -351,20 +350,20 @@ export default function App() {
             </button>
             <button
               type="button"
-              className={tab === 'scan' ? 'tab active' : 'tab'}
+              className={tab === 'scan' ? 'tab active tab-scan' : 'tab tab-scan'}
               onClick={() => setTab('scan')}
             >
               Scanner
             </button>
           </div>
-          <div className="nav-group" role="group" aria-label="Outils">
-            <span className="nav-group-label">Outils</span>
+          <span className="nav-sep" aria-hidden="true" />
+          <div className="nav-cluster" role="group" aria-label="Outils">
             <button
               type="button"
               className={tab === 'listes' ? 'tab active' : 'tab'}
               onClick={() => setTab('listes')}
             >
-              Mes listes
+              Listes
             </button>
             <button
               type="button"
