@@ -1219,9 +1219,13 @@ textarea:focus {
   position: relative;
 }
 
+.hunt-card-open {
+  position: relative;
+}
+
 .hunt-card .potential-stamp {
-  top: 0.85rem;
-  left: 0.85rem;
+  top: 0.35rem;
+  left: 0.35rem;
   max-width: 7.2rem;
 }
 
@@ -2094,13 +2098,43 @@ textarea:focus {
 }
 
 .hunt-card {
-  display: grid;
-  grid-template-columns: 86px 1fr;
-  gap: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
   padding: 0.75rem;
   background: rgba(16, 22, 31, 0.9);
   border: 1px solid var(--line);
   border-radius: 16px;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.hunt-card.is-openable:hover {
+  border-color: rgba(255, 213, 106, 0.38);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
+}
+
+.hunt-card-open {
+  display: grid;
+  grid-template-columns: 86px 1fr;
+  gap: 0.75rem;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  position: relative;
+}
+
+.hunt-card-open:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+  border-radius: 10px;
 }
 
 .hunt-card img,
@@ -2125,20 +2159,29 @@ textarea:focus {
   gap: 0.2rem 0.85rem;
 }
 
+.hunt-links a,
 .hunt-links .hunt-all-series {
-  margin-top: 0;
-}
-
-.hunt-body a {
   color: var(--gold);
   font-size: 0.85rem;
   font-weight: 700;
 }
 
+.hunt-links .hunt-all-series {
+  margin-top: 0;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+}
+
 .hunt-grid.is-large .hunt-card {
+  padding: 1rem;
+}
+
+.hunt-grid.is-large .hunt-card-open {
   grid-template-columns: 150px 1fr;
   gap: 1rem;
-  padding: 1rem;
 }
 
 .hunt-grid.is-large .hunt-card img,
@@ -2155,7 +2198,7 @@ textarea:focus {
   font-size: 1.25rem;
 }
 
-.hunt-grid.is-list .hunt-card {
+.hunt-grid.is-list .hunt-card-open {
   grid-template-columns: 112px minmax(0, 1fr);
   align-items: center;
 }
@@ -2172,7 +2215,7 @@ textarea:focus {
   grid-template-areas:
     'num pop price'
     'name pop price'
-    'meta links price'
+    'meta meta price'
     'potential potential potential';
   gap: 0.15rem 1rem;
   align-items: center;
@@ -2201,10 +2244,6 @@ textarea:focus {
 .hunt-grid.is-list .hunt-prices {
   grid-area: price;
   margin: 0;
-}
-
-.hunt-grid.is-list .hunt-links {
-  grid-area: links;
 }
 
 .hunt-grid.is-list .hunt-potential {
@@ -2388,7 +2427,7 @@ textarea:focus {
     width: 100%;
   }
 
-  .hunt-grid.is-large .hunt-card {
+  .hunt-grid.is-large .hunt-card-open {
     grid-template-columns: 112px 1fr;
   }
 

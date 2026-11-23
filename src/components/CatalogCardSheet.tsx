@@ -1,42 +1,84 @@
+import { useEffect, useId, useState } from 'react'
 import { formatEuro } from '../api/pokemon'
-import { loosePrices } from '../utils/advicePrice'
-import { cardPageUrl, huntPrintingLabel, languageLabel, toEur } from '../utils/psaHunt'
-import type { LooseConditionId } from '../utils/cardScan'
-import type { ScanTarget } from '../utils/scanTargets'
+import { fetchPsaPrices, loosePrices, type PsaPriceQuote } from '../utils/advicePrice'
 import { frenchCardName } from '../utils/generations'
+import { formatCount, formatGemRate, type PsaPrinting } from '../utils/population'
+import {
+  cardPageUrl,
+  cardPotential,
+  huntImageUrl,
+  huntPrintingLabel,
+  languageLabel,
+  toEur,
+  type PsaHuntCard,
+} from '../utils/psaHunt'
 import { PotentialStamp } from './PotentialStamp'
-import { cardPotential } from '../utils/psaHunt'
 
 interface Props {
-  target: ScanTarget
-  conditionId: LooseConditionId
+  card: PsaHuntCard
   onClose: () => void
+  /** État confirmé après un scan. */
+  highlightedCondition?: string | null
 }
 
-export function CatalogCardSheet({ target, conditionId, onClose }: Props) {
-  const hunt = target.hunt
-  const rawEur = hunt ? toEur(hunt.rawUsd) : null
-  const psaEur = hunt ? toEur(hunt.psa10Usd) : null
+function asPrinting(card: PsaHuntCard): PsaPrinting {
+  return { label: card.printing || 'Normal', total: card.total, psa10: card.psa10, updatedAt: null }
+}
+
+export function CatalogCardSheet({ card, onClose, highlightedCondition = null }: Props) {
+  const titleId = useId()
+  const rawEur = toEur(card.rawUsd)
+  const psaEur = toEur(card.psa10Usd)
   const loose = rawEur != null && rawEur > 0 ? loosePrices(rawEur) : []
-  const highlighted = loose.find((row) => row.id === conditionId)
-  const potential =
-    hunt && psaEur != null && rawEur != null
-      ? cardPotential(hunt.psa10, hunt.total, psaEur, rawEur)
-      : null
+  const potential = cardPotential(card.psa10, card.total, psaEur, rawEur)
+  const image = huntImageUrl(card)
+  const printing = asPrinting(card)
+  const [quote, setQuote] = useState<PsaPriceQuote | null>(null)
+  const [quoteState, setQuoteState] = useState<'loading' | 'ready' | 'empty' | 'error'>('loading')
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  useEffect(() => {
+    let cancelled = false
+    setQuoteState('loading')
+    setQuote(null)
+    fetchPsaPrices(card.cardId)
+      .then((next) => {
+        if (cancelled) return
+        setQuote(next)
+        setQuoteState(next ? 'ready' : 'empty')
+      })
+      .catch(() => {
+        if (!cancelled) setQuoteState('error')
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [card.cardId])
 
   return (
     <div className="card-sheet-backdrop" onClick={onClose} role="presentation">
-      <aside className="card-sheet" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+      <aside
+        className="card-sheet"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        onClick={(event) => event.stopPropagation()}
+      >
         <header className="card-sheet-head">
           <div>
             <p className="card-sheet-num">
-              #{target.number} · {target.setLabel}
+              #{card.number || '—'} · {card.set.name}
             </p>
-            <h2>{frenchCardName(target.name)}</h2>
+            <h2 id={titleId}>{frenchCardName(card.name)}</h2>
             <p className="muted">
-              {hunt
-                ? `${languageLabel(hunt.set.language)} · ${huntPrintingLabel(hunt.printing)}`
-                : target.rarity || 'Carte'}
+              {languageLabel(card.set.language)} · {huntPrintingLabel(card.printing)}
             </p>
           </div>
           <button type="button" className="btn ghost" onClick={onClose}>
@@ -45,38 +87,47 @@ export function CatalogCardSheet({ target, conditionId, onClose }: Props) {
         </header>
 
         <div className="card-sheet-body">
-          {target.imageSmall ? (
-            <img className="card-sheet-art" src={target.imageSmall} alt={target.name} width={245} height={342} />
+          {image ? (
+            <img
+              className="card-sheet-art"
+              src={image}
+              alt={frenchCardName(card.name)}
+              width={245}
+              height={342}
+            />
           ) : (
             <div className="card-sheet-art hunt-fallback" aria-hidden="true" />
           )}
+
           <div className="card-sheet-main">
             <div className="card-sheet-prices">
               <div>
-                <span className="stat-label">Sans note</span>
+                <span className="stat-label">Côte sans note</span>
                 <strong>{formatEuro(rawEur)}</strong>
               </div>
               <div>
-                <span className="stat-label">PSA 10</span>
+                <span className="stat-label">Côte PSA 10</span>
                 <strong>{formatEuro(psaEur)}</strong>
               </div>
             </div>
 
-            {potential && (
+            {potential.level !== 'unknown' && (
               <p className="pop-note">
                 <PotentialStamp potential={potential} inline /> {potential.reason}
               </p>
             )}
 
-            {loose.length > 0 && (
-              <section className="advice-block">
-                <div>
-                  <h3>Prix conseillé, carte sans note</h3>
-                  <p className="muted">
-                    Le quasi neuf suit le prix marché. Les autres états sont un conseil à partir de
-                    ce prix.
-                  </p>
-                </div>
+            <section className="advice-block">
+              <div>
+                <h3>Prix conseillé, carte sans note</h3>
+                <p className="muted">
+                  Le quasi neuf suit le prix marché du catalogue. Les autres états sont un conseil à
+                  partir de ce prix, pas une vente relevée.
+                </p>
+              </div>
+              {loose.length === 0 ? (
+                <p className="pop-note">Pas de prix sans note pour cette carte.</p>
+              ) : (
                 <table className="pop-table">
                   <thead>
                     <tr>
@@ -85,40 +136,101 @@ export function CatalogCardSheet({ target, conditionId, onClose }: Props) {
                     </tr>
                   </thead>
                   <tbody>
-                    {loose.map((row) => (
+                    {loose.map((row) => {
+                      const highlighted = highlightedCondition === row.id
+                      return (
+                        <tr
+                          key={row.id}
+                          className={highlighted || row.reference ? 'is-compared' : undefined}
+                        >
+                          <td>
+                            {row.label}
+                            {highlighted ? (
+                              <small> état confirmé après le scan</small>
+                            ) : (
+                              <small>{row.hint}</small>
+                            )}
+                          </td>
+                          <td>{formatEuro(row.eur)}</td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              )}
+
+              <div>
+                <h3>Prix conseillé, carte notée PSA</h3>
+                <p className="muted">
+                  Prix du marché anglais, converti en euros. Le numéro est le même en français, pas
+                  la quantité imprimée.
+                </p>
+              </div>
+              {quoteState === 'loading' && <p className="pop-note">Chargement des prix notés…</p>}
+              {quoteState === 'error' && (
+                <p className="pop-note">Les prix notés n’ont pas pu être chargés.</p>
+              )}
+              {quoteState === 'empty' && (
+                <p className="pop-note">
+                  Pas encore de détail de notes. Côte PSA 10 connue : {formatEuro(psaEur)}.
+                </p>
+              )}
+              {quoteState === 'ready' && quote && (
+                <table className="pop-table">
+                  <thead>
+                    <tr>
+                      <th>Note</th>
+                      <th>Prix conseillé</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {quote.rows.map((row) => (
                       <tr
-                        key={row.id}
-                        className={row.id === conditionId || row.reference ? 'is-compared' : undefined}
+                        key={row.label}
+                        className={row.label === 'PSA 10' ? 'is-compared' : undefined}
                       >
-                        <td>
-                          {row.label}
-                          {row.id === conditionId ? (
-                            <small> état confirmé après le scan</small>
-                          ) : (
-                            <small>{row.hint}</small>
-                          )}
-                        </td>
+                        <td>{row.label}</td>
                         <td>{formatEuro(row.eur)}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-                {highlighted && (
-                  <p className="pop-note">
-                    Pour l’état choisi : <strong>{formatEuro(highlighted.eur)}</strong>
-                  </p>
-                )}
-              </section>
-            )}
+              )}
+            </section>
 
-            {hunt && (
+            <section className="pop-block">
+              <div className="pop-block-head">
+                <h3>Population PSA</h3>
+                <p className="muted">
+                  Nombre d’exemplaires déjà notés. Moins il y a de notes 10, plus cette version est
+                  rare parmi les cartes notées.
+                </p>
+              </div>
+              <table className="pop-table">
+                <thead>
+                  <tr>
+                    <th>Version</th>
+                    <th>Cartes notées</th>
+                    <th>Notes 10</th>
+                    <th>Part de 10</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="is-compared">
+                    <td>{huntPrintingLabel(card.printing)}</td>
+                    <td>{formatCount(card.total)}</td>
+                    <td>{formatCount(card.psa10)}</td>
+                    <td>{formatGemRate(printing)}</td>
+                  </tr>
+                </tbody>
+              </table>
               <p className="pop-note">
-                Prix du catalogue ({languageLabel(hunt.set.language)}).{' '}
-                <a href={cardPageUrl(hunt.slug)} target="_blank" rel="noreferrer">
-                  Voir la fiche source
+                Source catalogue ({languageLabel(card.set.language)}).{' '}
+                <a href={cardPageUrl(card.slug)} target="_blank" rel="noreferrer">
+                  Ouvrir la fiche source
                 </a>
               </p>
-            )}
+            </section>
           </div>
         </div>
       </aside>

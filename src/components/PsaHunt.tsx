@@ -109,7 +109,7 @@ function seriesOrder(series: string): number {
   return index === -1 ? 999 : index
 }
 
-export function PsaHunt() {
+export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => void }) {
   const [data, setData] = useState<PsaHuntData | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [language, setLanguage] = useState<LanguageFilter>(DEFAULTS.language)
@@ -628,52 +628,67 @@ export function PsaHunt() {
                       {seriesLabel(card.set.series)} · {countLabel(seriesTotal)}
                     </h3>
                   )}
-                  <article className="hunt-card">
-                    <PotentialStamp potential={potential} />
-                    {image ? (
-                      <img src={image} alt="" loading="lazy" />
-                    ) : (
-                      <div className="hunt-fallback" aria-hidden="true" />
-                    )}
-                    <div className="hunt-body">
-                      <p className="tile-num">
-                        #{card.number || '—'} · {card.set.name}
-                        {language === 'all' ? ` · ${languageLabel(card.set.language)}` : ''}
-                      </p>
-                      <h3>{frenchCardName(card.name)}</h3>
-                      <p className="tile-meta">
-                        {seriesLabel(card.set.series)} · {huntPrintingLabel(card.printing)}
-                      </p>
-                      <p className="hunt-pop">
-                        {formatCount(card.psa10)} exemplaires notés 10
-                        <span>
-                          sur {formatCount(card.total)} cartes notées ({formatGemRate(asPrinting(card))})
-                        </span>
-                      </p>
-                      <p className="hunt-prices">
-                        <span>
-                          <small>Côte notée 10</small>
-                          <strong>{money(psaPrice)}</strong>
-                        </span>
-                        <span>
-                          <small>Côte sans note</small>
-                          <strong>{money(rawPrice)}</strong>
-                        </span>
-                      </p>
-                      <p className={`hunt-potential is-${potential.level}`}>
-                        <strong>{potential.title}</strong>
-                        <span>{potential.reason}</span>
-                      </p>
-                      <div className="hunt-links">
-                        <a href={pageUrl} target="_blank" rel="noreferrer">
-                          {pageUrl.includes('better-pop.com') ? 'Voir le recensement' : 'Ouvrir la fiche'}
-                        </a>
-                        {species && species !== pokemon && (
-                          <button type="button" className="hunt-all-series" onClick={() => showAllSeries(card.name)}>
-                            Toutes les cartes de {speciesLabel(species)}
-                          </button>
-                        )}
+                  <article className="hunt-card is-openable">
+                    <button
+                      type="button"
+                      className="hunt-card-open"
+                      onClick={() => onOpenCard(card)}
+                      aria-label={`Voir les côtes de ${frenchCardName(card.name)}`}
+                    >
+                      <PotentialStamp potential={potential} />
+                      {image ? (
+                        <img src={image} alt="" loading="lazy" />
+                      ) : (
+                        <div className="hunt-fallback" aria-hidden="true" />
+                      )}
+                      <div className="hunt-body">
+                        <p className="tile-num">
+                          #{card.number || '—'} · {card.set.name}
+                          {language === 'all' ? ` · ${languageLabel(card.set.language)}` : ''}
+                        </p>
+                        <h3>{frenchCardName(card.name)}</h3>
+                        <p className="tile-meta">
+                          {seriesLabel(card.set.series)} · {huntPrintingLabel(card.printing)}
+                        </p>
+                        <p className="hunt-pop">
+                          {formatCount(card.psa10)} exemplaires notés 10
+                          <span>
+                            sur {formatCount(card.total)} cartes notées (
+                            {formatGemRate(asPrinting(card))})
+                          </span>
+                        </p>
+                        <p className="hunt-prices">
+                          <span>
+                            <small>Côte notée 10</small>
+                            <strong>{money(psaPrice)}</strong>
+                          </span>
+                          <span>
+                            <small>Côte sans note</small>
+                            <strong>{money(rawPrice)}</strong>
+                          </span>
+                        </p>
+                        <p className={`hunt-potential is-${potential.level}`}>
+                          <strong>{potential.title}</strong>
+                          <span>{potential.reason}</span>
+                        </p>
                       </div>
+                    </button>
+                    <div className="hunt-links">
+                      <button type="button" className="hunt-all-series" onClick={() => onOpenCard(card)}>
+                        Voir les côtes
+                      </button>
+                      <a href={pageUrl} target="_blank" rel="noreferrer">
+                        {pageUrl.includes('better-pop.com') ? 'Recensement' : 'Source'}
+                      </a>
+                      {species && species !== pokemon && (
+                        <button
+                          type="button"
+                          className="hunt-all-series"
+                          onClick={() => showAllSeries(card.name)}
+                        >
+                          Toutes les cartes de {speciesLabel(species)}
+                        </button>
+                      )}
                     </div>
                   </article>
                 </Fragment>

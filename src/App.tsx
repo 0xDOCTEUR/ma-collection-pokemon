@@ -13,7 +13,7 @@ import { CatalogCardSheet } from './components/CatalogCardSheet'
 import { PokemonCardTile } from './components/PokemonCardTile'
 import { QuickAdd } from './components/QuickAdd'
 import type { LooseConditionId } from './utils/cardScan'
-import { buildScanTargets, type ScanTarget } from './utils/scanTargets'
+import { buildScanTargets } from './utils/scanTargets'
 import { useCollection } from './hooks/useCollection'
 import { useCustomLists } from './hooks/useCustomLists'
 import { SETS, type AppTab } from './sets'
@@ -27,7 +27,14 @@ import {
   rankByPsa10,
   type PopulationFile,
 } from './utils/population'
-import { cardPotential, loadPsaHunt, toEur, type CardPotential, type PsaHuntData } from './utils/psaHunt'
+import {
+  cardPotential,
+  loadPsaHunt,
+  toEur,
+  type CardPotential,
+  type PsaHuntCard,
+  type PsaHuntData,
+} from './utils/psaHunt'
 import './App.css'
 
 function money(n: number) {
@@ -77,7 +84,7 @@ export default function App() {
   const [rarity, setRarity] = useState('all')
   const [sort, setSort] = useState<SortKey>('number')
   const [detailCard, setDetailCard] = useState<PokemonCard | null>(null)
-  const [catalogTarget, setCatalogTarget] = useState<ScanTarget | null>(null)
+  const [catalogCard, setCatalogCard] = useState<PsaHuntCard | null>(null)
   const [scannedCondition, setScannedCondition] = useState<LooseConditionId | null>(null)
   const [populationBySet, setPopulationBySet] = useState<Record<string, PopulationFile | null>>({})
   const [hunt, setHunt] = useState<PsaHuntData | null>(null)
@@ -385,7 +392,13 @@ export default function App() {
       </header>
 
       {tab === 'catalogue' ? (
-        <PsaHunt />
+        <PsaHunt
+          onOpenCard={(card) => {
+            setDetailCard(null)
+            setScannedCondition(null)
+            setCatalogCard(card)
+          }}
+        />
       ) : tab === 'scan' ? (
         loading ? (
           <p className="state-msg">Chargement des séries pour le scan…</p>
@@ -396,11 +409,11 @@ export default function App() {
             onConfirm={(target, conditionId) => {
               setScannedCondition(conditionId)
               if (target.collectionCard) {
-                setCatalogTarget(null)
+                setCatalogCard(null)
                 setDetailCard(target.collectionCard)
-              } else {
+              } else if (target.hunt) {
                 setDetailCard(null)
-                setCatalogTarget(target)
+                setCatalogCard(target.hunt)
               }
             }}
           />
@@ -638,12 +651,12 @@ export default function App() {
         </>
       )}
 
-      {catalogTarget && scannedCondition && (
+      {catalogCard && (
         <CatalogCardSheet
-          target={catalogTarget}
-          conditionId={scannedCondition}
+          card={catalogCard}
+          highlightedCondition={scannedCondition}
           onClose={() => {
-            setCatalogTarget(null)
+            setCatalogCard(null)
             setScannedCondition(null)
           }}
         />
