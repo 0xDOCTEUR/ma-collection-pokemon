@@ -1,0 +1,12 @@
+---
+description: Pousser chaque mise à jour sur le dépôt dès qu’elle est prête
+alwaysApply: true
+---
+
+Après chaque mise à jour du projet (correction, ajout, texte, style), envoie-la tout de suite sur le dépôt distant, sans attendre qu’on le redemande.
+
+1. Vérifie `git status`, `git diff` et `git log` avant de committer.
+2. Committe les fichiers de la mise à jour avec un message court en français, dans le style du dépôt.
+3. Pousse sur la branche courante avec `git push`.
+
+Ne force jamais le push. Ne change pas la configuration git. Ne saute pas les hooks. N’inclus pas de fichier secret (`.env`, clés, mots de passe).
