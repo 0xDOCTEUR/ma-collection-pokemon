@@ -35,6 +35,8 @@ interface Props {
   frenchSourceName?: string | null
   frenchCensusDate?: string | null
   potential?: CardPotential | null
+  /** État confirmé après un scan, pour le prix conseillé sans note. */
+  scannedCondition?: string | null
 }
 
 export function CardDetailSheet({
@@ -50,6 +52,7 @@ export function CardDetailSheet({
   frenchSourceName = null,
   frenchCensusDate = null,
   potential = null,
+  scannedCondition = null,
 }: Props) {
   const titleId = useId()
   const [range, setRange] = useState<PriceRangeDays>(30)
@@ -192,7 +195,7 @@ export function CardDetailSheet({
               </>
             )}
 
-            <AdvicePrices card={card} stats={stats} />
+            <AdvicePrices card={card} stats={stats} highlightedCondition={scannedCondition} />
 
             <PopulationBlock
               printings={population}

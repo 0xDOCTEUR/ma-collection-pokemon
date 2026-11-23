@@ -17,9 +17,12 @@ function nearMintEuro(card: PokemonCard, stats: CardmarketLiveStats | null): num
 export function AdvicePrices({
   card,
   stats,
+  highlightedCondition = null,
 }: {
   card: PokemonCard
   stats: CardmarketLiveStats | null
+  /** État choisi après un scan, pour le mettre en avant dans le tableau. */
+  highlightedCondition?: string | null
 }) {
   const [quote, setQuote] = useState<PsaPriceQuote | null>(null)
   const [state, setState] = useState<'loading' | 'ready' | 'empty' | 'error'>('loading')
@@ -64,15 +67,21 @@ export function AdvicePrices({
             </tr>
           </thead>
           <tbody>
-            {loose.map((row) => (
-              <tr key={row.id} className={row.reference ? 'is-compared' : undefined}>
-                <td>
-                  {row.label}
-                  <small>{row.hint}</small>
-                </td>
-                <td>{formatEuro(row.eur)}</td>
-              </tr>
-            ))}
+            {loose.map((row) => {
+              const highlighted = highlightedCondition === row.id
+              return (
+                <tr
+                  key={row.id}
+                  className={highlighted || row.reference ? 'is-compared' : undefined}
+                >
+                  <td>
+                    {row.label}
+                    {highlighted ? <small> état confirmé après le scan</small> : <small>{row.hint}</small>}
+                  </td>
+                  <td>{formatEuro(row.eur)}</td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       )}

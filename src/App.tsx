@@ -8,8 +8,10 @@ import { GlobalEstimate } from './components/GlobalEstimate'
 import { LotSearch } from './components/LotSearch'
 import { PsaHunt } from './components/PsaHunt'
 import { PokedocLogo } from './components/PokedocLogo'
+import { CardScan } from './components/CardScan'
 import { PokemonCardTile } from './components/PokemonCardTile'
 import { QuickAdd } from './components/QuickAdd'
+import type { LooseConditionId } from './utils/cardScan'
 import { useCollection } from './hooks/useCollection'
 import { useCustomLists } from './hooks/useCustomLists'
 import { SETS, type AppTab } from './sets'
@@ -73,6 +75,8 @@ export default function App() {
   const [rarity, setRarity] = useState('all')
   const [sort, setSort] = useState<SortKey>('number')
   const [detailCard, setDetailCard] = useState<PokemonCard | null>(null)
+  const [scanOpen, setScanOpen] = useState(false)
+  const [scannedCondition, setScannedCondition] = useState<LooseConditionId | null>(null)
   const [populationBySet, setPopulationBySet] = useState<Record<string, PopulationFile | null>>({})
   const [hunt, setHunt] = useState<PsaHuntData | null>(null)
   const { getStatus, setStatus, markMany, resetSet, savedAt } = useCollection()
@@ -461,6 +465,21 @@ export default function App() {
             />
           )}
 
+          {activeSet && cards.length > 0 && (
+            <section className="panel scan-entry">
+              <div>
+                <h2>Scanner une carte</h2>
+                <p className="muted">
+                  Prends une photo : l’appli lit le numéro, propose un état, et ouvre le prix
+                  conseillé. Tu confirmes toujours l’état.
+                </p>
+              </div>
+              <button type="button" className="btn" onClick={() => setScanOpen(true)}>
+                Ouvrir le scan
+              </button>
+            </section>
+          )}
+
           {activeSet && (
             <ExportPanel setName={activeSet.name} cards={cards} getStatus={getActiveStatus} />
           )}
@@ -578,7 +597,10 @@ export default function App() {
                     onSetStatus={(variant, status) =>
                       setStatus(activeSet.id, card.id, status, variant)
                     }
-                    onOpenDetail={() => setDetailCard(card)}
+                    onOpenDetail={() => {
+                      setScannedCondition(null)
+                      setDetailCard(card)
+                    }}
                     population={
                       setHasPopulation
                         ? (populationFile?.cards[card.id]?.printings ?? [])
@@ -593,10 +615,26 @@ export default function App() {
         </>
       )}
 
+      {scanOpen && activeSet && (
+        <CardScan
+          cards={cards}
+          setName={activeSet.name}
+          onClose={() => setScanOpen(false)}
+          onConfirm={(card, conditionId) => {
+            setScanOpen(false)
+            setScannedCondition(conditionId)
+            setDetailCard(card)
+          }}
+        />
+      )}
+
       {detailCard && (
         <CardDetailSheet
           card={detailCard}
-          onClose={() => setDetailCard(null)}
+          onClose={() => {
+            setDetailCard(null)
+            setScannedCondition(null)
+          }}
           population={
             setHasPopulation && detailCard.setId === activeSet?.id
               ? (populationFile?.cards[detailCard.id]?.printings ?? [])
@@ -619,6 +657,7 @@ export default function App() {
               ? (potentialByCardId.get(detailCard.id) ?? null)
               : null
           }
+          scannedCondition={scannedCondition}
         />
       )}
 
