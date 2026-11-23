@@ -25,8 +25,26 @@ import { formatCount, formatGemRate, type PsaPrinting } from '../utils/populatio
 
 type LanguageFilter = 'en' | 'ja' | 'all'
 type SortMode = 'upside' | 'price' | 'pop'
+type CardView = 'small' | 'large' | 'list'
 
 const PAGE = 48
+const VIEW_KEY = 'pokedoc-hunt-view'
+
+const VIEW_OPTIONS: { id: CardView; label: string }[] = [
+  { id: 'small', label: 'Petites' },
+  { id: 'large', label: 'Grandes' },
+  { id: 'list', label: 'Liste' },
+]
+
+function readCardView(): CardView {
+  try {
+    const saved = localStorage.getItem(VIEW_KEY)
+    if (saved === 'small' || saved === 'large' || saved === 'list') return saved
+  } catch {
+    /* le navigateur peut bloquer la mémoire locale */
+  }
+  return 'small'
+}
 
 const DEFAULTS = {
   language: 'en' as LanguageFilter,
@@ -104,7 +122,17 @@ export function PsaHunt() {
   const [pricedOnly, setPricedOnly] = useState(DEFAULTS.pricedOnly)
   const [sort, setSort] = useState<SortMode>(DEFAULTS.sort)
   const [keepLimits, setKeepLimits] = useState(false)
+  const [moreFilters, setMoreFilters] = useState(false)
+  const [view, setView] = useState<CardView>(readCardView)
   const [shown, setShown] = useState(PAGE)
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(VIEW_KEY, view)
+    } catch {
+      /* le choix reste valable pour cette visite */
+    }
+  }, [view])
 
   useEffect(() => {
     let cancelled = false
@@ -308,16 +336,6 @@ export function PsaHunt() {
     pricedOnly ? 'cartes sans prix cachées' : '',
   ].filter(Boolean)
 
-  const sortClause =
-    sort === 'price'
-      ? 'la note 10 la moins chère arrive en premier'
-      : sort === 'pop'
-        ? 'le plus petit nombre d’exemplaires notés 10 arrive en premier'
-        : 'on met d’abord une carte déjà achetée, avec peu d’exemplaires notés 10, et dont la note 10 n’est pas déjà beaucoup plus chère que la carte sans note'
-  const sortHelp = pokemon
-    ? `Les cartes de ${pokemonName} sont regroupées par période. Dans chaque période, ${sortClause}.`
-    : `${sortClause.charAt(0).toUpperCase()}${sortClause.slice(1)}.`
-
   const scope =
     pokemon && series === 'all' && setId === 'all'
       ? ' Toutes les périodes sont affichées.'
@@ -326,13 +344,13 @@ export function PsaHunt() {
   function emptyMessage(): string {
     if (pokemon) {
       if (!relaxed && limitBits.length > 0) {
-        return `Aucune carte de ${pokemonName} avec ces limites. Clique sur Voir toutes les versions, ou élargis les prix et les notes.`
+        return `Aucune carte de ${pokemonName} avec ces limites. Ouvre Filtres pour les élargir, ou clique sur Voir toutes les versions.`
       }
-      return `Aucune carte de ${pokemonName} dans cette langue. Choisis Anglais et japonais dans Langue.`
+      return `Aucune carte de ${pokemonName} dans cette langue. Choisis Les deux dans Langue.`
     }
     if (query.trim()) {
       if (!relaxed && limitBits.length > 0) {
-        return 'Aucune carte pour ce nom avec ces limites. Clique sur Voir toutes les versions, ou élargis les prix et les notes.'
+        return 'Aucune carte pour ce nom avec ces limites. Ouvre Filtres pour les élargir, ou clique sur Voir toutes les versions.'
       }
       if (generation !== 'all') {
         return 'Aucune carte de cette génération pour ce nom. Remets Génération sur Toutes.'
@@ -340,9 +358,9 @@ export function PsaHunt() {
       return 'Aucune carte pour ce nom. Essaie le nom anglais, par exemple Charizard.'
     }
     if (generation !== 'all') {
-      return 'Aucune carte de cette génération avec ces limites. Les dresseurs et les énergies ne sont pas comptés. Remets Génération sur Toutes, ou clique sur Enlever les limites.'
+      return 'Aucune carte de cette génération avec ces limites. Ouvre Filtres et remets Génération sur Toutes, ou clique sur Enlever les limites.'
     }
-    return 'Aucune carte avec ces limites. Vide une case, monte le prix maximum, ou clique sur Enlever les limites.'
+    return 'Aucune carte avec ces limites. Ouvre Filtres pour les changer, ou clique sur Enlever les limites.'
   }
 
   if (error) return <p className="state-msg error">{error}</p>
@@ -366,8 +384,8 @@ export function PsaHunt() {
             <strong>Sans note</strong> — prix de la même carte, pas encore envoyée pour être notée.
           </li>
           <li>
-            <strong>Anglais</strong> — pas de liste à part pour le français. Le numéro de la carte
-            est le même.
+            <strong>Français</strong> — pas de liste à part. Le numéro est le même qu’en anglais,
+            donc ces cartes sont dans « Français et anglais ».
           </li>
         </ul>
         <p className="hunt-source">
@@ -379,166 +397,58 @@ export function PsaHunt() {
       </div>
 
       <form className="panel hunt-form" onSubmit={(event) => event.preventDefault()}>
-        <fieldset className="hunt-group">
-          <legend>1. Quelles cartes afficher</legend>
-          <div className="hunt-row hunt-pick">
-            <label>
-              <span>Recherche</span>
-              <input
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Dracaufeu, Mewtwo, 199…"
-              />
-              <small className="hunt-hint">Nom français, nom anglais, ou numéro.</small>
-            </label>
-            <label>
-              <span>Pokémon</span>
-              <select
-                value={pokemon}
-                onChange={(event) => {
-                  const next = event.target.value
-                  setPokemon(next)
-                  if (next) {
-                    setSeries('all')
-                    setSetId('all')
-                    setQuery('')
-                  }
-                }}
-              >
-                <option value="">Tous les Pokémon</option>
-                {choices.map((option) => (
-                  <option key={option.phrase} value={option.phrase}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <small className="hunt-hint">Affiche toutes ses cartes, période par période.</small>
-            </label>
-            <label>
-              <span>Langue</span>
-              <select value={language} onChange={(event) => setLanguage(event.target.value as LanguageFilter)}>
-                <option value="en">Anglais</option>
-                <option value="ja">Japonais</option>
-                <option value="all">Anglais et japonais</option>
-              </select>
-              <small className="hunt-hint">En français, utilise la liste anglaise : même numéro.</small>
-            </label>
-            <label>
-              <span>Génération</span>
-              <select value={generation} onChange={(event) => setGeneration(event.target.value)}>
-                <option value="all">Toutes</option>
-                {GENERATION_OPTIONS.map((option) => (
-                  <option key={option.id} value={String(option.id)}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <small className="hunt-hint">Dresseurs et énergies ne sont pas inclus.</small>
-            </label>
-            <label>
-              <span>Période</span>
-              <select value={series} onChange={(event) => setSeries(event.target.value)}>
-                <option value="all">Toutes les périodes</option>
-                {seriesOptions.map((id) => (
-                  <option key={id} value={id}>
-                    {seriesLabel(id)}
-                  </option>
-                ))}
-              </select>
-              <small className="hunt-hint">Un grand groupe, par exemple Écarlate et Violet.</small>
-            </label>
-            <label>
-              <span>Série</span>
-              <select value={setId} onChange={(event) => setSetId(event.target.value)}>
-                <option value="all">Toutes les séries ({setOptions.length})</option>
-                {setOptions.map((set) => (
-                  <option key={set.id} value={set.id}>
-                    {set.name}
-                  </option>
-                ))}
-              </select>
-              <small className="hunt-hint">Une série précise. Le chiffre, c’est combien il y en a.</small>
-            </label>
-          </div>
-        </fieldset>
-
-        <fieldset className="hunt-group">
-          <legend>2. Limiter les prix et les notes</legend>
-          <p className="hunt-group-help">
-            Chaque case enlève des cartes. Laisse une case vide pour ne plus limiter sur ce point.
-            Les chiffres déjà remplis sont un réglage de départ : des cartes ni trop chères, ni trop
-            courantes.
-          </p>
-          <div className="hunt-row hunt-limits">
-            <label>
-              <span>Prix maximum de la note 10 (€)</span>
-              <input
-                inputMode="decimal"
-                value={maxPrice}
-                onChange={(event) => setMaxPrice(event.target.value)}
-                placeholder="Pas de maximum"
-              />
-              <small className="hunt-hint">On cache les exemplaires notés 10 plus chers.</small>
-            </label>
-            <label>
-              <span>Prix minimum sans note (€)</span>
-              <input
-                inputMode="decimal"
-                value={minRaw}
-                onChange={(event) => setMinRaw(event.target.value)}
-                placeholder="Pas de minimum"
-              />
-              <small className="hunt-hint">On cache les cartes que presque personne n’achète.</small>
-            </label>
-            <label>
-              <span>Notes 10, au moins</span>
-              <input
-                inputMode="numeric"
-                value={minPsa10}
-                onChange={(event) => setMinPsa10(event.target.value)}
-                placeholder="0"
-              />
-              <small className="hunt-hint">Nombre d’exemplaires déjà notés 10.</small>
-            </label>
-            <label>
-              <span>Notes 10, au plus</span>
-              <input
-                inputMode="numeric"
-                value={maxPsa10}
-                onChange={(event) => setMaxPsa10(event.target.value)}
-                placeholder="Pas de maximum"
-              />
-              <small className="hunt-hint">Au-delà, la carte est trop courante.</small>
-            </label>
-            <label>
-              <span>Cartes notées, au moins</span>
-              <input
-                inputMode="numeric"
-                value={minGraded}
-                onChange={(event) => setMinGraded(event.target.value)}
-                placeholder="0"
-              />
-              <small className="hunt-hint">
-                Toutes les notes, pas seulement les 10. Sous 150, le pourcentage n’est pas fiable.
-              </small>
-            </label>
-          </div>
-          <label className="hunt-check">
+        <div className="hunt-row hunt-main">
+          <label>
+            <span>Recherche</span>
             <input
-              type="checkbox"
-              checked={pricedOnly}
-              onChange={(event) => setPricedOnly(event.target.checked)}
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Dracaufeu, Mewtwo, 199…"
             />
-            Cacher les cartes dont on ne connaît pas le prix
           </label>
-        </fieldset>
+          <label>
+            <span>Pokémon</span>
+            <select
+              value={pokemon}
+              onChange={(event) => {
+                const next = event.target.value
+                setPokemon(next)
+                if (next) {
+                  setSeries('all')
+                  setSetId('all')
+                  setQuery('')
+                }
+              }}
+            >
+              <option value="">Tous les Pokémon</option>
+              {choices.map((option) => (
+                <option key={option.phrase} value={option.phrase}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            <span>Langue</span>
+            <select value={language} onChange={(event) => setLanguage(event.target.value as LanguageFilter)}>
+              <option value="en">Français et anglais</option>
+              <option value="ja">Japonais</option>
+              <option value="all">Les deux</option>
+            </select>
+          </label>
+          <label>
+            <span>Ordre</span>
+            <select value={sort} onChange={(event) => setSort(event.target.value as SortMode)}>
+              <option value="upside">Les plus intéressantes</option>
+              <option value="price">Note 10 la moins chère</option>
+              <option value="pop">Le moins de notes 10</option>
+            </select>
+          </label>
+        </div>
 
         {precise && relaxed && (
           <div className="hunt-notice">
-            <p>
-              Tu cherches une carte précise : les limites de l’étape 2 sont mises de côté, pour
-              montrer toutes les versions.
-            </p>
+            <p>Recherche précise : les limites de prix et de notes sont mises de côté.</p>
             <button type="button" className="btn ghost" onClick={() => setKeepLimits(true)}>
               Garder les limites
             </button>
@@ -546,25 +456,111 @@ export function PsaHunt() {
         )}
         {precise && keepLimits && (
           <div className="hunt-notice">
-            <p>Les limites de prix et de notes restent actives pour cette recherche.</p>
+            <p>Les limites restent actives pour cette recherche.</p>
             <button type="button" className="btn ghost" onClick={() => setKeepLimits(false)}>
               Voir toutes les versions
             </button>
           </div>
         )}
 
-        <fieldset className="hunt-group">
-          <legend>3. Dans quel ordre</legend>
-          <label className="hunt-sort">
-            <span>Ordre de la liste</span>
-            <select value={sort} onChange={(event) => setSort(event.target.value as SortMode)}>
-              <option value="upside">Les plus intéressantes d’abord</option>
-              <option value="price">Note 10 la moins chère d’abord</option>
-              <option value="pop">Le moins d’exemplaires notés 10 d’abord</option>
-            </select>
-          </label>
-          <p className="hunt-group-help">{sortHelp}</p>
-        </fieldset>
+        {moreFilters && (
+          <fieldset className="hunt-group">
+            <legend>Filtres</legend>
+            <p className="hunt-group-help">
+              Vide une case pour enlever sa limite.
+            </p>
+            <div className="hunt-row hunt-pick">
+              <label>
+                <span>Génération</span>
+                <select value={generation} onChange={(event) => setGeneration(event.target.value)}>
+                  <option value="all">Toutes</option>
+                  {GENERATION_OPTIONS.map((option) => (
+                    <option key={option.id} value={String(option.id)}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <span>Période</span>
+                <select value={series} onChange={(event) => setSeries(event.target.value)}>
+                  <option value="all">Toutes les périodes</option>
+                  {seriesOptions.map((id) => (
+                    <option key={id} value={id}>
+                      {seriesLabel(id)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                <span>Série</span>
+                <select value={setId} onChange={(event) => setSetId(event.target.value)}>
+                  <option value="all">Toutes les séries ({setOptions.length})</option>
+                  {setOptions.map((set) => (
+                    <option key={set.id} value={set.id}>
+                      {set.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <div className="hunt-row hunt-limits">
+              <label>
+                <span>Prix max, note 10 (€)</span>
+                <input
+                  inputMode="decimal"
+                  value={maxPrice}
+                  onChange={(event) => setMaxPrice(event.target.value)}
+                  placeholder="Pas de maximum"
+                />
+              </label>
+              <label>
+                <span>Prix min, sans note (€)</span>
+                <input
+                  inputMode="decimal"
+                  value={minRaw}
+                  onChange={(event) => setMinRaw(event.target.value)}
+                  placeholder="Pas de minimum"
+                />
+              </label>
+              <label>
+                <span>Notes 10, minimum</span>
+                <input
+                  inputMode="numeric"
+                  value={minPsa10}
+                  onChange={(event) => setMinPsa10(event.target.value)}
+                  placeholder="0"
+                />
+              </label>
+              <label>
+                <span>Notes 10, maximum</span>
+                <input
+                  inputMode="numeric"
+                  value={maxPsa10}
+                  onChange={(event) => setMaxPsa10(event.target.value)}
+                  placeholder="Pas de maximum"
+                />
+              </label>
+              <label>
+                <span>Cartes déjà notées, minimum</span>
+                <input
+                  inputMode="numeric"
+                  value={minGraded}
+                  onChange={(event) => setMinGraded(event.target.value)}
+                  placeholder="0"
+                />
+              </label>
+            </div>
+            <label className="hunt-check">
+              <input
+                type="checkbox"
+                checked={pricedOnly}
+                onChange={(event) => setPricedOnly(event.target.checked)}
+              />
+              Cacher les cartes sans prix
+            </label>
+          </fieldset>
+        )}
 
         <div className="hunt-foot">
           <p className="hunt-count">
@@ -586,6 +582,14 @@ export function PsaHunt() {
             </small>
           </p>
           <div className="hunt-actions">
+            <button
+              type="button"
+              className="btn ghost"
+              aria-expanded={moreFilters}
+              onClick={() => setMoreFilters((open) => !open)}
+            >
+              {moreFilters ? 'Fermer les filtres' : 'Filtres'}
+            </button>
             <button type="button" className="btn ghost" onClick={clearLimits}>
               Enlever les limites
             </button>
@@ -600,7 +604,30 @@ export function PsaHunt() {
         <p className="panel state-msg">{emptyMessage()}</p>
       ) : (
         <div className="panel hunt-results">
-          <div className="hunt-grid">
+          <div className="hunt-toolbar">
+            <div className="hunt-view" role="group" aria-label="Affichage des cartes">
+              <span>Affichage</span>
+              {VIEW_OPTIONS.map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  className={view === option.id ? 'is-on' : ''}
+                  aria-pressed={view === option.id}
+                  onClick={() => setView(option.id)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            <p>
+              {view === 'list'
+                ? 'Une carte par ligne, pour lire le nom et les prix plus vite.'
+                : view === 'large'
+                  ? 'Image plus grande, pour mieux reconnaître la carte.'
+                  : 'Plusieurs cartes par ligne.'}
+            </p>
+          </div>
+          <div className={`hunt-grid is-${view}`}>
             {visible.map((card, index) => {
               const image = cardImageUrl(card.cardId)
               const psaPrice = toEur(card.psa10Usd)
@@ -649,14 +676,16 @@ export function PsaHunt() {
                           {money(rawPrice)}
                         </span>
                       </p>
-                      <a href={cardPageUrl(card.slug)} target="_blank" rel="noreferrer">
-                        Ouvrir la fiche
-                      </a>
-                      {species && species !== pokemon && (
-                        <button type="button" className="hunt-all-series" onClick={() => showAllSeries(card.name)}>
-                          Toutes les cartes de {speciesLabel(species)}
-                        </button>
-                      )}
+                      <div className="hunt-links">
+                        <a href={cardPageUrl(card.slug)} target="_blank" rel="noreferrer">
+                          Ouvrir la fiche
+                        </a>
+                        {species && species !== pokemon && (
+                          <button type="button" className="hunt-all-series" onClick={() => showAllSeries(card.name)}>
+                            Toutes les cartes de {speciesLabel(species)}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </article>
                 </Fragment>
