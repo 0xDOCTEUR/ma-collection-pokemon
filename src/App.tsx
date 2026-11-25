@@ -147,10 +147,6 @@ function readDensity(): CollectionDensity {
 export default function App() {
   const [tab, setTab] = useState<AppTab>(() => readInitialTab())
   const [selectedSetId, setSelectedSetId] = useState<string | 'all'>(() => readInitialSetFilter())
-  const [lastSeriesId, setLastSeriesId] = useState(() => {
-    const initial = readInitialSetFilter()
-    return initial === 'all' ? 'sv03.5' : initial
-  })
   const previousSetIdRef = useRef<string | 'all'>(readInitialSetFilter())
   const [cardsBySet, setCardsBySet] = useState<Record<string, PokemonCard[]>>({})
   const [loading, setLoading] = useState(true)
@@ -578,10 +574,6 @@ export default function App() {
   }, [tab, selectedSetId])
 
   useEffect(() => {
-    if (selectedSetId !== 'all') setLastSeriesId(selectedSetId)
-  }, [selectedSetId])
-
-  useEffect(() => {
     const previous = previousSetIdRef.current
     previousSetIdRef.current = selectedSetId
     // Ne vide la recherche que quand on change d’une série à une autre série.
@@ -694,7 +686,6 @@ export default function App() {
             hunt={hunt}
             onOpenCollection={() => setTab('collection')}
             onSelectSet={(setId) => {
-              if (setId !== 'all') setLastSeriesId(setId)
               setSelectedSetId(setId)
               setTab('collection')
             }}
