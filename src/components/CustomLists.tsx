@@ -33,7 +33,14 @@ function compareCards(a: PokemonCard, b: PokemonCard, sort: SortKey): number {
   return Number.parseInt(a.number, 10) - Number.parseInt(b.number, 10)
 }
 
+interface SetOption {
+  id: string
+  name: string
+  shortName: string
+}
+
 interface Props {
+  sets?: SetOption[]
   cardsBySet: Record<string, PokemonCard[]>
   getStatus: (setId: string, id: string, variant: CardVariant) => CardStatus
   lists: CustomList[]
@@ -47,6 +54,7 @@ interface Props {
 }
 
 export function CustomLists({
+  sets = SETS,
   cardsBySet,
   getStatus,
   lists,
@@ -60,7 +68,7 @@ export function CustomLists({
 }: Props) {
   const [activeId, setActiveId] = useState<string | null>(lists[0]?.id ?? null)
   const [newName, setNewName] = useState('')
-  const [newSetId, setNewSetId] = useState(SETS[0]?.id ?? 'sv03.5')
+  const [newSetId, setNewSetId] = useState(sets[0]?.id ?? 'sv03.5')
   const [query, setQuery] = useState('')
   const deferredQuery = useDeferredValue(query)
   const [format, setFormat] = useState<ListFormat>('numbers-names')
@@ -75,7 +83,7 @@ export function CustomLists({
 
   const active = lists.find((l) => l.id === activeId) ?? lists[0] ?? null
 
-  const setInfo = SETS.find((s) => s.id === active?.setId)
+  const setInfo = sets.find((s) => s.id === active?.setId)
   const cards = active ? (cardsBySet[active.setId] ?? []) : []
   const selectedSet = useMemo(() => new Set(active?.selected ?? []), [active?.selected])
 
@@ -351,7 +359,7 @@ export function CustomLists({
           <label>
             Collection
             <select value={newSetId} onChange={(e) => setNewSetId(e.target.value)}>
-              {SETS.map((set) => (
+              {sets.map((set) => (
                 <option key={set.id} value={set.id}>
                   {set.name}
                 </option>
@@ -370,7 +378,7 @@ export function CustomLists({
         <>
           <div className="list-picker panel">
             {lists.map((list) => {
-              const setName = SETS.find((s) => s.id === list.setId)?.shortName ?? list.setId
+              const setName = sets.find((s) => s.id === list.setId)?.shortName ?? list.setId
               const value = listValues.get(list.id) ?? { tcg: 0, cardmarket: 0 }
               return (
                 <button
@@ -417,7 +425,7 @@ export function CustomLists({
                       }
                     }}
                   >
-                    {SETS.map((set) => (
+                    {sets.map((set) => (
                       <option key={set.id} value={set.id}>
                         {set.name}
                       </option>

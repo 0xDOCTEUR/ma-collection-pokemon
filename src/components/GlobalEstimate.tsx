@@ -20,7 +20,13 @@ interface SetBreakdown {
   totalSlots: number
 }
 
+interface SetOption {
+  id: string
+  name: string
+}
+
 interface Props {
+  sets?: SetOption[]
   cardsBySet: Record<string, PokemonCard[]>
   getStatus: (setId: string, id: string, variant: 'normal' | 'reverse') => CardStatus
 }
@@ -33,7 +39,7 @@ function money(n: number) {
   }).format(n)
 }
 
-export function GlobalEstimate({ cardsBySet, getStatus }: Props) {
+export function GlobalEstimate({ sets = SETS, cardsBySet, getStatus }: Props) {
   const breakdowns: SetBreakdown[] = []
   const ownedSlots: OwnedSlot[] = []
   let ownedTotal = 0
@@ -43,7 +49,7 @@ export function GlobalEstimate({ cardsBySet, getStatus }: Props) {
   let wantedValue = 0
   let missingValue = 0
 
-  for (const set of SETS) {
+  for (const set of sets) {
     const cards = cardsBySet[set.id] ?? []
     const row: SetBreakdown = {
       setId: set.id,

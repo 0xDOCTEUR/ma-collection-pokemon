@@ -2,10 +2,10 @@ import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'rea
 import { euroValue, fetchPopulation, fetchSetCards } from './api/pokemon'
 import { BackupPanel } from './components/BackupPanel'
 import { CardDetailSheet } from './components/CardDetailSheet'
+import { CollectionMenu } from './components/CollectionMenu'
 import { CustomLists } from './components/CustomLists'
 import { ExportPanel } from './components/ExportPanel'
 import { GlobalEstimate } from './components/GlobalEstimate'
-import { LotSearch } from './components/LotSearch'
 import { PsaHunt } from './components/PsaHunt'
 import { PokedocLogo } from './components/PokedocLogo'
 import { CardScan } from './components/CardScan'
@@ -13,6 +13,11 @@ import { CatalogCardSheet } from './components/CatalogCardSheet'
 import { PokemonCardTile } from './components/PokemonCardTile'
 import { QuickAdd } from './components/QuickAdd'
 import type { LooseConditionId } from './utils/cardScan'
+import {
+  buildAllCollectionSets,
+  buildCatalogSetCards,
+  buildCatalogSetPopulation,
+} from './utils/collectionSets'
 import { buildScanTargets } from './utils/scanTargets'
 import { useCollection } from './hooks/useCollection'
 import { useCustomLists } from './hooks/useCustomLists'
@@ -89,7 +94,7 @@ export default function App() {
   const [scannedCondition, setScannedCondition] = useState<LooseConditionId | null>(null)
   const [populationBySet, setPopulationBySet] = useState<Record<string, PopulationFile | null>>({})
   const [hunt, setHunt] = useState<PsaHuntData | null>(null)
-  const { getStatus, setStatus, markMany, resetSet, savedAt } = useCollection()
+  const { collections, getStatus, setStatus, markMany, resetSet, savedAt } = useCollection()
   const customLists = useCustomLists()
 
   useEffect(() => {
@@ -163,8 +168,46 @@ export default function App() {
     }
   }, [])
 
-  const activeSet = SETS.find((s) => s.id === tab) ?? null
-  const cards = activeSet ? (cardsBySet[activeSet.id] ?? []) : []
+  const allCollectionSets = useMemo(() => buildAllCollectionSets(hunt), [hunt])
+
+  const isToolTab =
+    tab === 'catalogue' || tab === 'scan' || tab === 'estimation' || tab === 'listes' || tab === 'lots'
+  const activeSet = isToolTab ? null : (allCollectionSets.find((s) => s.id === tab) ?? null)
+
+  const ownedCountBySet = useMemo(() => {
+    const counts: Record<string, number> = {}
+    for (const [setId, map] of Object.entries(collections)) {
+      let n = 0
+      for (const status of Object.values(map)) {
+        if (status === 'owned') n += 1
+      }
+      if (n > 0) counts[setId] = n
+    }
+    return counts
+  }, [collections])
+
+  const trackedSets = useMemo(() => {
+    const needed = new Set<string>(SETS.map((s) => s.id))
+    for (const setId of Object.keys(collections)) {
+      if (Object.keys(collections[setId] ?? {}).length > 0) needed.add(setId)
+    }
+    for (const list of customLists.lists) needed.add(list.setId)
+    if (activeSet) needed.add(activeSet.id)
+    return allCollectionSets.filter((s) => needed.has(s.id))
+  }, [allCollectionSets, collections, customLists.lists, activeSet])
+
+  const allCardsBySet = useMemo(() => {
+    const next: Record<string, PokemonCard[]> = { ...cardsBySet }
+    if (!hunt) return next
+    for (const set of trackedSets) {
+      if (!next[set.id] && !set.featured) {
+        next[set.id] = buildCatalogSetCards(set.id, hunt)
+      }
+    }
+    return next
+  }, [cardsBySet, hunt, trackedSets])
+
+  const cards = activeSet ? (allCardsBySet[activeSet.id] ?? []) : []
 
   const getActiveStatus = useCallback(
     (cardId: string, variant: CardVariant): CardStatus =>
@@ -177,7 +220,14 @@ export default function App() {
     return sortRarities([...set])
   }, [cards])
 
-  const populationFile = activeSet ? (populationBySet[activeSet.id] ?? null) : null
+  const activeCatalogPopulation = useMemo(() => {
+    if (!activeSet || activeSet.featured || !hunt) return null
+    return buildCatalogSetPopulation(activeSet.id, hunt)
+  }, [activeSet, hunt])
+
+  const populationFile = activeSet
+    ? (populationBySet[activeSet.id] ?? activeCatalogPopulation ?? null)
+    : null
   const setHasPopulation = populationFile != null && Object.keys(populationFile.cards).length > 0
   const populationRank = useMemo(() => {
     if (!setHasPopulation || !populationFile) {
@@ -193,11 +243,13 @@ export default function App() {
 
   const potentialByCardId = useMemo(() => {
     const map = new Map<string, CardPotential>()
-    const huntSetId = activeSet ? COLLECTION_HUNT_SET[activeSet.id] : undefined
+    const huntSetId = activeSet
+      ? (activeSet.huntSetId ?? COLLECTION_HUNT_SET[activeSet.id])
+      : undefined
     if (!hunt || !huntSetId) return map
     const byNumber = new Map<string, PsaHuntData['cards']>()
     for (const row of hunt.cards) {
-      if (row.set.id !== huntSetId || row.set.language !== 'en') continue
+      if (row.set.id !== huntSetId || row.set.language === 'fr') continue
       const list = byNumber.get(row.number) ?? []
       list.push(row)
       byNumber.set(row.number, list)
@@ -258,8 +310,8 @@ export default function App() {
 
   const globalOwnedValue = useMemo(() => {
     let total = 0
-    for (const set of SETS) {
-      for (const card of cardsBySet[set.id] ?? []) {
+    for (const set of trackedSets) {
+      for (const card of allCardsBySet[set.id] ?? []) {
         if (getStatus(set.id, card.id, 'normal') === 'owned') {
           total += euroValue(card, 'normal')
         }
@@ -269,7 +321,7 @@ export default function App() {
       }
     }
     return total
-  }, [cardsBySet, getStatus])
+  }, [trackedSets, allCardsBySet, getStatus])
 
   const visible = useMemo(() => {
     const q = deferredQuery.trim().toLowerCase()
@@ -296,21 +348,21 @@ export default function App() {
       )
     })
 
-    const populationFile = activeSet ? populationBySet[activeSet.id] : null
+    const activePop = populationFile
     list = [...list].sort((a, b) => {
       if (sort === 'name') return a.card.name.localeCompare(b.card.name, 'fr')
       if (sort === 'price-asc') return euroValue(a.card) - euroValue(b.card)
       if (sort === 'price-desc') return euroValue(b.card) - euroValue(a.card)
       if (sort === 'pop-asc' || sort === 'pop-desc') {
-        const left = populationSortGroup(populationFile?.cards[a.card.id]?.printings)
-        const right = populationSortGroup(populationFile?.cards[b.card.id]?.printings)
+        const left = populationSortGroup(activePop?.cards[a.card.id]?.printings)
+        const right = populationSortGroup(activePop?.cards[b.card.id]?.printings)
         if (left.group !== right.group) return left.group - right.group
         return sort === 'pop-asc' ? left.psa10 - right.psa10 : right.psa10 - left.psa10
       }
       return Number.parseInt(a.card.number, 10) - Number.parseInt(b.card.number, 10)
     })
     return list
-  }, [enriched, deferredQuery, filter, rarity, sort, activeSet, populationBySet])
+  }, [enriched, deferredQuery, filter, rarity, sort, populationFile])
 
   useEffect(() => {
     setQuery('')
@@ -334,60 +386,46 @@ export default function App() {
       <header className="site-top">
         <PokedocLogo />
         <nav className="tabs" aria-label="Navigation">
-          <div className="nav-cluster" role="group" aria-label="Collection">
-            {SETS.map((set) => (
-              <button
-                key={set.id}
-                type="button"
-                className={tab === set.id ? 'tab active' : 'tab'}
-                onClick={() => setTab(set.id)}
-              >
-                {set.shortName}
-              </button>
-            ))}
-          </div>
+          <CollectionMenu
+            sets={allCollectionSets}
+            activeSetId={activeSet?.id ?? null}
+            isCollectionActive={!isToolTab}
+            ownedCountBySet={ownedCountBySet}
+            onSelectSet={(setId) => setTab(setId)}
+          />
           <span className="nav-sep" aria-hidden="true" />
-          <div className="nav-cluster" role="group" aria-label="Côtes">
-            <button
-              type="button"
-              className={tab === 'catalogue' ? 'tab active' : 'tab'}
-              onClick={() => setTab('catalogue')}
-            >
-              Catalogue
-            </button>
-            <button
-              type="button"
-              className={tab === 'scan' ? 'tab active tab-scan' : 'tab tab-scan'}
-              onClick={() => setTab('scan')}
-            >
-              Scanner
-            </button>
-          </div>
+          <button
+            type="button"
+            className={tab === 'catalogue' ? 'tab active' : 'tab'}
+            onClick={() => setTab('catalogue')}
+          >
+            Catalogue
+          </button>
           <span className="nav-sep" aria-hidden="true" />
-          <div className="nav-cluster" role="group" aria-label="Outils">
-            <button
-              type="button"
-              className={tab === 'listes' ? 'tab active' : 'tab'}
-              onClick={() => setTab('listes')}
-            >
-              Listes
-            </button>
-            <button
-              type="button"
-              className={tab === 'lots' ? 'tab active' : 'tab'}
-              onClick={() => setTab('lots')}
-            >
-              Lots
-            </button>
-            <button
-              type="button"
-              className={tab === 'estimation' ? 'tab active' : 'tab'}
-              onClick={() => setTab('estimation')}
-            >
-              Estimation
-              <span className="tab-value">{money(globalOwnedValue)}</span>
-            </button>
-          </div>
+          <button
+            type="button"
+            className={tab === 'scan' ? 'tab active tab-scan' : 'tab tab-scan'}
+            onClick={() => setTab('scan')}
+          >
+            Scanner
+          </button>
+          <span className="nav-sep" aria-hidden="true" />
+          <button
+            type="button"
+            className={tab === 'listes' ? 'tab active' : 'tab'}
+            onClick={() => setTab('listes')}
+          >
+            Listes
+          </button>
+          <span className="nav-sep" aria-hidden="true" />
+          <button
+            type="button"
+            className={tab === 'estimation' ? 'tab active' : 'tab'}
+            onClick={() => setTab('estimation')}
+          >
+            Estimation
+            <span className="tab-value">{money(globalOwnedValue)}</span>
+          </button>
         </nav>
       </header>
 
@@ -424,7 +462,7 @@ export default function App() {
         ) : error ? (
           <p className="state-msg error">{error}</p>
         ) : (
-          <GlobalEstimate cardsBySet={cardsBySet} getStatus={getStatus} />
+          <GlobalEstimate sets={trackedSets} cardsBySet={allCardsBySet} getStatus={getStatus} />
         )
       ) : tab === 'listes' ? (
         loading ? (
@@ -432,15 +470,12 @@ export default function App() {
         ) : error ? (
           <p className="state-msg error">{error}</p>
         ) : (
-          <CustomLists cardsBySet={cardsBySet} getStatus={getStatus} {...customLists} />
-        )
-      ) : tab === 'lots' ? (
-        loading ? (
-          <p className="state-msg">Chargement des séries…</p>
-        ) : error ? (
-          <p className="state-msg error">{error}</p>
-        ) : (
-          <LotSearch cardsBySet={cardsBySet} getStatus={getStatus} />
+          <CustomLists
+            sets={trackedSets}
+            cardsBySet={allCardsBySet}
+            getStatus={getStatus}
+            {...customLists}
+          />
         )
       ) : (
         <>
@@ -662,34 +697,37 @@ export default function App() {
         />
       )}
 
-      {detailCard && (
-        <CardDetailSheet
-          card={detailCard}
-          onClose={() => {
-            setDetailCard(null)
-            setScannedCondition(null)
-          }}
-          population={
-            populationBySet[detailCard.setId]?.cards[detailCard.id]?.printings ?? null
-          }
-          rank={
-            detailCard.setId === activeSet?.id
-              ? (populationRank.rankById.get(detailCard.id) ?? null)
-              : null
-          }
-          comparableCount={
-            detailCard.setId === activeSet?.id ? populationRank.comparable : 0
-          }
-          sourceUrl={populationBySet[detailCard.setId]?.source ?? null}
-          sourceName={populationBySet[detailCard.setId]?.sourceName ?? 'CardPrice'}
-          censusDate={latestCensusDate(populationBySet[detailCard.setId] ?? null)}
-          frenchSourceUrl={populationBySet[detailCard.setId]?.frenchSource ?? null}
-          frenchSourceName={populationBySet[detailCard.setId]?.frenchSourceName ?? null}
-          frenchCensusDate={populationBySet[detailCard.setId]?.frenchFetchedAt ?? null}
-          potential={potentialByCardId.get(detailCard.id) ?? null}
-          scannedCondition={scannedCondition}
-        />
-      )}
+      {detailCard && (() => {
+        const detailPop =
+          populationBySet[detailCard.setId] ??
+          (detailCard.setId === activeSet?.id ? populationFile : null)
+        return (
+          <CardDetailSheet
+            card={detailCard}
+            onClose={() => {
+              setDetailCard(null)
+              setScannedCondition(null)
+            }}
+            population={detailPop?.cards[detailCard.id]?.printings ?? null}
+            rank={
+              detailCard.setId === activeSet?.id
+                ? (populationRank.rankById.get(detailCard.id) ?? null)
+                : null
+            }
+            comparableCount={
+              detailCard.setId === activeSet?.id ? populationRank.comparable : 0
+            }
+            sourceUrl={detailPop?.source ?? null}
+            sourceName={detailPop?.sourceName ?? 'CardPrice'}
+            censusDate={latestCensusDate(detailPop)}
+            frenchSourceUrl={detailPop?.frenchSource ?? null}
+            frenchSourceName={detailPop?.frenchSourceName ?? null}
+            frenchCensusDate={detailPop?.frenchFetchedAt ?? null}
+            potential={potentialByCardId.get(detailCard.id) ?? null}
+            scannedCondition={scannedCondition}
+          />
+        )
+      })()}
 
       <BackupPanel />
 
