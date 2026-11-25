@@ -254,7 +254,7 @@ function makeCrop(
   ry: number,
   rw: number,
   rh: number,
-  mode: 'raw' | 'inv' | 'contrast' | 'invcontrast' | 'maxrgb' = 'raw',
+  mode: 'raw' | 'inv' | 'contrast' | 'invcontrast' | 'maxrgb' | 'soft' | 'softinv' = 'raw',
   scaleFactor = 2.5,
 ): HTMLCanvasElement {
   const { width: sourceW, height: sourceH } = sourceSize(image)
@@ -265,17 +265,23 @@ function makeCrop(
 
   const outW = Math.max(360, Math.min(1200, Math.round(sw * scaleFactor)))
   const outH = Math.max(64, Math.round((outW * sh) / sw))
+  const pad = mode === 'soft' || mode === 'softinv' ? 18 : 0
   const canvas = document.createElement('canvas')
-  canvas.width = outW
-  canvas.height = outH
-  const context = canvas.getContext('2d')
+  canvas.width = outW + pad * 2
+  canvas.height = outH + pad * 2
+  const context = canvas.getContext('2d', { willReadFrequently: true })
   if (!context) throw new Error('Canvas indisponible.')
+  if (pad > 0) {
+    context.fillStyle = '#ffffff'
+    context.fillRect(0, 0, canvas.width, canvas.height)
+  }
   context.imageSmoothingEnabled = true
-  context.drawImage(image, sx, sy, sw, sh, 0, 0, outW, outH)
+  context.imageSmoothingQuality = 'high'
+  context.drawImage(image, sx, sy, sw, sh, pad, pad, outW, outH)
 
   if (mode === 'raw') return canvas
 
-  const pixels = context.getImageData(0, 0, outW, outH)
+  const pixels = context.getImageData(pad, pad, outW, outH)
   const data = pixels.data
   let mn = 255
   let mx = 0
@@ -283,13 +289,59 @@ function makeCrop(
   for (let i = 0, p = 0; i < data.length; i += 4, p += 1) {
     // max(R,G,B) rend le texte noir très net sur fond rouge/violet/bleu (cartes Feu/Psy/Eau).
     const g =
-      mode === 'maxrgb'
+      mode === 'maxrgb' || mode === 'soft'
         ? Math.max(data[i], data[i + 1], data[i + 2])
         : Math.round(0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2])
     gray[p] = g
     if (g < mn) mn = g
     if (g > mx) mx = g
   }
+
+  if (mode === 'soft' || mode === 'softinv') {
+    // Normalisation locale par image intégrale : supprime les reflets brillants, pochettes et fonds
+    // colorés en ramenant le fond à blanc pur (255) et les lettres à noir net (0).
+    const stride = outW + 1
+    const ii = new Float64Array(stride * (outH + 1))
+    for (let y = 1; y <= outH; y += 1) {
+      let rowSum = 0
+      const rowOff = y * stride
+      const prevOff = (y - 1) * stride
+      const gOff = (y - 1) * outW
+      for (let x = 1; x <= outW; x += 1) {
+        rowSum += gray[gOff + x - 1]
+        ii[rowOff + x] = ii[prevOff + x] + rowSum
+      }
+    }
+    const rad = Math.max(10, Math.min(48, Math.round(outH * 0.35)))
+    for (let y = 0; y < outH; y += 1) {
+      const y0 = Math.max(0, y - rad)
+      const y1 = Math.min(outH - 1, y + rad)
+      const r0 = y0 * stride
+      const r1 = (y1 + 1) * stride
+      for (let x = 0; x < outW; x += 1) {
+        const x0 = Math.max(0, x - rad)
+        const x1 = Math.min(outW - 1, x + rad)
+        const cnt = (x1 - x0 + 1) * (y1 - y0 + 1)
+        const mean = (ii[r1 + x1 + 1] - ii[r0 + x1 + 1] - ii[r1 + x0] + ii[r0 + x0]) / cnt
+        const p = y * outW + x
+        let ratio: number
+        if (mode === 'soft') {
+          ratio = gray[p] / Math.max(20, mean)
+        } else {
+          // Texte clair sur fond sombre : inverse la luminance avant le rapport local.
+          ratio = (255 - gray[p]) / Math.max(20, 255 - mean)
+        }
+        const v = Math.max(0, Math.min(255, Math.round(((ratio - 0.55) / 0.4) * 255)))
+        const i = p * 4
+        data[i] = v
+        data[i + 1] = v
+        data[i + 2] = v
+      }
+    }
+    context.putImageData(pixels, pad, pad)
+    return canvas
+  }
+
   const span = Math.max(1, mx - mn)
 
   for (let i = 0, p = 0; i < data.length; i += 4, p += 1) {
@@ -305,7 +357,7 @@ function makeCrop(
     data[i + 1] = v
     data[i + 2] = v
   }
-  context.putImageData(pixels, 0, 0)
+  context.putImageData(pixels, pad, pad)
   return canvas
 }
 
@@ -745,12 +797,27 @@ function setHintBoost(ocrText: string, target: ScanTarget): number {
   if (target.setId.includes('sv03.5') || target.setId.includes('sv3pt5')) {
     if (/\b151\b/.test(folded) || /pokemon 151|pok.?mon 151/.test(folded)) score += 14
   }
-  if (target.setId.includes('me55') || /30e|30th|anniversaire|celebration/.test(folded)) {
-    if (/30e|30th|anniversaire|celebration/.test(foldName(target.setLabel))) score += 10
+  if (/30e|30th|anniversaire|celebration/.test(folded)) {
+    if (/30e|30th|anniversaire|celebration/.test(label)) score += 10
   }
   if (target.collectionCard) score += 4
   if (/^[A-Z]{2,}\d+$/i.test(target.number)) score += 4
   return score
+}
+
+const VARIANT_TAG_RE = /\b(vmax|vstar|v-union|vunion|gx|ex|v)\b/i
+
+function variantHintBoost(ocrText: string, target: ScanTarget): number {
+  const foldedOcr = foldName(ocrText)
+  const foldedName = foldName(target.name)
+  const targetVar = foldedName.match(VARIANT_TAG_RE)?.[1]?.replace('-', '') ?? ''
+  const ocrHasTag = VARIANT_TAG_RE.test(foldedOcr)
+  if (targetVar) {
+    if (new RegExp(`\\b${targetVar}\\b`, 'i').test(foldedOcr)) return 10
+    return 0
+  }
+  // Carte classique (sans ex / V / GX) : léger avantage si aucun de ces suffixes n’a été lu.
+  return ocrHasTag ? 0 : 10
 }
 
 function targetsForNumber(byNumber: Map<string, ScanTarget[]>, number: string): ScanTarget[] {
@@ -938,7 +1005,11 @@ export function scoreMatches(
           keep({
             target,
             number: target.number,
-            score: 70 + species.priority * 4 + setHintBoost(ocrText, target),
+            score:
+              70 +
+              species.priority * 4 +
+              setHintBoost(ocrText, target) +
+              variantHintBoost(ocrText, target),
             why: `Nom lu : ${species.label}`,
           })
         }
@@ -1088,12 +1159,12 @@ export async function scanCardPhoto(
     return data.text?.trim() ?? ''
   }
 
-  // 1. Bande du nom en haut : raw + maxrgb (cartes Feu/Psy/Eau) + inv (textes blancs Full Art)
+  // 1. Bande du nom en haut : soft (supprime reflets/fonds colorés) + softinv (textes blancs Full Art) + raw
   const topRegions: { canvas: HTMLCanvasElement; psm: PSM }[] = [
-    { canvas: makeCrop(card, 0.14, 0.025, 0.65, 0.11, 'maxrgb', 2.6), psm: PSM.SINGLE_BLOCK },
-    { canvas: makeCrop(card, 0.14, 0.025, 0.65, 0.11, 'raw', 2.5), psm: PSM.SINGLE_BLOCK },
+    { canvas: makeCrop(card, 0.14, 0.025, 0.68, 0.12, 'soft', 3.0), psm: PSM.SINGLE_BLOCK },
+    { canvas: makeCrop(card, 0.22, 0.05, 0.62, 0.11, 'soft', 3.5), psm: PSM.SINGLE_BLOCK },
+    { canvas: makeCrop(card, 0.04, 0.015, 0.92, 0.16, 'softinv', 2.4), psm: PSM.SPARSE_TEXT },
     { canvas: makeCrop(card, 0.04, 0.015, 0.92, 0.16, 'raw', 2.0), psm: PSM.SPARSE_TEXT },
-    { canvas: makeCrop(card, 0.04, 0.015, 0.92, 0.16, 'inv', 2.0), psm: PSM.SPARSE_TEXT },
   ]
   const topTexts: string[] = []
   for (const r of topRegions) {
@@ -1103,10 +1174,10 @@ export async function scanCardPhoto(
 
   // 2. Numéro en bas à GAUCHE (cartes récentes) ET en bas à DROITE (anciennes cartes / XY)
   const bottomRegions: { canvas: HTMLCanvasElement; psm: PSM }[] = [
-    { canvas: makeCrop(card, 0.02, 0.87, 0.40, 0.12, 'maxrgb', 3.2), psm: PSM.SPARSE_TEXT },
-    { canvas: makeCrop(card, 0.02, 0.87, 0.40, 0.12, 'invcontrast', 3.2), psm: PSM.SPARSE_TEXT },
-    { canvas: makeCrop(card, 0.68, 0.89, 0.30, 0.10, 'maxrgb', 4.0), psm: PSM.SPARSE_TEXT },
-    { canvas: makeCrop(card, 0.68, 0.89, 0.30, 0.10, 'invcontrast', 4.0), psm: PSM.SPARSE_TEXT },
+    { canvas: makeCrop(card, 0.02, 0.87, 0.40, 0.12, 'soft', 3.4), psm: PSM.SPARSE_TEXT },
+    { canvas: makeCrop(card, 0.02, 0.87, 0.40, 0.12, 'softinv', 3.4), psm: PSM.SPARSE_TEXT },
+    { canvas: makeCrop(card, 0.68, 0.89, 0.30, 0.10, 'soft', 4.0), psm: PSM.SPARSE_TEXT },
+    { canvas: makeCrop(card, 0.68, 0.89, 0.30, 0.10, 'softinv', 4.0), psm: PSM.SPARSE_TEXT },
   ]
   const bottomTexts: string[] = []
   for (const r of bottomRegions) {
@@ -1124,9 +1195,9 @@ export async function scanCardPhoto(
   if (speciesHits.length === 0 && numberHits.length === 0) {
     onProgress?.('Nouvel essai sur toute la photo…')
     const fullFallbacks = [
-      makeCrop(card, 0, 0, 1, 0.25, 'maxrgb', 2.2),
-      makeCrop(card, 0, 0, 1, 0.25, 'invcontrast', 2.2),
-      makeCrop(image, 0, 0, 1, 1, 'maxrgb', 1.4),
+      makeCrop(card, 0, 0, 1, 0.25, 'soft', 2.4),
+      makeCrop(card, 0, 0, 1, 0.25, 'softinv', 2.4),
+      makeCrop(image, 0, 0, 1, 1, 'soft', 1.4),
     ]
     for (const canvas of fullFallbacks) {
       const t = await ocr(canvas, PSM.SPARSE_TEXT)
