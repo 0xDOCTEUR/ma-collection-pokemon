@@ -33,6 +33,26 @@
   padding-right: 0.15rem;
 }
 
+button.pokedoc-logo.is-link {
+  margin: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  padding: 0.15rem 0.25rem 0.15rem 0;
+  border-radius: 10px;
+}
+
+button.pokedoc-logo.is-link:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+button.pokedoc-logo.is-link:focus-visible {
+  outline: 2px solid rgba(61, 214, 198, 0.65);
+  outline-offset: 2px;
+}
+
 .pokedoc-ball {
   display: block;
   filter: drop-shadow(0 4px 10px rgba(230, 57, 70, 0.28));

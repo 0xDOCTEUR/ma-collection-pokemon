@@ -591,6 +591,18 @@ export default function App() {
     setTab('collection')
   }
 
+  function goHome() {
+    setTab('collection')
+    setDetailCard(null)
+    setCatalogCard(null)
+    setScannedCondition(null)
+    setOpenTool(null)
+    setQuery('')
+    setFilter('all')
+    setRarity('all')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   function searchPokemonEverywhere(name: string) {
     const next = name.trim()
     if (next.length < 2) return
@@ -675,7 +687,7 @@ export default function App() {
       </div>
 
       <header className="site-top">
-        <PokedocLogo />
+        <PokedocLogo onClick={goHome} />
         <nav className="tabs" aria-label="Navigation">
           <CollectionMenu
             sets={allCollectionSets}
@@ -1213,7 +1225,7 @@ export default function App() {
       <BackupPanel />
 
       <footer className="footer">
-        <PokedocLogo compact />
+        <PokedocLogo compact onClick={goHome} />
         <p>
           POKEDOC — ta collection sur toutes les séries, tes listes d’achat, et le scan pour
           reconnaître une carte. Côtes TCGPlayer (converties en euros) et Cardmarket. Données
