@@ -3272,6 +3272,16 @@ textarea:focus {
   overflow: auto;
 }
 
+.nav-submenu .search-suggest {
+  position: static;
+  max-height: none;
+  box-shadow: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  backdrop-filter: none;
+}
+
 .search-suggest-item {
   display: grid;
   grid-template-columns: 36px 1fr;

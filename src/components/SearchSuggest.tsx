@@ -48,7 +48,7 @@ export function SearchSuggest({ items, activeIndex, onHover, onPick }: Props) {
         )
       })}
       <li className="search-suggest-hint" aria-hidden="true">
-        Survole une carte · Entrée = recherche globale
+        Survole une carte · Entrée pour chercher partout
       </li>
     </ul>
   )

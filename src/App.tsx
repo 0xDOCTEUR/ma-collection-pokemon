@@ -1,12 +1,4 @@
-import {
-  useCallback,
-  useDeferredValue,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type KeyboardEvent,
-} from 'react'
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { euroValue, fetchPopulation, fetchSetCards } from './api/pokemon'
 import { BackupPanel } from './components/BackupPanel'
 import { CardDetailSheet } from './components/CardDetailSheet'
@@ -20,7 +12,6 @@ import { CatalogCardSheet } from './components/CatalogCardSheet'
 import { AddToListMenu } from './components/AddToListMenu'
 import { PokemonCardTile } from './components/PokemonCardTile'
 import { QuickAdd } from './components/QuickAdd'
-import { SearchSuggest, type SearchSuggestItem } from './components/SearchSuggest'
 import type { LooseConditionId } from './utils/cardScan'
 import {
   buildAllCollectionSets,
@@ -42,11 +33,8 @@ import {
   rankByPsa10,
   type PopulationFile,
 } from './utils/population'
-import { frenchCardName } from './utils/generations'
 import {
   cardPotential,
-  catalogSetName,
-  huntImageUrl,
   loadPsaHunt,
   toEur,
   type CardPotential,
@@ -169,8 +157,6 @@ export default function App() {
   const [error, setError] = useState<string | null>(null)
   const [query, setQuery] = useState('')
   const deferredQuery = useDeferredValue(query)
-  const [suggestOpen, setSuggestOpen] = useState(false)
-  const [suggestIndex, setSuggestIndex] = useState(0)
   const [filter, setFilter] = useState<FilterStatus>('all')
   const [rarity, setRarity] = useState('all')
   const [sort, setSort] = useState<SortKey>('number')
@@ -611,7 +597,6 @@ export default function App() {
   function searchInAllSets() {
     setSelectedSetId('all')
     setTab('collection')
-    setSuggestOpen(false)
   }
 
   function searchInLastSeries() {
@@ -619,70 +604,12 @@ export default function App() {
     setTab('collection')
   }
 
-  const searchSuggestions = useMemo((): SearchSuggestItem[] => {
-    const q = deferredQuery.trim()
-    if (q.length < 2 || !hunt) return []
-    const seen = new Set<string>()
-    const rows: SearchSuggestItem[] = []
-    for (const row of hunt.cards) {
-      if (row.set.language === 'fr') continue
-      const name = frenchCardName(row.name)
-      const setName = catalogSetName(row.set)
-      const hay = `${name} ${row.name} ${row.number} ${setName}`
-      if (!matchesSearchText(hay, q)) continue
-      const key = `${row.set.id}:${row.number}:${name}`
-      if (seen.has(key)) continue
-      seen.add(key)
-      rows.push({
-        key,
-        name,
-        number: row.number,
-        setName,
-        image: huntImageUrl(row, 'low') ?? undefined,
-      })
-      if (rows.length >= 8) break
-    }
-    return rows
-  }, [deferredQuery, hunt])
-
-  useEffect(() => {
-    setSuggestIndex(0)
-  }, [deferredQuery])
-
-  function commitGlobalSearch(text?: string) {
-    const next = (text ?? query).trim()
+  function searchPokemonEverywhere(name: string) {
+    const next = name.trim()
     if (next.length < 2) return
     setQuery(next)
-    searchInAllSets()
-  }
-
-  function onSearchKeyDown(e: KeyboardEvent<HTMLInputElement>) {
-    if (!suggestOpen || searchSuggestions.length === 0) {
-      if (e.key === 'Enter') {
-        e.preventDefault()
-        commitGlobalSearch()
-      }
-      return
-    }
-    if (e.key === 'ArrowDown') {
-      e.preventDefault()
-      setSuggestIndex((i) => Math.min(i + 1, searchSuggestions.length - 1))
-      return
-    }
-    if (e.key === 'ArrowUp') {
-      e.preventDefault()
-      setSuggestIndex((i) => Math.max(i - 1, 0))
-      return
-    }
-    if (e.key === 'Escape') {
-      setSuggestOpen(false)
-      return
-    }
-    if (e.key === 'Enter') {
-      e.preventDefault()
-      const picked = searchSuggestions[suggestIndex]
-      commitGlobalSearch(picked?.name ?? query)
-    }
+    setSelectedSetId('all')
+    setTab('collection')
   }
 
   const setHasAnyReverse = useMemo(() => cards.some((c) => c.hasReverse), [cards])
@@ -766,12 +693,14 @@ export default function App() {
             selectedSetId={selectedSetId}
             isCollectionActive={isCollectionTab}
             ownedCountBySet={ownedCountBySet}
+            hunt={hunt}
             onOpenCollection={() => setTab('collection')}
             onSelectSet={(setId) => {
               if (setId !== 'all') setLastSeriesId(setId)
               setSelectedSetId(setId)
               setTab('collection')
             }}
+            onSearchPokemon={searchPokemonEverywhere}
           />
           <span className="nav-sep" aria-hidden="true" />
           <button
@@ -981,37 +910,15 @@ export default function App() {
               <div className="search-block">
                 <label className="search">
                   Recherche
-                  <div className="search-field">
-                    <input
-                      value={query}
-                      onChange={(e) => {
-                        setQuery(e.target.value)
-                        setSuggestOpen(e.target.value.trim().length >= 2)
-                      }}
-                      onFocus={() => {
-                        if (query.trim().length >= 2) setSuggestOpen(true)
-                      }}
-                      onBlur={() => {
-                        window.setTimeout(() => setSuggestOpen(false), 120)
-                      }}
-                      onKeyDown={onSearchKeyDown}
-                      placeholder={
-                        isAllSets
-                          ? 'Ex. Dracaufeu, Pikachu, GG70…'
-                          : 'Nom ou numéro… Entrée = toutes les séries'
-                      }
-                      aria-autocomplete="list"
-                      aria-expanded={suggestOpen && searchSuggestions.length > 0}
-                    />
-                    {suggestOpen && (
-                      <SearchSuggest
-                        items={searchSuggestions}
-                        activeIndex={suggestIndex}
-                        onHover={setSuggestIndex}
-                        onPick={(item) => commitGlobalSearch(item.name)}
-                      />
-                    )}
-                  </div>
+                  <input
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder={
+                      isAllSets
+                        ? 'Ex. Dracaufeu, Pikachu, GG70…'
+                        : 'Nom ou numéro dans cette série…'
+                    }
+                  />
                 </label>
                 <div className="search-scope" role="group" aria-label="Où chercher">
                   <button
@@ -1032,7 +939,7 @@ export default function App() {
                     className={isAllSets ? 'is-on' : ''}
                     aria-pressed={isAllSets}
                     title="Chercher un Pokémon dans toutes les séries"
-                    onClick={() => commitGlobalSearch()}
+                    onClick={searchInAllSets}
                   >
                     Toutes
                   </button>
@@ -1041,7 +948,7 @@ export default function App() {
                   <button
                     type="button"
                     className="search-expand-link"
-                    onClick={() => commitGlobalSearch()}
+                    onClick={searchInAllSets}
                   >
                     Chercher « {query.trim()} » dans toutes les séries →
                   </button>
