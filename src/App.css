@@ -3555,7 +3555,6 @@ textarea:focus {
 }
 
 .grid.grid-compact .tile-pop,
-.grid.grid-compact .variant-block.reverse,
 .grid.grid-compact .tile-detail-hint {
   display: none;
 }
@@ -3620,8 +3619,7 @@ textarea:focus {
 
 .grid.grid-list .tile-detail-hint,
 .grid.grid-list .tile-pop,
-.grid.grid-list .tile-price-inline,
-.grid.grid-list .variant-block.reverse {
+.grid.grid-list .tile-price-inline {
   display: none !important;
 }
 

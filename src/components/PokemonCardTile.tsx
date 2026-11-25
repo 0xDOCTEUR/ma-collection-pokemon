@@ -158,33 +158,30 @@ export function PokemonCardTile({
         </div>
 
         <div className="variant-block">
-          <p className="variant-title">Normale · {formatPrice(card, 'normal')}</p>
+          <p className="variant-title">
+            Normale · {formatPrice(card, 'normal')}
+            {card.hasReverse ? ` · Reverse ${formatPrice(card, 'reverse')}` : ''}
+          </p>
           <div className="tile-actions">
             <button
               type="button"
               className={normalStatus === 'owned' ? 'chip active-owned' : 'chip'}
               onClick={() => onSetStatus('normal', toggleOwned(normalStatus))}
             >
-              J’ai
+              {normalStatus === 'owned' ? '✓ J’ai' : '+ J’ai'}
             </button>
-            {listActions}
-          </div>
-        </div>
-
-        {card.hasReverse && (
-          <div className="variant-block reverse">
-            <p className="variant-title">Reverse · {formatPrice(card, 'reverse')}</p>
-            <div className="tile-actions">
+            {card.hasReverse && (
               <button
                 type="button"
                 className={reverseStatus === 'owned' ? 'chip active-owned' : 'chip'}
                 onClick={() => onSetStatus('reverse', toggleOwned(reverseStatus))}
               >
-                J’ai reverse
+                {reverseStatus === 'owned' ? '✓ Reverse' : '+ Reverse'}
               </button>
-            </div>
+            )}
+            {listActions}
           </div>
-        )}
+        </div>
       </div>
     </article>
   )
