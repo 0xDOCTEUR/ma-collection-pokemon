@@ -48,13 +48,59 @@ export async function terminateScanWorker(): Promise<void> {
   workerPromise = null
 }
 
-function loadImage(source: Blob | string): Promise<HTMLImageElement> {
+function canvasToImage(canvas: HTMLCanvasElement): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const image = new Image()
     image.onload = () => resolve(image)
     image.onerror = () => reject(new Error('Impossible de lire la photo.'))
-    image.src = typeof source === 'string' ? source : URL.createObjectURL(source)
+    image.src = canvas.toDataURL('image/jpeg', 0.92)
   })
+}
+
+/**
+ * Charge une photo en respectant l’orientation EXIF (souvent cassée à l’import
+ * depuis la galerie téléphone) et en limitant la taille pour l’OCR.
+ */
+async function loadImage(source: Blob | string): Promise<HTMLImageElement> {
+  const maxSide = 1600
+
+  if (typeof source !== 'string' && typeof createImageBitmap === 'function') {
+    try {
+      const bitmap = await createImageBitmap(source, {
+        // Corrige les photos tournées de la galerie iPhone / Android.
+        imageOrientation: 'from-image',
+      } as ImageBitmapOptions)
+      const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height))
+      const canvas = document.createElement('canvas')
+      canvas.width = Math.max(1, Math.round(bitmap.width * scale))
+      canvas.height = Math.max(1, Math.round(bitmap.height * scale))
+      const context = canvas.getContext('2d')
+      if (!context) throw new Error('Canvas indisponible.')
+      context.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+      bitmap.close()
+      return canvasToImage(canvas)
+    } catch {
+      // HEIC ou navigateur sans support : repli Image classique.
+    }
+  }
+
+  const url = typeof source === 'string' ? source : URL.createObjectURL(source)
+  const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => resolve(img)
+    img.onerror = () => reject(new Error('Impossible de lire la photo.'))
+    img.src = url
+  })
+
+  const scale = Math.min(1, maxSide / Math.max(image.naturalWidth || image.width, image.naturalHeight || image.height))
+  if (scale >= 0.99) return image
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.round((image.naturalWidth || image.width) * scale)
+  canvas.height = Math.round((image.naturalHeight || image.height) * scale)
+  const context = canvas.getContext('2d')
+  if (!context) return image
+  context.drawImage(image, 0, 0, canvas.width, canvas.height)
+  return canvasToImage(canvas)
 }
 
 type ImageSource = HTMLImageElement | HTMLCanvasElement
@@ -437,7 +483,11 @@ function setHintBoost(ocrText: string, target: ScanTarget): number {
   if (target.setId.includes('me55') || /30e|30th|anniversaire|celebration/.test(folded)) {
     if (/30e|30th|anniversaire|celebration/.test(foldName(target.setLabel))) score += 10
   }
-  if (target.collectionCard) score += 8
+  if (target.collectionCard) score += 4
+  if (/^[A-Z]{2,}\d+$/i.test(target.number)) score += 6
+  if (/gallery|illustration|special art|trainer gallery/i.test(target.rarity + target.setLabel)) {
+    score += 5
+  }
   if (target.language === 'fr' && /\bfr\b|francais|français/.test(folded)) score += 4
   return score
 }
@@ -525,26 +575,29 @@ export function scoreMatches(
   }
 
   // Nom seul : utile si le numéro GG est illisible mais le Pokémon est clair.
+  // Priorité aux cartes galerie / illustration (souvent la photo importée),
+  // pas aux communes de la collection locale.
   if (numberHits.length === 0 && speciesHits.length > 0) {
     for (const species of speciesHits) {
       const named = targets.filter((target) => speciesMatchesTarget(species, target))
+      const galleryNamed = named.filter(
+        (target) =>
+          /^[A-Z]{2,}\d+$/i.test(target.number) ||
+          /gallery|illustration|special|art rare/i.test(`${target.rarity} ${target.setLabel}`),
+      )
       const collectionNamed = named.filter((target) => target.collectionCard)
-      const galleryNamed = named.filter((target) => /^[A-Z]{2,}\d+$/i.test(target.number))
-      let pool = named
-      if (collectionNamed.length > 0 && collectionNamed.length <= 8) pool = collectionNamed
-      else if (galleryNamed.length > 0 && galleryNamed.length <= 8) pool = galleryNamed
-      else if (named.length > 10) {
-        // Trop de versions : garde les illustrations / galeries en priorité.
-        pool = named
-          .filter((target) => /gallery|illustration|special|art/i.test(target.rarity + target.setLabel))
-          .slice(0, 8)
-      }
-      if (pool.length === 0 || pool.length > 10) continue
+      let pool: ScanTarget[]
+      if (galleryNamed.length > 0 && galleryNamed.length <= 12) pool = galleryNamed
+      else if (collectionNamed.length > 0 && collectionNamed.length <= 6) pool = collectionNamed
+      else if (named.length <= 8) pool = named
+      else pool = named.slice(0, 8)
+      if (pool.length === 0) continue
       for (const target of pool) {
+        const galleryBonus = /^[A-Z]{2,}\d+$/i.test(target.number) ? 8 : 0
         keep({
           target,
           number: target.number,
-          score: 72 + setHintBoost(ocrText, target) - Math.min(10, pool.length),
+          score: 72 + galleryBonus + setHintBoost(ocrText, target) - Math.min(8, pool.length),
           why: `Nom lu : ${species.label}`,
         })
       }
@@ -686,8 +739,9 @@ export async function scanCardPhoto(
   source: Blob | string,
   targets: ScanTarget[],
 ): Promise<ScanResult> {
-  const previewUrl = typeof source === 'string' ? source : URL.createObjectURL(source)
-  const image = await loadImage(previewUrl)
+  // Passer le Blob brut : createImageBitmap lit l’EXIF (import galerie).
+  const image = await loadImage(source)
+  const previewUrl = image.src
   const condition = guessCondition(image)
   const printedTotals = new Set(
     targets.map((target) => String(target.printedTotal)).filter((value) => value && value !== '0'),
@@ -715,15 +769,17 @@ export async function scanCardPhoto(
   let numberHits = extractNumberHits(ocrText, printedTotals)
   let speciesHits = findSpeciesInText(ocrText)
 
-  // Relance large si rien de lisible (carte très brillante / OCR raté).
-  if (numberHits.length === 0 && speciesHits.length === 0) {
-    const fallback = cropRegion(card, 'full', 'contrast')
-    const { data } = await worker.recognize(fallback, undefined, { text: true })
-    if (data.text?.trim()) {
-      ocrText = `${ocrText}\n${data.text}`
-      numberHits = extractNumberHits(ocrText, printedTotals)
-      speciesHits = findSpeciesInText(ocrText)
+  // Relance large si numéro manquant (souvent le cas à l’import galerie).
+  if (numberHits.length === 0) {
+    const fallbacks = [cropRegion(card, 'full', 'contrast'), cropRegion(card, 'bottom', 'binarize-invert')]
+    for (const fallback of fallbacks) {
+      const { data } = await worker.recognize(fallback, undefined, { text: true })
+      if (data.text?.trim()) {
+        ocrText = `${ocrText}\n${data.text}`
+      }
     }
+    numberHits = extractNumberHits(ocrText, printedTotals)
+    speciesHits = findSpeciesInText(ocrText)
   }
 
   const matches = finalizeMatches(scoreMatches(targets, numberHits, speciesHits, ocrText))

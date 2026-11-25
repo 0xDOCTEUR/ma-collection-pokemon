@@ -87,6 +87,8 @@ export function CardScan({ targets, embedded = false, onClose, onConfirm }: Prop
   async function analyze(blob: Blob) {
     setStep('reading')
     setMessage(null)
+    setManualNumber('')
+    setManualName('')
     try {
       const result = await scanCardPhoto(blob, targets)
       setPreviewUrl(result.previewUrl)
