@@ -22,6 +22,8 @@ export interface ConditionGuess {
 
 export interface ScanResult {
   numbers: string[]
+  /** Noms d’espèces lus (pour préremplir la recherche manuelle). */
+  names: string[]
   matches: ScanMatch[]
   condition: ConditionGuess
   previewUrl: string
@@ -48,39 +50,29 @@ export async function terminateScanWorker(): Promise<void> {
   workerPromise = null
 }
 
-function canvasToImage(canvas: HTMLCanvasElement): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const image = new Image()
-    image.onload = () => resolve(image)
-    image.onerror = () => reject(new Error('Impossible de lire la photo.'))
-    image.src = canvas.toDataURL('image/jpeg', 0.92)
-  })
-}
-
 /**
- * Charge une photo en respectant l’orientation EXIF (souvent cassée à l’import
- * depuis la galerie téléphone) et en limitant la taille pour l’OCR.
+ * Charge une photo en canvas : orientation EXIF corrigée, taille limitée.
+ * On garde un canvas (pas de aller-retour JPEG) pour ne pas perdre le détail OCR.
  */
-async function loadImage(source: Blob | string): Promise<HTMLImageElement> {
-  const maxSide = 1600
+async function loadScanCanvas(source: Blob | string): Promise<HTMLCanvasElement> {
+  const maxSide = 1800
+  const canvas = document.createElement('canvas')
+  const context = canvas.getContext('2d')
+  if (!context) throw new Error('Canvas indisponible.')
 
   if (typeof source !== 'string' && typeof createImageBitmap === 'function') {
     try {
       const bitmap = await createImageBitmap(source, {
-        // Corrige les photos tournées de la galerie iPhone / Android.
         imageOrientation: 'from-image',
       } as ImageBitmapOptions)
       const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height))
-      const canvas = document.createElement('canvas')
       canvas.width = Math.max(1, Math.round(bitmap.width * scale))
       canvas.height = Math.max(1, Math.round(bitmap.height * scale))
-      const context = canvas.getContext('2d')
-      if (!context) throw new Error('Canvas indisponible.')
       context.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
       bitmap.close()
-      return canvasToImage(canvas)
+      return canvas
     } catch {
-      // HEIC ou navigateur sans support : repli Image classique.
+      // HEIC / navigateur : repli Image.
     }
   }
 
@@ -91,16 +83,15 @@ async function loadImage(source: Blob | string): Promise<HTMLImageElement> {
     img.onerror = () => reject(new Error('Impossible de lire la photo.'))
     img.src = url
   })
-
-  const scale = Math.min(1, maxSide / Math.max(image.naturalWidth || image.width, image.naturalHeight || image.height))
-  if (scale >= 0.99) return image
-  const canvas = document.createElement('canvas')
-  canvas.width = Math.round((image.naturalWidth || image.width) * scale)
-  canvas.height = Math.round((image.naturalHeight || image.height) * scale)
-  const context = canvas.getContext('2d')
-  if (!context) return image
+  const scale = Math.min(
+    1,
+    maxSide / Math.max(image.naturalWidth || image.width, image.naturalHeight || image.height),
+  )
+  canvas.width = Math.max(1, Math.round((image.naturalWidth || image.width) * scale))
+  canvas.height = Math.max(1, Math.round((image.naturalHeight || image.height) * scale))
   context.drawImage(image, 0, 0, canvas.width, canvas.height)
-  return canvasToImage(canvas)
+  if (typeof source !== 'string') URL.revokeObjectURL(url)
+  return canvas
 }
 
 type ImageSource = HTMLImageElement | HTMLCanvasElement
@@ -155,12 +146,15 @@ export function detectCardBounds(image: ImageSource): {
   }
 
   const area = count / (pw * ph)
-  if (count < 80 || area < 0.04 || area > 0.92) {
+  // Fond très chargé (feuille quadrillée, bureau) : on garde toute la photo.
+  if (count < 80 || area < 0.04 || area > 0.88) {
     return { sx: 0, sy: 0, sw: sourceW, sh: sourceH }
   }
 
-  const padX = Math.max(2, Math.round((maxX - minX) * 0.04))
-  const padY = Math.max(2, Math.round((maxY - minY) * 0.04))
+  // Important : les bords blancs de la carte portent le nom / le numéro GG.
+  // Sans cette marge, on ne garde que l’illustration et l’OCR ne lit rien.
+  const padX = Math.max(4, Math.round((maxX - minX) * 0.2))
+  const padY = Math.max(4, Math.round((maxY - minY) * 0.18))
   minX = Math.max(0, minX - padX)
   minY = Math.max(0, minY - padY)
   maxX = Math.min(pw - 1, maxX + padX)
@@ -176,10 +170,11 @@ export function detectCardBounds(image: ImageSource): {
 function extractCardCanvas(image: ImageSource): HTMLCanvasElement {
   const bounds = detectCardBounds(image)
   const canvas = document.createElement('canvas')
-  const maxW = 900
-  const scale = Math.min(1.8, maxW / Math.max(bounds.sw, 1))
-  canvas.width = Math.max(200, Math.round(bounds.sw * scale))
-  canvas.height = Math.max(280, Math.round(bounds.sh * scale))
+  // Un peu plus grand : les n° GG / vieux sets sont tout petits à l’import.
+  const maxW = 1100
+  const scale = Math.min(2.4, maxW / Math.max(bounds.sw, 1))
+  canvas.width = Math.max(240, Math.round(bounds.sw * scale))
+  canvas.height = Math.max(320, Math.round(bounds.sh * scale))
   const context = canvas.getContext('2d')
   if (!context) throw new Error('Canvas indisponible.')
   context.fillStyle = '#fff'
@@ -510,6 +505,7 @@ export function scoreMatches(
   numberHits: NumberHit[],
   speciesHits: NameHit[],
   ocrText: string,
+  minScore = 78,
 ): ScanMatch[] {
   const byNumber = new Map<string, ScanTarget[]>()
   for (const target of targets) {
@@ -547,6 +543,11 @@ export function scoreMatches(
       // Codes GG/TG assez uniques.
     } else if (hit.total && candidates.length <= 6) {
       // Numéro + total connus : assez fiable même sans nom.
+    } else if (hit.total && candidates.length > 6) {
+      // Plusieurs séries avec le même total : garde les plus cotées.
+      candidates = [...candidates]
+        .sort((a, b) => (b.hunt?.psa10Usd ?? b.hunt?.rawUsd ?? 0) - (a.hunt?.psa10Usd ?? a.hunt?.rawUsd ?? 0))
+        .slice(0, 5)
     } else if (candidates.length > 3) {
       const collectionOnly = candidates.filter((target) => target.collectionCard)
       if (collectionOnly.length > 0 && collectionOnly.length <= 4) candidates = collectionOnly
@@ -604,7 +605,7 @@ export function scoreMatches(
     }
   }
 
-  return [...best.values()].filter((match) => match.score >= 78)
+  return [...best.values()].filter((match) => match.score >= minScore)
 }
 
 function englishSpeciesKey(name: string): string {
@@ -655,7 +656,7 @@ function finalizeMatches(matches: ScanMatch[]): ScanMatch[] {
  * Estimation grossière de l’état : blancs sur les bords, contraste au centre.
  * À confirmer toujours par l’utilisateur.
  */
-export function guessCondition(image: HTMLImageElement): ConditionGuess {
+export function guessCondition(image: ImageSource): ConditionGuess {
   const canvas = document.createElement('canvas')
   const size = 220
   canvas.width = size
@@ -739,15 +740,14 @@ export async function scanCardPhoto(
   source: Blob | string,
   targets: ScanTarget[],
 ): Promise<ScanResult> {
-  // Passer le Blob brut : createImageBitmap lit l’EXIF (import galerie).
-  const image = await loadImage(source)
-  const previewUrl = image.src
+  // Blob brut → EXIF + canvas (sans recompression JPEG destructive).
+  const image = await loadScanCanvas(source)
+  const previewUrl = image.toDataURL('image/jpeg', 0.88)
   const condition = guessCondition(image)
   const printedTotals = new Set(
     targets.map((target) => String(target.printedTotal)).filter((value) => value && value !== '0'),
   )
   const worker = await getWorker()
-  // Recadre d’abord la carte (sinon photo loin = OCR sur le fond blanc).
   const card = extractCardCanvas(image)
 
   const regions = [
@@ -769,23 +769,30 @@ export async function scanCardPhoto(
   let numberHits = extractNumberHits(ocrText, printedTotals)
   let speciesHits = findSpeciesInText(ocrText)
 
-  // Relance large si numéro manquant (souvent le cas à l’import galerie).
-  if (numberHits.length === 0) {
-    const fallbacks = [cropRegion(card, 'full', 'contrast'), cropRegion(card, 'bottom', 'binarize-invert')]
+  // Relance large si peu d’indices (import galerie / holo / fond chargé).
+  if (numberHits.length === 0 || speciesHits.length === 0) {
+    const fallbacks = [
+      cropRegion(card, 'full', 'contrast'),
+      cropRegion(image, 'full', 'contrast'),
+      cropRegion(card, 'bottom', 'binarize-invert'),
+    ]
     for (const fallback of fallbacks) {
       const { data } = await worker.recognize(fallback, undefined, { text: true })
-      if (data.text?.trim()) {
-        ocrText = `${ocrText}\n${data.text}`
-      }
+      if (data.text?.trim()) ocrText = `${ocrText}\n${data.text}`
     }
     numberHits = extractNumberHits(ocrText, printedTotals)
     speciesHits = findSpeciesInText(ocrText)
   }
 
-  const matches = finalizeMatches(scoreMatches(targets, numberHits, speciesHits, ocrText))
+  let matches = finalizeMatches(scoreMatches(targets, numberHits, speciesHits, ocrText))
+  // Dernier recours : seuil plus bas si on a lu un nom ou un numéro.
+  if (matches.length === 0 && (numberHits.length > 0 || speciesHits.length > 0)) {
+    matches = finalizeMatches(scoreMatches(targets, numberHits, speciesHits, ocrText, 65))
+  }
 
   return {
     numbers: numberHits.map((hit) => hit.number),
+    names: speciesHits.map((hit) => hit.label),
     matches: matches.slice(0, 8),
     condition,
     previewUrl,

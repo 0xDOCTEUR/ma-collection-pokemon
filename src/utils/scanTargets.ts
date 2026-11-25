@@ -27,6 +27,11 @@ const KNOWN_PRINTED_TOTAL: Record<string, number> = {
   me55c: 128,
   me6: 94,
   me06: 94,
+  base1: 102,
+  base2: 64,
+  base3: 62,
+  swsh12pt5gg: 70,
+  swsh12pt5: 159,
 }
 
 const BASE_RARITY =

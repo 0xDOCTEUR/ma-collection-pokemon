@@ -96,9 +96,20 @@ export function CardScan({ targets, embedded = false, onClose, onConfirm }: Prop
       setSelectedId(result.matches[0]?.target.id ?? null)
       setConditionId(result.condition.id)
       setConditionReason(result.condition.reason)
+      // Préremplit la recherche manuelle avec ce que l’OCR a lu.
+      if (result.numbers[0]) setManualNumber(result.numbers[0])
+      if (result.names[0]) setManualName(result.names[0])
       if (result.matches.length === 0) {
+        const lu = [
+          result.names[0] ? `nom « ${result.names[0]} »` : '',
+          result.numbers[0] ? `n° ${result.numbers[0]}` : '',
+        ]
+          .filter(Boolean)
+          .join(', ')
         setMessage(
-          'Pas de carte assez sûre. Cadre la carte entière, avec le nom et le numéro lisibles (ex. 199/165 ou GG03/GG70), peu de reflet, ou cherche à la main.',
+          lu
+            ? `Pas de carte assez sûre (lu : ${lu}). Vérifie ou cherche à la main ci-dessous.`
+            : 'Pas de carte assez sûre. Cadre la carte entière, nom et numéro lisibles, peu de reflet — ou cherche à la main.',
         )
       }
       setStep('result')
