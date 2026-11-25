@@ -2867,8 +2867,13 @@ textarea:focus {
 }
 
 .hero.hero-compact.has-set-theme {
-  min-height: 5.5rem;
-  padding: 0.85rem 1.1rem;
+  min-height: 6.4rem;
+  padding: 0.95rem 1.15rem;
+}
+
+.hero.hero-compact.has-chase {
+  min-height: 7.2rem;
+  padding-right: min(38%, 11.5rem);
 }
 
 .set-theme {
@@ -2886,26 +2891,37 @@ textarea:focus {
   z-index: 1;
   background:
     linear-gradient(
-      105deg,
-      rgba(12, 16, 24, 0.96) 0%,
-      rgba(12, 16, 24, 0.88) 38%,
-      rgba(12, 16, 24, 0.45) 68%,
-      rgba(12, 16, 24, 0.2) 100%
-    ),
-    linear-gradient(0deg, rgba(12, 16, 24, 0.35), rgba(12, 16, 24, 0.1));
+      100deg,
+      rgba(12, 16, 24, 0.98) 0%,
+      rgba(12, 16, 24, 0.92) 42%,
+      rgba(12, 16, 24, 0.55) 72%,
+      rgba(12, 16, 24, 0.18) 100%
+    );
 }
 
-.set-theme-art {
+.set-theme-chase {
   position: absolute;
   top: 50%;
-  right: -2%;
-  width: min(48%, 340px);
-  height: 150%;
+  right: 0.35rem;
+  height: 128%;
+  width: auto;
+  max-width: min(42%, 210px);
   object-fit: contain;
   object-position: right center;
-  transform: translateY(-50%);
-  filter: drop-shadow(0 10px 28px rgba(0, 0, 0, 0.45));
-  opacity: 0.92;
+  transform: translateY(-50%) rotate(4deg);
+  border-radius: 10px;
+  filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.55));
+  opacity: 0.95;
+}
+
+.set-logo-mark {
+  height: 3.1rem;
+  width: auto;
+  max-width: 7.5rem;
+  object-fit: contain;
+  object-position: left center;
+  flex-shrink: 0;
+  filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.4));
 }
 
 .hero-compact-main,
@@ -2917,7 +2933,7 @@ textarea:focus {
 .hero-compact-main {
   display: flex;
   align-items: center;
-  gap: 0.7rem;
+  gap: 0.75rem;
   flex: 1 1 280px;
   min-width: 0;
 }
@@ -3003,24 +3019,40 @@ textarea:focus {
 }
 
 @media (max-width: 720px) {
-  .hero.hero-compact.has-set-theme {
-    min-height: 6.2rem;
+  .hero.hero-compact.has-chase {
+    min-height: 8rem;
+    padding-right: 1rem;
+    padding-bottom: 5.5rem;
   }
 
-  .set-theme-art {
-    width: min(62%, 260px);
-    right: -8%;
-    opacity: 0.78;
+  .set-logo-mark {
+    height: 2.55rem;
+    max-width: 5.8rem;
+  }
+
+  .set-theme-chase {
+    right: 0.2rem;
+    bottom: -8%;
+    top: auto;
+    height: 5.8rem;
+    max-width: 38%;
+    transform: rotate(6deg);
+    opacity: 0.9;
   }
 
   .set-theme::before {
     background:
       linear-gradient(
-        115deg,
-        rgba(12, 16, 24, 0.97) 0%,
-        rgba(12, 16, 24, 0.9) 48%,
-        rgba(12, 16, 24, 0.55) 100%
+        165deg,
+        rgba(12, 16, 24, 0.98) 0%,
+        rgba(12, 16, 24, 0.92) 48%,
+        rgba(12, 16, 24, 0.45) 100%
       );
+  }
+
+  .hero-tools-bar {
+    width: 100%;
+    justify-content: flex-start;
   }
 }
 

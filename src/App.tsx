@@ -589,16 +589,33 @@ export default function App() {
       ) : (
         <>
           <header
-            className={
-              activeSet?.logo ? 'hero hero-compact panel has-set-theme' : 'hero hero-compact panel'
-            }
+            className={[
+              'hero hero-compact panel',
+              activeSet?.logo || activeSet?.chaseImage ? 'has-set-theme' : '',
+              activeSet?.chaseImage ? 'has-chase' : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
           >
-            {activeSet?.logo && (
+            {activeSet?.chaseImage && (
               <div className="set-theme" aria-hidden="true">
+                <img
+                  src={activeSet.chaseImage}
+                  alt=""
+                  className="set-theme-chase"
+                  onError={(e) => {
+                    ;(e.currentTarget as HTMLImageElement).style.display = 'none'
+                  }}
+                />
+              </div>
+            )}
+
+            <div className="hero-compact-main">
+              {activeSet?.logo ? (
                 <img
                   src={activeSet.logo}
                   alt=""
-                  className="set-theme-art"
+                  className="set-logo-mark"
                   onError={(e) => {
                     const img = e.currentTarget as HTMLImageElement
                     if (activeSet.logoFallback && img.dataset.fallbackTried !== '1') {
@@ -609,10 +626,7 @@ export default function App() {
                     }
                   }}
                 />
-              </div>
-            )}
-
-            <div className="hero-compact-main">
+              ) : null}
               <div className="hero-compact-copy">
                 <div className="hero-title-row">
                   <h1>{activeSet?.name ?? 'Collection'}</h1>
