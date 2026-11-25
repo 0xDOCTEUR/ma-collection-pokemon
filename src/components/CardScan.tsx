@@ -96,7 +96,7 @@ export function CardScan({ targets, embedded = false, onClose, onConfirm }: Prop
       setConditionReason(result.condition.reason)
       if (result.matches.length === 0) {
         setMessage(
-          'Pas de carte assez sûre. Cadre bien le nom en haut et le numéro en bas à droite (ex. 199/165), avec peu de reflet, ou cherche à la main.',
+          'Pas de carte assez sûre. Cadre la carte entière, avec le nom et le numéro lisibles (ex. 199/165 ou GG03/GG70), peu de reflet, ou cherche à la main.',
         )
       }
       setStep('result')
@@ -169,9 +169,9 @@ export function CardScan({ targets, embedded = false, onClose, onConfirm }: Prop
           <p className="card-sheet-num">Scan</p>
           <h2 id={titleId}>Reconnaître une carte</h2>
           <p className="muted">
-            Toutes les séries du catalogue. Cadre le nom en haut et le numéro en bas à droite. La
-            photo reste sur ton appareil. L’état proposé est une estimation : tu confirmes avant le
-            prix.
+            Toutes les séries du catalogue. Cadre la carte (même un peu loin, on la recadre). Nom en
+            haut, numéro en bas à droite — y compris GG03/GG70. La photo reste sur ton appareil.
+            L’état proposé est une estimation : tu confirmes avant le prix.
           </p>
         </div>
         {onClose && (

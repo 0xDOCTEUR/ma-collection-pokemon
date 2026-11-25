@@ -57,6 +57,102 @@ function loadImage(source: Blob | string): Promise<HTMLImageElement> {
   })
 }
 
+type ImageSource = HTMLImageElement | HTMLCanvasElement
+
+function sourceSize(image: ImageSource) {
+  if (image instanceof HTMLCanvasElement) {
+    return { width: image.width, height: image.height }
+  }
+  return { width: image.naturalWidth || image.width, height: image.naturalHeight || image.height }
+}
+
+/** Repère la carte sur un fond clair (photo loin / table blanche). */
+export function detectCardBounds(image: ImageSource): {
+  sx: number
+  sy: number
+  sw: number
+  sh: number
+} {
+  const { width: sourceW, height: sourceH } = sourceSize(image)
+  const probe = document.createElement('canvas')
+  const pw = 180
+  const ph = Math.max(120, Math.round((pw * sourceH) / sourceW))
+  probe.width = pw
+  probe.height = ph
+  const context = probe.getContext('2d', { willReadFrequently: true })
+  if (!context) return { sx: 0, sy: 0, sw: sourceW, sh: sourceH }
+  context.drawImage(image, 0, 0, pw, ph)
+  const { data } = context.getImageData(0, 0, pw, ph)
+
+  let minX = pw
+  let minY = ph
+  let maxX = 0
+  let maxY = 0
+  let count = 0
+  for (let y = 0; y < ph; y += 1) {
+    for (let x = 0; x < pw; x += 1) {
+      const i = (y * pw + x) * 4
+      const r = data[i]
+      const g = data[i + 1]
+      const b = data[i + 2]
+      const bright = (r + g + b) / 3
+      const sat = Math.max(r, g, b) - Math.min(r, g, b)
+      // Fond blanc / table claire → ignorer. Garde couleurs et zones sombres de la carte.
+      const isBackground = bright > 228 && sat < 28
+      if (isBackground) continue
+      count += 1
+      if (x < minX) minX = x
+      if (y < minY) minY = y
+      if (x > maxX) maxX = x
+      if (y > maxY) maxY = y
+    }
+  }
+
+  const area = count / (pw * ph)
+  if (count < 80 || area < 0.04 || area > 0.92) {
+    return { sx: 0, sy: 0, sw: sourceW, sh: sourceH }
+  }
+
+  const padX = Math.max(2, Math.round((maxX - minX) * 0.04))
+  const padY = Math.max(2, Math.round((maxY - minY) * 0.04))
+  minX = Math.max(0, minX - padX)
+  minY = Math.max(0, minY - padY)
+  maxX = Math.min(pw - 1, maxX + padX)
+  maxY = Math.min(ph - 1, maxY + padY)
+
+  const sx = Math.round((minX / pw) * sourceW)
+  const sy = Math.round((minY / ph) * sourceH)
+  const sw = Math.max(32, Math.round(((maxX - minX + 1) / pw) * sourceW))
+  const sh = Math.max(32, Math.round(((maxY - minY + 1) / ph) * sourceH))
+  return { sx, sy, sw: Math.min(sw, sourceW - sx), sh: Math.min(sh, sourceH - sy) }
+}
+
+function extractCardCanvas(image: ImageSource): HTMLCanvasElement {
+  const bounds = detectCardBounds(image)
+  const canvas = document.createElement('canvas')
+  const maxW = 900
+  const scale = Math.min(1.8, maxW / Math.max(bounds.sw, 1))
+  canvas.width = Math.max(200, Math.round(bounds.sw * scale))
+  canvas.height = Math.max(280, Math.round(bounds.sh * scale))
+  const context = canvas.getContext('2d')
+  if (!context) throw new Error('Canvas indisponible.')
+  context.fillStyle = '#fff'
+  context.fillRect(0, 0, canvas.width, canvas.height)
+  context.imageSmoothingEnabled = true
+  context.drawImage(
+    image,
+    bounds.sx,
+    bounds.sy,
+    bounds.sw,
+    bounds.sh,
+    0,
+    0,
+    canvas.width,
+    canvas.height,
+  )
+  return canvas
+}
+
 function binarize(context: CanvasRenderingContext2D, width: number, height: number, invert = false) {
   const pixels = context.getImageData(0, 0, width, height)
   let sum = 0
@@ -78,11 +174,26 @@ function binarize(context: CanvasRenderingContext2D, width: number, height: numb
   context.putImageData(pixels, 0, 0)
 }
 
-type CropKind = 'bottom' | 'top' | 'numberCorner'
+function boostContrast(context: CanvasRenderingContext2D, width: number, height: number) {
+  const pixels = context.getImageData(0, 0, width, height)
+  for (let i = 0; i < pixels.data.length; i += 4) {
+    const gray = 0.299 * pixels.data[i] + 0.587 * pixels.data[i + 1] + 0.114 * pixels.data[i + 2]
+    const value = Math.max(0, Math.min(255, (gray - 110) * 1.55 + 128))
+    pixels.data[i] = value
+    pixels.data[i + 1] = value
+    pixels.data[i + 2] = value
+  }
+  context.putImageData(pixels, 0, 0)
+}
 
-function cropRegion(image: HTMLImageElement, kind: CropKind, invert = false): HTMLCanvasElement {
-  const sourceW = image.naturalWidth || image.width
-  const sourceH = image.naturalHeight || image.height
+type CropKind = 'bottom' | 'top' | 'numberCorner' | 'full'
+
+function cropRegion(
+  image: ImageSource,
+  kind: CropKind,
+  mode: 'binarize' | 'binarize-invert' | 'contrast' = 'binarize',
+): HTMLCanvasElement {
+  const { width: sourceW, height: sourceH } = sourceSize(image)
   const canvas = document.createElement('canvas')
   const context = canvas.getContext('2d')
   if (!context) throw new Error('Canvas indisponible.')
@@ -93,19 +204,19 @@ function cropRegion(image: HTMLImageElement, kind: CropKind, invert = false): HT
   let sh = sourceH
 
   if (kind === 'bottom') {
-    sy = sourceH * 0.7
-    sh = sourceH * 0.3
+    sy = sourceH * 0.68
+    sh = sourceH * 0.32
   } else if (kind === 'top') {
-    sh = sourceH * 0.24
-  } else {
+    sh = sourceH * 0.26
+  } else if (kind === 'numberCorner') {
     // Coin bas droit : numéro + total imprimés
-    sx = sourceW * 0.42
-    sy = sourceH * 0.76
-    sw = sourceW * 0.58
-    sh = sourceH * 0.24
+    sx = sourceW * 0.4
+    sy = sourceH * 0.74
+    sw = sourceW * 0.6
+    sh = sourceH * 0.26
   }
 
-  const outW = Math.min(1200, Math.round(sw * 1.6))
+  const outW = Math.min(1200, Math.round(sw * (kind === 'full' ? 1.1 : 1.7)))
   const outH = Math.max(72, Math.round((outW * sh) / sw))
   canvas.width = outW
   canvas.height = outH
@@ -113,7 +224,8 @@ function cropRegion(image: HTMLImageElement, kind: CropKind, invert = false): HT
   context.fillRect(0, 0, outW, outH)
   context.imageSmoothingEnabled = true
   context.drawImage(image, sx, sy, sw, sh, 0, 0, outW, outH)
-  binarize(context, outW, outH, invert)
+  if (mode === 'contrast') boostContrast(context, outW, outH)
+  else binarize(context, outW, outH, mode === 'binarize-invert')
   return canvas
 }
 
@@ -124,12 +236,43 @@ interface NumberHit {
 }
 
 function cleanOcrNumber(raw: string): string {
+  // Ne pas transformer S/B dans GG/SV : seulement les vrais chiffres OCR.
+  if (/[A-Za-z]/.test(raw)) {
+    return raw.replace(/[^\dA-Za-z]/g, '')
+  }
   return raw
     .replace(/[Oo]/g, '0')
     .replace(/[Il|]/g, '1')
     .replace(/[Ss]/g, '5')
     .replace(/[Bb]/g, '8')
-    .replace(/[^\dA-Za-z]/g, '')
+    .replace(/[^\d]/g, '')
+}
+
+function normalizeCardNumber(raw: string): string {
+  const cleaned = cleanOcrNumber(raw).toUpperCase()
+  if (!cleaned) return ''
+  if (/^\d+$/.test(cleaned)) return String(Number.parseInt(cleaned, 10))
+  const gallery = cleaned.match(/^([A-Z]{1,4})0*(\d{1,3})$/)
+  if (gallery) {
+    const digits = gallery[2]
+    // GG03 (catalogue) plutôt que GG3
+    return `${gallery[1]}${digits.padStart(Math.max(2, digits.length), '0')}`
+  }
+  return cleaned
+}
+
+export function numberLookupKeys(number: string): string[] {
+  const base = normalizeCardNumber(number)
+  if (!base) return []
+  const keys = new Set<string>([base])
+  const gallery = base.match(/^([A-Z]+)(\d+)$/)
+  if (gallery) {
+    const n = String(Number.parseInt(gallery[2], 10))
+    keys.add(`${gallery[1]}${n}`)
+    keys.add(`${gallery[1]}${n.padStart(2, '0')}`)
+    keys.add(`${gallery[1]}${n.padStart(3, '0')}`)
+  }
+  return [...keys]
 }
 
 export function extractNumberHits(text: string, printedTotals: Set<string>): NumberHit[] {
@@ -137,17 +280,20 @@ export function extractNumberHits(text: string, printedTotals: Set<string>): Num
   const seen = new Set<string>()
 
   function push(numberRaw: string, totalRaw: string | null, trusted: boolean) {
-    const number = cleanOcrNumber(numberRaw)
-    if (!number) return
-    const total = totalRaw ? cleanOcrNumber(totalRaw).replace(/\D/g, '') : null
-    if (!/^\d{1,3}$|^[A-Za-z]+\d{0,3}$|^\d+[A-Za-z]+$/.test(number) && !/^\d{1,3}$/.test(number)) {
-      // Garde les numéros simples et quelques codes (TG01, B…).
-      if (!/^[A-Za-z]$/.test(number) && !/^[A-Za-z]{1,3}\d{1,3}$/i.test(number)) return
+    const normalized = normalizeCardNumber(numberRaw)
+    if (!normalized) return
+    if (
+      !/^\d{1,3}$/.test(normalized) &&
+      !/^[A-Z]{1,4}\d{1,3}$/.test(normalized) &&
+      !/^[A-Z]$/.test(normalized)
+    ) {
+      return
     }
-    const normalized = /^\d+$/.test(number) ? String(Number.parseInt(number, 10)) : number.toUpperCase()
+    const totalNorm = totalRaw ? normalizeCardNumber(totalRaw) : null
+    const totalDigits = totalNorm && /^\d+$/.test(totalNorm) ? totalNorm : null
     if (seen.has(normalized)) return
     // Ignore les totaux pris pour des numéros (ex. 165 lu seul).
-    if (!total && printedTotals.has(normalized)) return
+    if (!totalNorm && printedTotals.has(normalized)) return
     if (/^\d+$/.test(normalized)) {
       const value = Number(normalized)
       if (value < 1 || value > 500) return
@@ -155,19 +301,28 @@ export function extractNumberHits(text: string, printedTotals: Set<string>): Num
     seen.add(normalized)
     hits.push({
       number: normalized,
-      total: total && /^\d+$/.test(total) ? String(Number.parseInt(total, 10)) : null,
-      trusted,
+      total: totalDigits,
+      trusted:
+        trusted ||
+        /^[A-Z]{2,}\d+$/.test(normalized) ||
+        Boolean(totalDigits && (printedTotals.has(totalDigits) || Number(totalDigits) >= 60)),
     })
   }
 
-  // Formats usuels : 199/165, 004 / 165, 25 | 165
-  for (const match of text.matchAll(/([A-Za-z]?\d{1,3})\s*[/|Il\\]\s*(\d{2,3})/gi)) {
-    const total = String(Number.parseInt(cleanOcrNumber(match[2]).replace(/\D/g, ''), 10))
-    push(match[1], total, printedTotals.has(total) || Number(total) >= 60)
+  // Galerie : GG03/GG70, TG11/TG30
+  for (const match of text.matchAll(
+    /\b((?:TG|GG|SV|SM|XY|BW)[-\s]?\d{1,3})\s*[/|Il\\]\s*((?:TG|GG|SV|SM|XY|BW)[-\s]?\d{1,3}|\d{2,3})\b/gi,
+  )) {
+    push(match[1].replace(/[-\s]/g, ''), match[2].replace(/[-\s]/g, ''), true)
+  }
+
+  // Formats usuels : 199/165, 004 / 165
+  for (const match of text.matchAll(/\b(\d{1,3})\s*[/|Il\\]\s*(\d{2,3})\b/gi)) {
+    push(match[1], match[2], true)
   }
 
   // « No. 150 », « N°150 »
-  for (const match of text.matchAll(/(?:n[o°.]|no\.?|n°)\s*([A-Za-z]?\d{1,3})\b/gi)) {
+  for (const match of text.matchAll(/(?:n[o°.]|no\.?|n°)\s*(\d{1,3})\b/gi)) {
     push(match[1], null, false)
   }
 
@@ -287,6 +442,19 @@ function setHintBoost(ocrText: string, target: ScanTarget): number {
   return score
 }
 
+function targetsForNumber(byNumber: Map<string, ScanTarget[]>, number: string): ScanTarget[] {
+  const found: ScanTarget[] = []
+  const seen = new Set<string>()
+  for (const key of numberLookupKeys(number)) {
+    for (const target of byNumber.get(key) ?? []) {
+      if (seen.has(target.id)) continue
+      seen.add(target.id)
+      found.push(target)
+    }
+  }
+  return found
+}
+
 export function scoreMatches(
   targets: ScanTarget[],
   numberHits: NumberHit[],
@@ -295,9 +463,11 @@ export function scoreMatches(
 ): ScanMatch[] {
   const byNumber = new Map<string, ScanTarget[]>()
   for (const target of targets) {
-    const list = byNumber.get(target.number) ?? []
-    list.push(target)
-    byNumber.set(target.number, list)
+    for (const key of numberLookupKeys(target.number)) {
+      const list = byNumber.get(key) ?? []
+      list.push(target)
+      byNumber.set(key, list)
+    }
   }
 
   const best = new Map<string, ScanMatch>()
@@ -308,7 +478,7 @@ export function scoreMatches(
   }
 
   for (const hit of numberHits) {
-    let candidates = byNumber.get(hit.number) ?? []
+    let candidates = targetsForNumber(byNumber, hit.number)
     if (candidates.length === 0) continue
 
     if (hit.total) {
@@ -323,6 +493,8 @@ export function scoreMatches(
     // Sans nom, un numéro seul sur tout le catalogue est trop ambigu.
     if (named.length > 0) {
       candidates = named
+    } else if (/^[A-Z]{2,}\d+$/.test(hit.number) && candidates.length <= 8) {
+      // Codes GG/TG assez uniques.
     } else if (hit.total && candidates.length <= 6) {
       // Numéro + total connus : assez fiable même sans nom.
     } else if (candidates.length > 3) {
@@ -336,7 +508,8 @@ export function scoreMatches(
       const base = hit.trusted ? 78 : 55
       const nameBoost = nameHit ? 35 : 0
       const totalBoost = hit.total && String(target.printedTotal) === hit.total ? 18 : 0
-      const score = base + nameBoost + totalBoost + setHintBoost(ocrText, target)
+      const galleryBoost = /^[A-Z]{2,}\d+$/.test(hit.number) ? 10 : 0
+      const score = base + nameBoost + totalBoost + galleryBoost + setHintBoost(ocrText, target)
       keep({
         target,
         number: hit.number,
@@ -351,14 +524,22 @@ export function scoreMatches(
     }
   }
 
-  // Nom seul : seulement si peu de cartes portent ce Pokémon dans la collection,
-  // ou une seule carte dans les séries suivies.
+  // Nom seul : utile si le numéro GG est illisible mais le Pokémon est clair.
   if (numberHits.length === 0 && speciesHits.length > 0) {
     for (const species of speciesHits) {
       const named = targets.filter((target) => speciesMatchesTarget(species, target))
       const collectionNamed = named.filter((target) => target.collectionCard)
-      const pool = collectionNamed.length > 0 && collectionNamed.length <= 6 ? collectionNamed : named
-      if (pool.length === 0 || pool.length > 8) continue
+      const galleryNamed = named.filter((target) => /^[A-Z]{2,}\d+$/i.test(target.number))
+      let pool = named
+      if (collectionNamed.length > 0 && collectionNamed.length <= 8) pool = collectionNamed
+      else if (galleryNamed.length > 0 && galleryNamed.length <= 8) pool = galleryNamed
+      else if (named.length > 10) {
+        // Trop de versions : garde les illustrations / galeries en priorité.
+        pool = named
+          .filter((target) => /gallery|illustration|special|art/i.test(target.rarity + target.setLabel))
+          .slice(0, 8)
+      }
+      if (pool.length === 0 || pool.length > 10) continue
       for (const target of pool) {
         keep({
           target,
@@ -370,7 +551,7 @@ export function scoreMatches(
     }
   }
 
-  return [...best.values()].filter((match) => match.score >= 80)
+  return [...best.values()].filter((match) => match.score >= 78)
 }
 
 function englishSpeciesKey(name: string): string {
@@ -512,21 +693,39 @@ export async function scanCardPhoto(
     targets.map((target) => String(target.printedTotal)).filter((value) => value && value !== '0'),
   )
   const worker = await getWorker()
+  // Recadre d’abord la carte (sinon photo loin = OCR sur le fond blanc).
+  const card = extractCardCanvas(image)
 
   const regions = [
-    cropRegion(image, 'top'),
-    cropRegion(image, 'numberCorner'),
-    cropRegion(image, 'numberCorner', true),
-    cropRegion(image, 'bottom'),
+    cropRegion(card, 'top', 'contrast'),
+    cropRegion(card, 'top', 'binarize'),
+    cropRegion(card, 'numberCorner', 'contrast'),
+    cropRegion(card, 'numberCorner', 'binarize'),
+    cropRegion(card, 'numberCorner', 'binarize-invert'),
+    cropRegion(card, 'bottom', 'contrast'),
+    cropRegion(card, 'bottom', 'binarize'),
   ]
   const texts: string[] = []
   for (const region of regions) {
     const { data } = await worker.recognize(region, undefined, { text: true })
     if (data.text?.trim()) texts.push(data.text)
   }
-  const ocrText = texts.join('\n')
-  const numberHits = extractNumberHits(ocrText, printedTotals)
-  const speciesHits = findSpeciesInText(ocrText)
+
+  let ocrText = texts.join('\n')
+  let numberHits = extractNumberHits(ocrText, printedTotals)
+  let speciesHits = findSpeciesInText(ocrText)
+
+  // Relance large si rien de lisible (carte très brillante / OCR raté).
+  if (numberHits.length === 0 && speciesHits.length === 0) {
+    const fallback = cropRegion(card, 'full', 'contrast')
+    const { data } = await worker.recognize(fallback, undefined, { text: true })
+    if (data.text?.trim()) {
+      ocrText = `${ocrText}\n${data.text}`
+      numberHits = extractNumberHits(ocrText, printedTotals)
+      speciesHits = findSpeciesInText(ocrText)
+    }
+  }
+
   const matches = finalizeMatches(scoreMatches(targets, numberHits, speciesHits, ocrText))
 
   return {
