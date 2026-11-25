@@ -40,7 +40,9 @@ export const FRENCH_SETS: Record<string, FrenchSetMeta> = {
   "swsh9tg": { tcgdexId: "swsh9tg", name: "Stars Étincelantes — Galerie des Dresseurs", logo: "", assetBase: "" },
   "swsh9": { tcgdexId: "swsh9", name: "Stars Étincelantes", logo: "https://assets.tcgdex.net/fr/swsh/swsh9/logo.webp", assetBase: "https://assets.tcgdex.net/fr/swsh/swsh9" },
   "swsh8": { tcgdexId: "swsh8", name: "Poing de Fusion", logo: "https://assets.tcgdex.net/fr/swsh/swsh8/logo.webp", assetBase: "https://assets.tcgdex.net/fr/swsh/swsh8" },
-  "cel25c": { tcgdexId: "cel25cc", name: "Célébrations — Collection classique", logo: "", assetBase: "" },
+  "cel25": { tcgdexId: "cel25", name: "Célébrations", logo: "https://assets.tcgdex.net/fr/swsh/cel25/logo.webp", assetBase: "https://assets.tcgdex.net/fr/swsh/cel25" },
+  "cel25c": { tcgdexId: "cel25cc", name: "Célébrations — Collection classique", logo: "https://images.pokemontcg.io/cel25c/logo.png", assetBase: "" },
+  "me55c": { tcgdexId: "cel25cc", name: "30ᵉ Anniversaire — Collection classique", logo: "https://images.pokemontcg.io/cel25c/logo.png", assetBase: "" },
   "swsh7": { tcgdexId: "swsh7", name: "Évolution Céleste", logo: "https://assets.tcgdex.net/fr/swsh/swsh7/logo.webp", assetBase: "https://assets.tcgdex.net/fr/swsh/swsh7" },
   "swsh6": { tcgdexId: "swsh6", name: "Règne de Glace", logo: "https://assets.tcgdex.net/fr/swsh/swsh6/logo.webp", assetBase: "https://assets.tcgdex.net/fr/swsh/swsh6" },
   "swsh5": { tcgdexId: "swsh5", name: "Styles de combat", logo: "https://assets.tcgdex.net/fr/swsh/swsh5/logo.webp", assetBase: "https://assets.tcgdex.net/fr/swsh/swsh5" },
@@ -154,8 +156,104 @@ export const FRENCH_SETS: Record<string, FrenchSetMeta> = {
   "base3": { tcgdexId: "base3", name: "Fossile", logo: "https://assets.tcgdex.net/fr/base/base3/logo.webp", assetBase: "https://assets.tcgdex.net/fr/base/base3" },
   "basep": { tcgdexId: "basep", name: "Promos Wizards", logo: "", assetBase: "" },
   "base2": { tcgdexId: "base2", name: "Jungle", logo: "https://assets.tcgdex.net/fr/base/base2/logo.webp", assetBase: "https://assets.tcgdex.net/fr/base/base2" },
-  "base1": { tcgdexId: "base1", name: "Set de Base", logo: "", assetBase: "" },
-  "me55": { tcgdexId: "30th", name: "30ᵉ Anniversaire", logo: "", assetBase: "" },
+  "base1": { tcgdexId: "base1", name: "Set de Base", logo: "https://images.pokemontcg.io/base1/logo.png", assetBase: "https://assets.tcgdex.net/fr/base/base1" },
+  "me55": { tcgdexId: "cel25", name: "30ᵉ Anniversaire", logo: "https://assets.tcgdex.net/fr/swsh/cel25/logo.webp", assetBase: "" },
+}
+
+/** Sous-séries / galeries / IDs CardPrice qui réutilisent un logo connu. */
+const LOGO_PARENT: Record<string, string> = {
+  swsh12tg: 'swsh12',
+  swsh11tg: 'swsh11',
+  swsh10tg: 'swsh10',
+  swsh9tg: 'swsh9',
+  swsh12pt5gg: 'swsh12pt5',
+  cel25c: 'cel25',
+  me55c: 'cel25',
+  me55: 'cel25',
+  swsh45sv: 'swsh45',
+  sma: 'sm115',
+  // IDs CardPrice (en-…) → code PokémonTCG / TCGdex
+  'en-1861': 'smp',
+  'en-1451': 'xyp',
+  'en-1423': 'np',
+  'en-1407': 'bwp',
+  'en-1418': 'basep',
+  'en-1421': 'dpp',
+  'en-1430': 'dp1',
+  'en-1393': 'ex1',
+  'en-1400': 'bw1',
+  'en-1528': 'xy0',
+  'en-24451': 'me1',
+  'en-24163': 'mcd22',
+  'en-3150': 'mcd22',
+  'en-2782': 'mcd21',
+  'en-2555': 'mcd19',
+  'en-2364': 'mcd18',
+  'en-2148': 'mcd17',
+  'en-3087': 'mcd16',
+  'en-1694': 'mcd15',
+  'en-1692': 'mcd14',
+  'en-1427': 'mcd12',
+  'en-1401': 'mcd11',
+  'en-1453': 'hgss1',
+  'en-2686': 'swsh1',
+  'en-23520': 'sv1',
+  'en-2208': 'sm1',
+  'en-1796': 'xy1',
+  'en-1538': 'bw1',
+  'en-1540': 'hgss1',
+  'en-1541': 'dp1',
+  'en-1853': 'ex1',
+  'en-1938': 'swshp',
+  'en-2175': 'basep',
+  'en-2289': 'swshp',
+  'en-2332': 'swshp',
+  'en-2374': 'swshp',
+  'en-23561': 'sv1',
+  'en-23266': 'sv1',
+  'en-3179': 'swsh1',
+  'en-22880': 'swsh1',
+  'en-2282': 'swsh1',
+  'en-1840': 'xy1',
+  'en-1539': 'bw1',
+  'en-2155': 'xy1',
+  'en-2214': 'basep',
+}
+
+export function pokemonTcgIoLogo(setId: string): string {
+  return `https://images.pokemontcg.io/${encodeURIComponent(setId)}/logo.png`
+}
+
+/**
+ * Logo de série le plus fiable : TCGdex FR → parent → PokémonTCG.io.
+ */
+export function resolveSetLogo(setId: string): { logo: string; logoFallback?: string } {
+  const direct = FRENCH_SETS[setId]?.logo
+  if (direct) {
+    const fallback = pokemonTcgIoLogo(setId)
+    return { logo: direct, logoFallback: fallback !== direct ? fallback : undefined }
+  }
+
+  const parentId = LOGO_PARENT[setId]
+  if (parentId) {
+    const parentDirect = FRENCH_SETS[parentId]?.logo
+    const parentLogo = parentDirect || pokemonTcgIoLogo(parentId)
+    return {
+      logo: parentLogo,
+      logoFallback: pokemonTcgIoLogo(setId),
+    }
+  }
+
+  // Séries internationales / promo / POP : logo PokémonTCG.io
+  if (
+    !setId.startsWith('jp-') &&
+    !setId.startsWith('french-') &&
+    !/^en-\d+$/.test(setId)
+  ) {
+    return { logo: pokemonTcgIoLogo(setId) }
+  }
+
+  return { logo: '' }
 }
 
 export const EXTRA_FRENCH_SET_NAMES: Record<string, string> = {
@@ -184,7 +282,7 @@ export function frenchSetName(setId: string, fallbackName: string): string {
 }
 
 export function frenchSetLogo(setId: string): string {
-  return FRENCH_SETS[setId]?.logo ?? ''
+  return resolveSetLogo(setId).logo
 }
 
 export function frenchCardImageUrl(

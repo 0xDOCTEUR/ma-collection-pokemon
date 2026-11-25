@@ -2,8 +2,8 @@ import { SETS, type SetInfo } from '../sets'
 import type { PokemonCard } from '../types'
 import {
   frenchCardImageUrl,
-  frenchSetLogo,
   normalizeCardNum,
+  resolveSetLogo,
   type TcgdexFrenchCardInfo,
 } from './frenchSets'
 import { frenchCardName } from './generations'
@@ -56,7 +56,10 @@ const SKIPPED_HUNT_SET_IDS = new Set(Object.values(FEATURED_HUNT_ALIAS))
 
 function toFeaturedMeta(set: SetInfo, chaseImage?: string): CollectionSetInfo {
   const series = FEATURED_SERIES[set.id] ?? 'Other'
-  const official = isOfficialLogoUrl(set.logo) ? set.logo : frenchSetLogo(set.id)
+  const resolved = resolveSetLogo(set.id)
+  const official = isOfficialLogoUrl(set.logo)
+    ? set.logo
+    : resolved.logo || (isOfficialLogoUrl(set.logoFallback) ? set.logoFallback : '')
   const cardAsLogo = set.logo && !isOfficialLogoUrl(set.logo) ? set.logo : undefined
   return {
     id: set.id,
@@ -64,8 +67,8 @@ function toFeaturedMeta(set: SetInfo, chaseImage?: string): CollectionSetInfo {
     shortName: set.shortName,
     series,
     language: 'fr',
-    logo: official || '',
-    logoFallback: set.logoFallback,
+    logo: official || resolved.logo || '',
+    logoFallback: set.logoFallback || resolved.logoFallback,
     chaseImage: chaseImage || cardAsLogo,
     featured: true,
     huntSetId: FEATURED_HUNT_ALIAS[set.id],
@@ -116,14 +119,15 @@ export function buildAllCollectionSets(hunt: PsaHuntData | null): CollectionSetI
     if (count === 0) continue
 
     const displayName = catalogSetName(set)
-    const officialLogo = frenchSetLogo(set.id)
+    const resolved = resolveSetLogo(set.id)
     fromHunt.push({
       id: set.id,
       name: displayName,
       shortName: displayName,
       series: set.series || 'Other',
       language: set.language === 'ja' ? 'ja' : 'en',
-      logo: officialLogo || '',
+      logo: resolved.logo,
+      logoFallback: resolved.logoFallback,
       chaseImage: chaseFor(set.id),
       cardCount: count,
       featured: false,
