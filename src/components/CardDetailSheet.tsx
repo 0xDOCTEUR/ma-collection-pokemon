@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react'
 import {
   fetchCardmarketLive,
   formatCardmarketPrice,
@@ -13,7 +13,14 @@ import type {
   PriceRangeDays,
 } from '../types'
 import { buildVisualVariants } from '../utils/cardVariants'
-import { BUY_MARKETPLACES, cardBuyQuery, openCardBuySearches, searchUrl } from '../utils/marketplace'
+import {
+  buyLinksForCard,
+  cardBuyQuery,
+  navigateBuyWindow,
+  openBuyBlank,
+  openCardBuySearches,
+  type BuyLink,
+} from '../utils/marketplace'
 import { buildTrendPoints, recordPriceSnapshot } from '../utils/priceHistory'
 import { PriceTrendChart } from './PriceTrendChart'
 import { AdvicePrices } from './AdvicePrices'
@@ -77,16 +84,39 @@ export function CardDetailSheet({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [zoomOpen, setZoomOpen] = useState(false)
+  const [buyBlocked, setBuyBlocked] = useState<BuyLink[]>([])
   const [variantId, setVariantId] = useState('normal')
+  const buyWinsRef = useRef<(Window | null)[]>([])
+  const buyLinks = useMemo(() => buyLinksForCard(card), [card])
 
   const historyKey = card.tcgdexId || card.id
   const variants = useMemo(() => buildVisualVariants(card, population), [card, population])
   const activeVariant = variants.find((row) => row.id === variantId) ?? variants[0]
 
+  const openBuyBlankAt = (index: number) => {
+    const link = buyLinks[index]
+    if (!link) return
+    buyWinsRef.current[index] = openBuyBlank(link)
+  }
+
+  const finishBuyGesture = () => {
+    const blocked: BuyLink[] = []
+    buyLinks.forEach((link, index) => {
+      const win = buyWinsRef.current[index]
+      if (win && !win.closed) {
+        navigateBuyWindow(win, link.url)
+      } else {
+        blocked.push(link)
+      }
+    })
+    setBuyBlocked(blocked)
+  }
+
   useEffect(() => {
     setVariantId((prev) =>
       variants.some((row) => row.id === prev) ? prev : (variants[0]?.id ?? 'normal'),
     )
+    setBuyBlocked([])
   }, [card.id, variants])
 
   useEffect(() => {
@@ -244,25 +274,72 @@ export function CardDetailSheet({
               <button
                 type="button"
                 className="btn primary buy-all-btn"
-                onClick={() => openCardBuySearches(card)}
                 title="Ouvrir Cardmarket, Leboncoin et Vinted avec les bons mots-clés"
+                onPointerDown={(event) => {
+                  if (event.button !== 0) return
+                  buyWinsRef.current = []
+                  // 1re activation (appui) → onglet vide Cardmarket
+                  openBuyBlankAt(0)
+                }}
+                onPointerUp={(event) => {
+                  if (event.button !== 0) return
+                  // 2e activation (relâchement) → onglet vide Leboncoin
+                  openBuyBlankAt(1)
+                }}
+                onClick={(event) => {
+                  // Clavier (Entrée / Espace) : un seul geste → on tente les 3.
+                  if (event.detail === 0) {
+                    const result = openCardBuySearches(card)
+                    setBuyBlocked(result.blocked)
+                    return
+                  }
+                  // 3e activation (clic) → onglet vide Vinted, puis navigation
+                  openBuyBlankAt(2)
+                  finishBuyGesture()
+                }}
               >
                 Acheter
               </button>
               <div className="buy-links" aria-label="Sites d’achat">
-                {BUY_MARKETPLACES.map((market) => (
+                {buyLinks.map((link) => (
                   <a
-                    key={market.id}
+                    key={link.id}
                     className="buy-link"
-                    href={searchUrl(market.id, cardBuyQuery(card, market.id))}
+                    href={link.url}
                     target="_blank"
                     rel="noreferrer"
-                    title={cardBuyQuery(card, market.id)}
+                    title={cardBuyQuery(card, link.id)}
                   >
-                    {market.label}
+                    {link.label}
                   </a>
                 ))}
               </div>
+              {buyBlocked.length > 0 && (
+                <div className="buy-blocked" role="status">
+                  <p>
+                    Le navigateur a bloqué {buyBlocked.length} onglet
+                    {buyBlocked.length > 1 ? 's' : ''}. Clique pour les ouvrir, ou
+                    autorise les pop-ups (icône à gauche de l’adresse) puis reclique
+                    Acheter.
+                  </p>
+                  <div className="buy-blocked-actions">
+                    {buyBlocked.map((link) => (
+                      <a
+                        key={link.id}
+                        className="btn primary buy-blocked-btn"
+                        href={link.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={() =>
+                          setBuyBlocked((prev) => prev.filter((row) => row.id !== link.id))
+                        }
+                      >
+                        Ouvrir {link.label}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="card-sheet-prices">

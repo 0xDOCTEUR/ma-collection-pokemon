@@ -67,17 +67,75 @@ export function cardBuyQuery(card: BuyCard, market: Marketplace = 'cardmarket'):
   return `${card.name} ${num}`.replace(/\s+/g, ' ').trim().toLowerCase()
 }
 
-/** Ouvre Cardmarket, Leboncoin et Vinted dans de nouveaux onglets. */
-export function openCardBuySearches(card: BuyCard): void {
-  const urls = BUY_MARKETPLACES.map((market) =>
-    searchUrl(market.id, cardBuyQuery(card, market.id)),
-  )
-  // Ordre inverse : le dernier window.open garde souvent le focus, et on veut
-  // Cardmarket visible. Sans 3e argument : moins bloqué par le navigateur.
-  for (let i = urls.length - 1; i >= 0; i -= 1) {
-    const opened = window.open(urls[i], '_blank')
-    if (opened) opened.opener = null
+export type BuyLink = {
+  id: Marketplace
+  label: string
+  url: string
+}
+
+export type BuyOpenResult = {
+  opened: BuyLink[]
+  blocked: BuyLink[]
+}
+
+export function buyLinksForCard(card: BuyCard): BuyLink[] {
+  return BUY_MARKETPLACES.map((market) => ({
+    id: market.id,
+    label: market.label,
+    url: searchUrl(market.id, cardBuyQuery(card, market.id)),
+  }))
+}
+
+/** Ouvre un onglet vide (léger) et rend le focus à la page. */
+export function openBuyBlank(link: BuyLink): Window | null {
+  const win = window.open('about:blank', `pokedoc-buy-${link.id}`)
+  if (!win) return null
+  try {
+    win.opener = null
+  } catch {
+    /* ignore */
   }
+  try {
+    win.blur()
+  } catch {
+    /* ignore */
+  }
+  try {
+    window.focus()
+  } catch {
+    /* ignore */
+  }
+  return win
+}
+
+export function navigateBuyWindow(win: Window, url: string): void {
+  try {
+    win.location.href = url
+  } catch {
+    /* ignore */
+  }
+}
+
+/**
+ * Tente d’ouvrir les 3 d’un coup (clavier / secours).
+ * Souvent 1 seul passe : les autres vont dans `blocked`.
+ */
+export function openCardBuySearches(card: BuyCard): BuyOpenResult {
+  const links = buyLinksForCard(card)
+  const opened: BuyLink[] = []
+  const blocked: BuyLink[] = []
+
+  for (const link of links) {
+    const win = openBuyBlank(link)
+    if (win) {
+      navigateBuyWindow(win, link.url)
+      opened.push(link)
+    } else {
+      blocked.push(link)
+    }
+  }
+
+  return { opened, blocked }
 }
 
 export interface SearchIdea {
