@@ -599,11 +599,6 @@ export default function App() {
     setTab('collection')
   }
 
-  function searchInLastSeries() {
-    setSelectedSetId(lastSeriesId)
-    setTab('collection')
-  }
-
   function searchPokemonEverywhere(name: string) {
     const next = name.trim()
     if (next.length < 2) return
