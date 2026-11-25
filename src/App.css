@@ -1407,7 +1407,7 @@ textarea:focus {
 }
 
 .tile.status-wanted {
-  border-color: rgba(78, 168, 222, 0.55);
+  border-color: rgba(240, 163, 58, 0.55);
 }
 
 .tile.status-missing {
@@ -1771,9 +1771,9 @@ textarea:focus {
 }
 
 .status-wanted .tile-badge {
-  color: #fff;
-  background: #2f7fbf;
-  border-color: #2f7fbf;
+  color: #1a1208;
+  background: #f0a33a;
+  border-color: #f0a33a;
 }
 
 .status-missing .tile-badge {
@@ -3363,7 +3363,7 @@ textarea:focus {
 .grid.grid-list .tile {
   display: flex;
   align-items: stretch;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .grid.grid-list .tile:hover {
@@ -3371,17 +3371,18 @@ textarea:focus {
 }
 
 .grid.grid-list .tile-media {
-  flex: 0 0 132px;
-  width: 132px;
+  flex: 0 0 140px;
+  width: 140px;
   align-self: stretch;
-  border-radius: 0;
+  border-radius: 16px 0 0 16px;
+  overflow: hidden;
 }
 
 .grid.grid-list .tile-media img,
 .grid.grid-list .tile-media-fallback {
-  width: 132px;
+  width: 140px;
   height: 100%;
-  min-height: 184px;
+  min-height: 196px;
   aspect-ratio: auto;
   object-fit: cover;
   object-position: center top;
@@ -3389,31 +3390,31 @@ textarea:focus {
 }
 
 .grid.grid-list .tile-badge {
-  left: 0.4rem;
-  bottom: 0.4rem;
-  padding: 0.18rem 0.45rem;
-  font-size: 0.64rem;
+  left: 0.45rem;
+  bottom: 0.45rem;
+  padding: 0.22rem 0.55rem;
+  font-size: 0.68rem;
 }
 
 .grid.grid-list .tile-detail-hint,
 .grid.grid-list .tile-pop,
 .grid.grid-list .tile-price-inline,
 .grid.grid-list .variant-block.reverse {
-  display: none;
+  display: none !important;
 }
 
 .grid.grid-list .tile-body {
-  flex: 1;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  flex: 1 1 auto;
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  column-gap: 1.1rem;
-  row-gap: 0.45rem;
+  gap: 0.65rem 1rem;
   min-width: 0;
-  padding: 0.65rem 1rem 0.65rem 0.85rem;
+  padding: 0.7rem 1rem 0.7rem 0.9rem;
 }
 
 .grid.grid-list .tile-copy {
+  flex: 1 1 12rem;
   min-width: 0;
   display: grid;
   gap: 0.2rem;
@@ -3427,15 +3428,17 @@ textarea:focus {
 }
 
 .grid.grid-list .tile-price-stack {
-  display: grid;
+  display: grid !important;
   justify-items: end;
   align-content: center;
   gap: 0.12rem;
-  min-width: 5.5rem;
+  flex: 0 0 auto;
+  min-width: 4.75rem;
+  margin-left: auto;
 }
 
 .grid.grid-list .tile-price-stack .tile-price {
-  font-size: 1.12rem;
+  font-size: 1.15rem;
   line-height: 1.1;
 }
 
@@ -3459,10 +3462,10 @@ textarea:focus {
 }
 
 .grid.grid-list .variant-block {
+  flex: 0 0 auto;
   margin: 0;
   padding: 0;
   border: 0;
-  justify-self: end;
 }
 
 .grid.grid-list .variant-title {
@@ -3475,13 +3478,12 @@ textarea:focus {
   justify-content: flex-end;
   gap: 0.35rem;
   margin: 0;
-  max-width: 15rem;
 }
 
 .grid.grid-list .tile-actions .chip,
 .grid.grid-list .tile-actions .add-list-trigger {
   flex: 0 0 auto;
-  padding: 0.38rem 0.7rem;
+  padding: 0.4rem 0.75rem;
   font-size: 0.78rem;
 }
 
@@ -3498,36 +3500,32 @@ textarea:focus {
   }
 
   .grid.grid-list .tile-body {
-    grid-template-columns: minmax(0, 1fr) auto;
     padding: 0.55rem 0.75rem;
   }
 
   .grid.grid-list .tile-price-stack {
-    grid-column: 2;
-    grid-row: 1;
+    margin-left: 0;
   }
 
   .grid.grid-list .variant-block {
-    grid-column: 1 / -1;
-    justify-self: stretch;
+    flex: 1 1 100%;
   }
 
   .grid.grid-list .tile-actions {
-    max-width: none;
     justify-content: flex-start;
   }
 }
 
 @media (max-width: 560px) {
   .grid.grid-list .tile-media {
-    flex-basis: 92px;
-    width: 92px;
+    flex-basis: 96px;
+    width: 96px;
   }
 
   .grid.grid-list .tile-media img,
   .grid.grid-list .tile-media-fallback {
-    width: 92px;
-    min-height: 128px;
+    width: 96px;
+    min-height: 134px;
   }
 
   .grid.grid-list .tile-name {
