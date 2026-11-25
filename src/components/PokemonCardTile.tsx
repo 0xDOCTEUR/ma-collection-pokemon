@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { useEffect, useState } from 'react'
 import { formatPrice } from '../api/pokemon'
 import type { CardStatus, CardVariant, PokemonCard } from '../types'
+import { CardImageLightbox } from './CardImageLightbox'
 import { PotentialStamp } from './PotentialStamp'
 import type { CardPotential } from '../utils/psaHunt'
 import {
@@ -81,6 +82,7 @@ export function PokemonCardTile({
   listActions = null,
 }: Props) {
   const [imgBroken, setImgBroken] = useState(false)
+  const [zoomOpen, setZoomOpen] = useState(false)
   useEffect(() => {
     setImgBroken(false)
   }, [card.id, card.imageSmall])
@@ -88,43 +90,61 @@ export function PokemonCardTile({
     normalStatus === 'owned' || (card.hasReverse && reverseStatus === 'owned')
       ? 'owned'
       : 'missing'
+  const zoomSrc = card.imageLarge || card.imageSmall
 
   return (
     <article
       className={`tile status-${overall}`}
       title={overall === 'owned' ? 'Possédée' : 'Manquante'}
     >
-      <button
-        type="button"
-        className={imgBroken ? 'tile-media is-broken' : 'tile-media'}
-        onClick={onOpenDetail}
-        title="Voir la cote, la population et le graphique"
-      >
-        {!imgBroken ? (
-          <img
-            key={card.imageSmall || card.id}
-            src={card.imageSmall}
-            alt={card.name}
-            loading="lazy"
-            width={245}
-            height={342}
-            onError={(e) => {
-              const img = e.currentTarget
-              if (card.imageFallback && img.dataset.fallbackTried !== '1') {
-                img.dataset.fallbackTried = '1'
-                img.src = card.imageFallback
-                return
-              }
-              setImgBroken(true)
-            }}
-          />
-        ) : (
-          <span className="tile-media-fallback" aria-hidden="true">
-            {card.name}
-          </span>
-        )}
-        <span className="tile-detail-hint">Cote</span>
-      </button>
+      <div className="tile-media-wrap">
+        <button
+          type="button"
+          className={imgBroken ? 'tile-media is-broken' : 'tile-media'}
+          onClick={() => setZoomOpen(true)}
+          title="Voir l’image en grand"
+        >
+          {!imgBroken ? (
+            <img
+              key={card.imageSmall || card.id}
+              src={card.imageSmall}
+              alt={card.name}
+              loading="lazy"
+              width={245}
+              height={342}
+              onError={(e) => {
+                const img = e.currentTarget
+                if (card.imageFallback && img.dataset.fallbackTried !== '1') {
+                  img.dataset.fallbackTried = '1'
+                  img.src = card.imageFallback
+                  return
+                }
+                setImgBroken(true)
+              }}
+            />
+          ) : (
+            <span className="tile-media-fallback" aria-hidden="true">
+              {card.name}
+            </span>
+          )}
+        </button>
+        <button
+          type="button"
+          className="tile-detail-hint"
+          title="Voir la cote, la population et le graphique"
+          onClick={onOpenDetail}
+        >
+          Cote
+        </button>
+      </div>
+      {zoomOpen && zoomSrc ? (
+        <CardImageLightbox
+          src={zoomSrc}
+          alt={card.name}
+          fallbackSrc={card.imageFallback}
+          onClose={() => setZoomOpen(false)}
+        />
+      ) : null}
 
       <div className="tile-body">
         <div className="tile-copy">

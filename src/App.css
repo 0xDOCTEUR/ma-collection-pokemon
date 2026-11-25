@@ -1532,10 +1532,15 @@ textarea:focus {
   max-width: 7.2rem;
 }
 
+.tile-media-wrap {
+  position: relative;
+}
+
 .tile-detail-hint {
   position: absolute;
   right: 0.55rem;
   top: 0.55rem;
+  z-index: 2;
   padding: 0.2rem 0.5rem;
   border-radius: 999px;
   font-size: 0.65rem;
@@ -1545,6 +1550,7 @@ textarea:focus {
   color: var(--wanted);
   background: rgba(0, 0, 0, 0.72);
   border: 1px solid rgba(78, 168, 222, 0.45);
+  cursor: pointer;
   opacity: 0;
   transform: translateY(-4px);
   transition:
@@ -1553,9 +1559,63 @@ textarea:focus {
 }
 
 .tile:hover .tile-detail-hint,
-.tile-media:focus-visible .tile-detail-hint {
+.tile-media-wrap:focus-within .tile-detail-hint {
   opacity: 1;
   transform: translateY(0);
+}
+
+.card-sheet-art-btn {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: zoom-in;
+  border-radius: 14px;
+}
+
+.card-sheet-art-btn:focus-visible {
+  outline: 2px solid rgba(78, 168, 222, 0.7);
+  outline-offset: 3px;
+}
+
+.card-zoom-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  gap: 0.75rem;
+  padding: 1.25rem;
+  background: rgba(2, 6, 12, 0.88);
+  backdrop-filter: blur(10px);
+  animation: rise 0.25s ease both;
+}
+
+.card-zoom-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1;
+}
+
+.card-zoom-image {
+  max-width: min(520px, 100%);
+  max-height: min(86vh, 920px);
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+  background: #070a0f;
+}
+
+.card-zoom-hint {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.82rem;
+  text-align: center;
 }
 
 .card-sheet-backdrop {

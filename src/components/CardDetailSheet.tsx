@@ -15,6 +15,7 @@ import type {
 import { buildTrendPoints, recordPriceSnapshot } from '../utils/priceHistory'
 import { PriceTrendChart } from './PriceTrendChart'
 import { AdvicePrices } from './AdvicePrices'
+import { CardImageLightbox } from './CardImageLightbox'
 import { PotentialStamp } from './PotentialStamp'
 import type { CardPotential } from '../utils/psaHunt'
 import {
@@ -73,16 +74,17 @@ export function CardDetailSheet({
   const [stats, setStats] = useState<CardmarketLiveStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [zoomOpen, setZoomOpen] = useState(false)
 
   const historyKey = card.tcgdexId || card.id
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape' && !zoomOpen) onClose()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
+  }, [onClose, zoomOpen])
 
   useEffect(() => {
     let cancelled = false
@@ -140,20 +142,27 @@ export function CardDetailSheet({
         </header>
 
         <div className="card-sheet-body">
-          <img
-            className="card-sheet-art"
-            src={card.imageLarge || card.imageSmall}
-            alt={card.name}
-            width={245}
-            height={342}
-            onError={(e) => {
-              const img = e.currentTarget
-              if (card.imageFallback && img.dataset.fallbackTried !== '1') {
-                img.dataset.fallbackTried = '1'
-                img.src = card.imageFallback
-              }
-            }}
-          />
+          <button
+            type="button"
+            className="card-sheet-art-btn"
+            onClick={() => setZoomOpen(true)}
+            title="Voir l’image en grand"
+          >
+            <img
+              className="card-sheet-art"
+              src={card.imageLarge || card.imageSmall}
+              alt={card.name}
+              width={245}
+              height={342}
+              onError={(e) => {
+                const img = e.currentTarget
+                if (card.imageFallback && img.dataset.fallbackTried !== '1') {
+                  img.dataset.fallbackTried = '1'
+                  img.src = card.imageFallback
+                }
+              }}
+            />
+          </button>
 
           <div className="card-sheet-main">
             {onSetStatus && (
@@ -271,6 +280,14 @@ export function CardDetailSheet({
           </div>
         </div>
       </aside>
+      {zoomOpen ? (
+        <CardImageLightbox
+          src={card.imageLarge || card.imageSmall}
+          alt={card.name}
+          fallbackSrc={card.imageFallback}
+          onClose={() => setZoomOpen(false)}
+        />
+      ) : null}
     </div>
   )
 }

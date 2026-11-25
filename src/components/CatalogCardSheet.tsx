@@ -20,6 +20,7 @@ import {
   type PsaHuntCard,
 } from '../utils/psaHunt'
 import type { CardStatus } from '../types'
+import { CardImageLightbox } from './CardImageLightbox'
 import { PotentialStamp } from './PotentialStamp'
 
 interface Props {
@@ -74,14 +75,15 @@ export function CatalogCardSheet({
   const printing = asPrinting(card)
   const [quote, setQuote] = useState<PsaPriceQuote | null>(null)
   const [quoteState, setQuoteState] = useState<'loading' | 'ready' | 'empty' | 'error'>('loading')
+  const [zoomOpen, setZoomOpen] = useState(false)
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose()
+      if (event.key === 'Escape' && !zoomOpen) onClose()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
+  }, [onClose, zoomOpen])
 
   useEffect(() => {
     let cancelled = false
@@ -127,20 +129,27 @@ export function CatalogCardSheet({
 
         <div className="card-sheet-body">
           {image ? (
-            <img
-              className="card-sheet-art"
-              src={image}
-              alt={displayName}
-              width={245}
-              height={342}
-              onError={(e) => {
-                const img = e.currentTarget
-                if (fallbackImage && img.dataset.fallbackTried !== '1') {
-                  img.dataset.fallbackTried = '1'
-                  img.src = fallbackImage
-                }
-              }}
-            />
+            <button
+              type="button"
+              className="card-sheet-art-btn"
+              onClick={() => setZoomOpen(true)}
+              title="Voir l’image en grand"
+            >
+              <img
+                className="card-sheet-art"
+                src={image}
+                alt={displayName}
+                width={245}
+                height={342}
+                onError={(e) => {
+                  const img = e.currentTarget
+                  if (fallbackImage && img.dataset.fallbackTried !== '1') {
+                    img.dataset.fallbackTried = '1'
+                    img.src = fallbackImage
+                  }
+                }}
+              />
+            </button>
           ) : (
             <div className="card-sheet-art hunt-fallback" aria-hidden="true" />
           )}
@@ -311,6 +320,14 @@ export function CatalogCardSheet({
           </div>
         </div>
       </aside>
+      {zoomOpen && image ? (
+        <CardImageLightbox
+          src={image}
+          alt={displayName}
+          fallbackSrc={fallbackImage}
+          onClose={() => setZoomOpen(false)}
+        />
+      ) : null}
     </div>
   )
 }
