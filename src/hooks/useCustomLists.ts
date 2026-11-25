@@ -5,18 +5,54 @@ import { variantKey } from '../types'
 export interface CustomList {
   id: string
   name: string
-  setId: string
+  /** Ancien champ (une série par liste). Conservé pour migration. */
+  setId?: string
+  /** Clés `setId|cardId` ou `setId|cardId:reverse`. */
   selected: string[]
   createdAt: number
 }
 
 const STORAGE_KEY = 'pokemon-custom-lists-v1'
 
+export function listItemKey(setId: string, cardId: string, variant: CardVariant): string {
+  return `${setId}|${variantKey(cardId, variant)}`
+}
+
+export function parseListItemKey(
+  key: string,
+): { setId: string; cardId: string; variant: CardVariant } | null {
+  const sep = key.indexOf('|')
+  if (sep <= 0) return null
+  const setId = key.slice(0, sep)
+  const rest = key.slice(sep + 1)
+  if (!setId || !rest) return null
+  if (rest.endsWith(':reverse')) {
+    return { setId, cardId: rest.slice(0, -':reverse'.length), variant: 'reverse' }
+  }
+  return { setId, cardId: rest, variant: 'normal' }
+}
+
+function migrateList(raw: CustomList): CustomList {
+  const setId = raw.setId
+  const selected = (raw.selected ?? []).map((key) => {
+    if (key.includes('|')) return key
+    if (setId) return `${setId}|${key}`
+    return key
+  })
+  return {
+    id: raw.id,
+    name: raw.name,
+    selected,
+    createdAt: raw.createdAt,
+  }
+}
+
 function load(): CustomList[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return []
-    return JSON.parse(raw) as CustomList[]
+    const parsed = JSON.parse(raw) as CustomList[]
+    return parsed.map(migrateList)
   } catch {
     return []
   }
@@ -33,11 +69,10 @@ export function useCustomLists() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(lists))
   }, [lists])
 
-  const createList = useCallback((name: string, setId: string) => {
+  const createList = useCallback((name: string) => {
     const list: CustomList = {
       id: newId(),
       name: name.trim() || 'Nouvelle liste',
-      setId,
       selected: [],
       createdAt: Date.now(),
     }
@@ -55,25 +90,55 @@ export function useCustomLists() {
     setLists((prev) => prev.filter((list) => list.id !== id))
   }, [])
 
-  const setListSet = useCallback((id: string, setId: string) => {
-    setLists((prev) =>
-      prev.map((list) => (list.id === id ? { ...list, setId, selected: [] } : list)),
-    )
-  }, [])
-
-  const toggleCard = useCallback((id: string, cardId: string, variant: CardVariant) => {
-    const key = variantKey(cardId, variant)
+  const addCard = useCallback((id: string, setId: string, cardId: string, variant: CardVariant) => {
+    const key = listItemKey(setId, cardId, variant)
     setLists((prev) =>
       prev.map((list) => {
         if (list.id !== id) return list
-        const has = list.selected.includes(key)
-        return {
-          ...list,
-          selected: has ? list.selected.filter((k) => k !== key) : [...list.selected, key],
-        }
+        if (list.selected.includes(key)) return list
+        return { ...list, selected: [...list.selected, key] }
       }),
     )
   }, [])
+
+  const removeCard = useCallback(
+    (id: string, setId: string, cardId: string, variant: CardVariant) => {
+      const key = listItemKey(setId, cardId, variant)
+      setLists((prev) =>
+        prev.map((list) => {
+          if (list.id !== id) return list
+          return { ...list, selected: list.selected.filter((k) => k !== key) }
+        }),
+      )
+    },
+    [],
+  )
+
+  const toggleCard = useCallback(
+    (id: string, setId: string, cardId: string, variant: CardVariant) => {
+      const key = listItemKey(setId, cardId, variant)
+      setLists((prev) =>
+        prev.map((list) => {
+          if (list.id !== id) return list
+          const has = list.selected.includes(key)
+          return {
+            ...list,
+            selected: has ? list.selected.filter((k) => k !== key) : [...list.selected, key],
+          }
+        }),
+      )
+    },
+    [],
+  )
+
+  const isInList = useCallback(
+    (id: string, setId: string, cardId: string, variant: CardVariant) => {
+      const list = lists.find((l) => l.id === id)
+      if (!list) return false
+      return list.selected.includes(listItemKey(setId, cardId, variant))
+    },
+    [lists],
+  )
 
   const clearSelection = useCallback((id: string) => {
     setLists((prev) => prev.map((list) => (list.id === id ? { ...list, selected: [] } : list)))
@@ -94,8 +159,10 @@ export function useCustomLists() {
     createList,
     renameList,
     deleteList,
-    setListSet,
+    addCard,
+    removeCard,
     toggleCard,
+    isInList,
     clearSelection,
     selectMany,
   }

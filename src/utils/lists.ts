@@ -5,6 +5,7 @@ export interface ListEntry {
   card: PokemonCard
   variant: CardVariant
   status: CardStatus
+  setName?: string
 }
 
 export type ListFormat = 'numbers' | 'numbers-names' | 'csv'
@@ -48,20 +49,20 @@ export function formatList(entries: ListEntry[], format: ListFormat): string {
   }
   if (format === 'numbers-names') {
     return entries
-      .map(
-        (e) =>
-          `${e.card.number} — ${e.card.name}${e.variant === 'reverse' ? ' (reverse)' : ''}`,
-      )
+      .map((e) => {
+        const setPart = e.setName ? ` [${e.setName}]` : ''
+        return `${e.card.number} — ${e.card.name}${e.variant === 'reverse' ? ' (reverse)' : ''}${setPart}`
+      })
       .join('\n')
   }
   return [
-    'numero;nom;version;statut;rarete;prix_tcgplayer_eur;prix_cardmarket_eur',
+    'serie;numero;nom;version;statut;rarete;prix_tcgplayer_eur;prix_cardmarket_eur',
     ...entries.map((e) => {
       const price = pricesFor(e.card, e.variant)
       const cm = cardmarketPricesFor(e.card, e.variant)
       const statut =
         e.status === 'owned' ? 'possedee' : e.status === 'wanted' ? 'recherchee' : 'manquante'
-      return `${e.card.number};${e.card.name};${e.variant};${statut};${e.card.rarity};${price.eur ?? price.usd ?? ''};${cm.eur ?? ''}`
+      return `${e.setName ?? e.card.setId};${e.card.number};${e.card.name};${e.variant};${statut};${e.card.rarity};${price.eur ?? price.usd ?? ''};${cm.eur ?? ''}`
     }),
   ].join('\n')
 }
@@ -82,7 +83,8 @@ export function formatSearchList(
       : entries
           .map((entry) => {
             const version = entry.variant === 'reverse' ? 'reverse' : 'normale'
-            return `${entry.card.number} — ${entry.card.name} · ${version} · ${entry.card.rarity}`
+            const setPart = entry.setName ? ` · ${entry.setName}` : ''
+            return `${entry.card.number} — ${entry.card.name} · ${version} · ${entry.card.rarity}${setPart}`
           })
           .join('\n')
 

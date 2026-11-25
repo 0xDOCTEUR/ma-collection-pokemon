@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from 'react'
+import { useEffect, useId, useState, type ReactNode } from 'react'
 import {
   fetchCardmarketLive,
   formatCardmarketPrice,
@@ -46,6 +46,7 @@ interface Props {
   normalStatus?: CardStatus
   reverseStatus?: CardStatus
   onSetStatus?: (variant: CardVariant, status: CardStatus) => void
+  listActions?: ReactNode
 }
 
 export function CardDetailSheet({
@@ -65,6 +66,7 @@ export function CardDetailSheet({
   normalStatus = 'missing',
   reverseStatus = 'missing',
   onSetStatus,
+  listActions = null,
 }: Props) {
   const titleId = useId()
   const [range, setRange] = useState<PriceRangeDays>(30)
@@ -197,6 +199,7 @@ export function CardDetailSheet({
                       {reverseStatus === 'owned' ? '✓ J’ai reverse' : '+ Reverse'}
                     </button>
                   )}
+                  {listActions}
                 </div>
               </div>
             )}

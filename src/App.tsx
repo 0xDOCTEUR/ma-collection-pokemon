@@ -6,10 +6,10 @@ import { CollectionMenu } from './components/CollectionMenu'
 import { CustomLists } from './components/CustomLists'
 import { ExportPanel } from './components/ExportPanel'
 import { GlobalEstimate } from './components/GlobalEstimate'
-import { PsaHunt } from './components/PsaHunt'
 import { PokedocLogo } from './components/PokedocLogo'
 import { CardScan } from './components/CardScan'
 import { CatalogCardSheet } from './components/CatalogCardSheet'
+import { AddToListMenu } from './components/AddToListMenu'
 import { PokemonCardTile } from './components/PokemonCardTile'
 import { QuickAdd } from './components/QuickAdd'
 import type { LooseConditionId } from './utils/cardScan'
@@ -20,7 +20,7 @@ import {
 } from './utils/collectionSets'
 import { buildScanTargets } from './utils/scanTargets'
 import { useCollection } from './hooks/useCollection'
-import { useCustomLists } from './hooks/useCustomLists'
+import { parseListItemKey, useCustomLists } from './hooks/useCustomLists'
 import { SETS, type AppTab } from './sets'
 import type { CardStatus, CardVariant, FilterStatus, PokemonCard, SortKey } from './types'
 import { matchesSearchText } from './utils/frenchNames'
@@ -93,13 +93,46 @@ const HUNT_TO_COLLECTION_SET: Record<string, string> = {
   sv3pt5: 'sv03.5',
 }
 
+const LAST_TAB_KEY = 'pokedoc-last-tab'
 const LAST_SET_KEY = 'pokedoc-last-set'
 const COLLECTION_DENSITY_KEY = 'pokedoc-collection-density'
 
 function readInitialTab(): AppTab {
   try {
+    const savedTab = localStorage.getItem(LAST_TAB_KEY)
+    if (
+      savedTab === 'collection' ||
+      savedTab === 'scan' ||
+      savedTab === 'estimation' ||
+      savedTab === 'listes'
+    ) {
+      return savedTab
+    }
+    const legacy = localStorage.getItem(LAST_SET_KEY)
+    if (legacy === 'scan' || legacy === 'estimation' || legacy === 'listes') return legacy
+  } catch {
+    /* ignore */
+  }
+  return 'collection'
+}
+
+function readInitialSetFilter(): string | 'all' {
+  try {
     const saved = localStorage.getItem(LAST_SET_KEY)
-    if (saved) return saved
+    if (saved === 'all') return 'all'
+    if (
+      saved &&
+      ![
+        'catalogue',
+        'scan',
+        'estimation',
+        'listes',
+        'lots',
+        'collection',
+      ].includes(saved)
+    ) {
+      return saved
+    }
   } catch {
     /* ignore */
   }
@@ -116,6 +149,7 @@ function readDensity(): 'normal' | 'compact' {
 
 export default function App() {
   const [tab, setTab] = useState<AppTab>(() => readInitialTab())
+  const [selectedSetId, setSelectedSetId] = useState<string | 'all'>(() => readInitialSetFilter())
   const [cardsBySet, setCardsBySet] = useState<Record<string, PokemonCard[]>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -138,6 +172,7 @@ export default function App() {
   >({})
   const { collections, getStatus, setStatus, markMany, resetSet, savedAt } = useCollection()
   const customLists = useCustomLists()
+  const isCollectionTab = tab === 'collection'
 
   useEffect(() => {
     const onScroll = () => setShowScrollTop(window.scrollY > 520)
@@ -226,9 +261,11 @@ export default function App() {
 
   const allCollectionSets = useMemo(() => buildAllCollectionSets(hunt), [hunt])
 
-  const isToolTab =
-    tab === 'catalogue' || tab === 'scan' || tab === 'estimation' || tab === 'listes' || tab === 'lots'
-  const activeSet = isToolTab ? null : (allCollectionSets.find((s) => s.id === tab) ?? null)
+  const activeSet =
+    isCollectionTab && selectedSetId !== 'all'
+      ? (allCollectionSets.find((s) => s.id === selectedSetId) ?? null)
+      : null
+  const isAllSets = isCollectionTab && selectedSetId === 'all'
 
   useEffect(() => {
     if (!activeSet || activeSet.featured || activeSet.language === 'ja') return
@@ -258,15 +295,60 @@ export default function App() {
     return counts
   }, [collections])
 
+  const globalSearchSetIds = useMemo(() => {
+    if (!isAllSets || !hunt || deferredQuery.trim().length < 2) return [] as string[]
+    const ids = new Set<string>()
+    const q = deferredQuery.trim()
+    for (const row of hunt.cards) {
+      if (row.set.language === 'fr') continue
+      const collectionSetId = HUNT_TO_COLLECTION_SET[row.set.id] ?? row.set.id
+      if (
+        matchesSearchText(
+          `${row.name} ${row.number} ${row.rarity} ${row.set.name} ${row.set.id}`,
+          q,
+        )
+      ) {
+        ids.add(collectionSetId)
+      }
+    }
+    return [...ids].slice(0, 50)
+  }, [isAllSets, hunt, deferredQuery])
+
+  useEffect(() => {
+    if (!isAllSets) return
+    let cancelled = false
+    for (const setId of globalSearchSetIds.slice(0, 16)) {
+      const set = allCollectionSets.find((s) => s.id === setId)
+      if (!set || set.featured || set.language === 'ja') continue
+      if (setId in tcgdexFrBySet) continue
+      fetchTcgdexFrenchSet(setId)
+        .then((map) => {
+          if (!cancelled) {
+            setTcgdexFrBySet((prev) => (setId in prev ? prev : { ...prev, [setId]: map }))
+          }
+        })
+        .catch(() => {})
+    }
+    return () => {
+      cancelled = true
+    }
+  }, [isAllSets, globalSearchSetIds, allCollectionSets, tcgdexFrBySet])
+
   const trackedSets = useMemo(() => {
     const needed = new Set<string>(SETS.map((s) => s.id))
     for (const setId of Object.keys(collections)) {
       if (Object.keys(collections[setId] ?? {}).length > 0) needed.add(setId)
     }
-    for (const list of customLists.lists) needed.add(list.setId)
+    for (const list of customLists.lists) {
+      for (const key of list.selected) {
+        const parsed = parseListItemKey(key)
+        if (parsed) needed.add(parsed.setId)
+      }
+    }
     if (activeSet) needed.add(activeSet.id)
+    for (const id of globalSearchSetIds) needed.add(id)
     return allCollectionSets.filter((s) => needed.has(s.id))
-  }, [allCollectionSets, collections, customLists.lists, activeSet])
+  }, [allCollectionSets, collections, customLists.lists, activeSet, globalSearchSetIds])
 
   const allCardsBySet = useMemo(() => {
     const next: Record<string, PokemonCard[]> = { ...cardsBySet }
@@ -287,6 +369,14 @@ export default function App() {
       activeSet ? getStatus(activeSet.id, cardId, variant) : 'missing',
     [activeSet, getStatus],
   )
+
+  type EnrichedCard = {
+    card: PokemonCard
+    setId: string
+    setName: string
+    normalStatus: CardStatus
+    reverseStatus: CardStatus
+  }
 
   const rarities = useMemo(() => {
     const set = new Set(cards.map((c) => c.rarity))
@@ -347,16 +437,55 @@ export default function App() {
 
   const scanTargets = useMemo(() => buildScanTargets(cardsBySet, hunt), [cardsBySet, hunt])
 
-  const enriched = useMemo(() => {
+  const enriched = useMemo((): EnrichedCard[] => {
+    if (isAllSets) {
+      if (deferredQuery.trim().length < 2) return []
+      const rows: EnrichedCard[] = []
+      for (const set of trackedSets) {
+        if (!globalSearchSetIds.includes(set.id)) continue
+        for (const card of allCardsBySet[set.id] ?? []) {
+          if (
+            !matchesSearchText(
+              `${card.name} ${card.number} ${card.number}/${card.printedTotal} ${card.rarity} ${set.name}`,
+              deferredQuery,
+            )
+          ) {
+            continue
+          }
+          rows.push({
+            card,
+            setId: set.id,
+            setName: set.name,
+            normalStatus: getStatus(set.id, card.id, 'normal'),
+            reverseStatus: card.hasReverse
+              ? getStatus(set.id, card.id, 'reverse')
+              : ('missing' as CardStatus),
+          })
+          if (rows.length >= 180) return rows
+        }
+      }
+      return rows
+    }
     if (!activeSet) return []
     return cards.map((card) => ({
       card,
+      setId: activeSet.id,
+      setName: activeSet.name,
       normalStatus: getStatus(activeSet.id, card.id, 'normal'),
       reverseStatus: card.hasReverse
         ? getStatus(activeSet.id, card.id, 'reverse')
         : ('missing' as CardStatus),
     }))
-  }, [cards, getStatus, activeSet])
+  }, [
+    isAllSets,
+    deferredQuery,
+    trackedSets,
+    globalSearchSetIds,
+    allCardsBySet,
+    getStatus,
+    activeSet,
+    cards,
+  ])
 
   const stats = useMemo(() => {
     const acc = {
@@ -438,19 +567,24 @@ export default function App() {
   }, [enriched, deferredQuery, filter, rarity, sort, populationFile])
 
   useEffect(() => {
-    setQuery('')
     setFilter('all')
     setRarity('all')
     setSort('number')
     setOpenTool(null)
-    if (!isToolTab) {
-      try {
-        localStorage.setItem(LAST_SET_KEY, tab)
-      } catch {
-        /* ignore */
+    try {
+      localStorage.setItem(LAST_TAB_KEY, tab)
+      if (tab === 'collection') {
+        localStorage.setItem(LAST_SET_KEY, selectedSetId)
       }
+    } catch {
+      /* ignore */
     }
-  }, [tab, isToolTab])
+  }, [tab, selectedSetId])
+
+  useEffect(() => {
+    if (selectedSetId === 'all') return
+    setQuery('')
+  }, [selectedSetId])
 
   const setHasAnyReverse = useMemo(() => cards.some((c) => c.hasReverse), [cards])
 
@@ -492,13 +626,13 @@ export default function App() {
     <div className="app">
       <div
         className={
-          !isToolTab && (activeSet?.logo || activeSet?.chaseImage)
+          isCollectionTab && (activeSet?.logo || activeSet?.chaseImage)
             ? 'atmosphere has-set-art'
             : 'atmosphere'
         }
         aria-hidden="true"
       >
-        {!isToolTab && activeSet?.logo ? (
+        {isCollectionTab && activeSet?.logo ? (
           <img
             src={activeSet.logo}
             alt=""
@@ -514,7 +648,7 @@ export default function App() {
             }}
           />
         ) : null}
-        {!isToolTab && activeSet?.chaseImage ? (
+        {isCollectionTab && activeSet?.chaseImage ? (
           <img
             src={activeSet.chaseImage}
             alt=""
@@ -532,18 +666,15 @@ export default function App() {
           <CollectionMenu
             sets={allCollectionSets}
             activeSetId={activeSet?.id ?? null}
-            isCollectionActive={!isToolTab}
+            selectedSetId={selectedSetId}
+            isCollectionActive={isCollectionTab}
             ownedCountBySet={ownedCountBySet}
-            onSelectSet={(setId) => setTab(setId)}
+            onOpenCollection={() => setTab('collection')}
+            onSelectSet={(setId) => {
+              setSelectedSetId(setId)
+              setTab('collection')
+            }}
           />
-          <span className="nav-sep" aria-hidden="true" />
-          <button
-            type="button"
-            className={tab === 'catalogue' ? 'tab active' : 'tab'}
-            onClick={() => setTab('catalogue')}
-          >
-            Catalogue
-          </button>
           <span className="nav-sep" aria-hidden="true" />
           <button
             type="button"
@@ -572,15 +703,7 @@ export default function App() {
         </nav>
       </header>
 
-      {tab === 'catalogue' ? (
-        <PsaHunt
-          onOpenCard={(card) => {
-            setDetailCard(null)
-            setScannedCondition(null)
-            setCatalogCard(card)
-          }}
-        />
-      ) : tab === 'scan' ? (
+      {tab === 'scan' ? (
         loading ? (
           <p className="state-msg">Chargement des séries pour le scan…</p>
         ) : (
@@ -617,7 +740,12 @@ export default function App() {
             sets={trackedSets}
             cardsBySet={allCardsBySet}
             getStatus={getStatus}
-            {...customLists}
+            lists={customLists.lists}
+            createList={customLists.createList}
+            renameList={customLists.renameList}
+            deleteList={customLists.deleteList}
+            removeCard={customLists.removeCard}
+            clearSelection={customLists.clearSelection}
           />
         )
       ) : (
@@ -626,58 +754,73 @@ export default function App() {
             <div className="hero-compact-main">
               <div className="hero-compact-copy">
                 <div className="hero-title-row">
-                  <h1>{activeSet?.name ?? 'Collection'}</h1>
+                  <h1>{isAllSets ? 'Toutes les séries' : (activeSet?.name ?? 'Collection')}</h1>
                   <span className="save-pill">{savedLabel}</span>
                 </div>
                 <p className="hero-sub">
-                  {stats.owned}/{stats.totalSlots} cartes ·{' '}
-                  <strong>{money(stats.ownedValue)}</strong> · reste{' '}
-                  <strong>{money(stats.missingValue)}</strong>
+                  {isAllSets ? (
+                    <>
+                      Tape un nom ou un numéro pour voir toutes les variantes · ajoute-les à une
+                      liste d’achat avec « + Liste »
+                    </>
+                  ) : (
+                    <>
+                      {stats.owned}/{stats.totalSlots} cartes ·{' '}
+                      <strong>{money(stats.ownedValue)}</strong> · reste{' '}
+                      <strong>{money(stats.missingValue)}</strong>
+                    </>
+                  )}
                 </p>
               </div>
-              <div
-                className="progress-ring progress-ring-sm"
-                style={{ ['--p' as string]: `${stats.progress}%` }}
-              >
-                <strong>{Math.round(stats.progress)}%</strong>
-                <span>complétée</span>
-              </div>
+              {!isAllSets && (
+                <div
+                  className="progress-ring progress-ring-sm"
+                  style={{ ['--p' as string]: `${stats.progress}%` }}
+                >
+                  <strong>{Math.round(stats.progress)}%</strong>
+                  <span>complétée</span>
+                </div>
+              )}
             </div>
 
-            <div className="hero-tools-bar">
-              <div className="hero-tool-actions">
-                <button
-                  type="button"
-                  className={openTool === 'quick' ? 'btn ghost filter-btn-active' : 'btn ghost'}
-                  aria-expanded={openTool === 'quick'}
-                  onClick={() => setOpenTool((t) => (t === 'quick' ? null : 'quick'))}
-                >
-                  + Ajout rapide
-                </button>
-                <button
-                  type="button"
-                  className={openTool === 'export' ? 'btn ghost filter-btn-active' : 'btn ghost'}
-                  aria-expanded={openTool === 'export'}
-                  onClick={() => setOpenTool((t) => (t === 'export' ? null : 'export'))}
-                >
-                  Exporter
-                </button>
-                <button
-                  type="button"
-                  className="btn ghost danger"
-                  onClick={() => {
-                    if (
-                      activeSet &&
-                      window.confirm(`Vider toutes tes cartes cochées dans « ${activeSet.name} » ?`)
-                    ) {
-                      resetSet(activeSet.id)
-                    }
-                  }}
-                >
-                  Vider
-                </button>
+            {!isAllSets && (
+              <div className="hero-tools-bar">
+                <div className="hero-tool-actions">
+                  <button
+                    type="button"
+                    className={openTool === 'quick' ? 'btn ghost filter-btn-active' : 'btn ghost'}
+                    aria-expanded={openTool === 'quick'}
+                    onClick={() => setOpenTool((t) => (t === 'quick' ? null : 'quick'))}
+                  >
+                    + Ajout rapide
+                  </button>
+                  <button
+                    type="button"
+                    className={openTool === 'export' ? 'btn ghost filter-btn-active' : 'btn ghost'}
+                    aria-expanded={openTool === 'export'}
+                    onClick={() => setOpenTool((t) => (t === 'export' ? null : 'export'))}
+                  >
+                    Exporter
+                  </button>
+                  <button
+                    type="button"
+                    className="btn ghost danger"
+                    onClick={() => {
+                      if (
+                        activeSet &&
+                        window.confirm(
+                          `Vider toutes tes cartes cochées dans « ${activeSet.name} » ?`,
+                        )
+                      ) {
+                        resetSet(activeSet.id)
+                      }
+                    }}
+                  >
+                    Vider
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
           </header>
 
           {openTool === 'quick' && activeSet && (
@@ -692,32 +835,34 @@ export default function App() {
           )}
 
           <section className="controls-stack panel" id="grille">
-            <div className="status-pills" role="group" aria-label="Filtrer par statut">
-              {(
-                [
-                  ['all', 'Toutes', statusCounts.all],
-                  ['owned', 'Possédées', statusCounts.owned],
-                  ['missing', 'Manquantes', statusCounts.missing],
-                  ['wanted', 'Recherchées', statusCounts.wanted],
-                  ...(setHasAnyReverse
-                    ? ([
-                        ['reverse-missing', 'Reverse manquantes', statusCounts.reverseMissing],
-                        ['reverse-owned', 'Reverse possédées', statusCounts.reverseOwned],
-                      ] as [FilterStatus, string, number][])
-                    : []),
-                ] as [FilterStatus, string, number][]
-              ).map(([id, label, count]) => (
-                <button
-                  key={id}
-                  type="button"
-                  className={filter === id ? 'status-pill active' : 'status-pill'}
-                  onClick={() => setFilter(id)}
-                >
-                  <span>{label}</span>
-                  <small>{count}</small>
-                </button>
-              ))}
-            </div>
+            {!isAllSets && (
+              <div className="status-pills" role="group" aria-label="Filtrer par statut">
+                {(
+                  [
+                    ['all', 'Toutes', statusCounts.all],
+                    ['owned', 'Possédées', statusCounts.owned],
+                    ['missing', 'Manquantes', statusCounts.missing],
+                    ['wanted', 'Recherchées', statusCounts.wanted],
+                    ...(setHasAnyReverse
+                      ? ([
+                          ['reverse-missing', 'Reverse manquantes', statusCounts.reverseMissing],
+                          ['reverse-owned', 'Reverse possédées', statusCounts.reverseOwned],
+                        ] as [FilterStatus, string, number][])
+                      : []),
+                  ] as [FilterStatus, string, number][]
+                ).map(([id, label, count]) => (
+                  <button
+                    key={id}
+                    type="button"
+                    className={filter === id ? 'status-pill active' : 'status-pill'}
+                    onClick={() => setFilter(id)}
+                  >
+                    <span>{label}</span>
+                    <small>{count}</small>
+                  </button>
+                ))}
+              </div>
+            )}
 
             <div className="controls-row">
               <label className="search">
@@ -725,7 +870,12 @@ export default function App() {
                 <input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Nom ou numéro…"
+                  placeholder={
+                    isAllSets
+                      ? 'Ex. Dracaufeu, Pikachu, GG70…'
+                      : 'Nom ou numéro…'
+                  }
+                  autoFocus={isAllSets}
                 />
               </label>
 
@@ -877,33 +1027,55 @@ export default function App() {
           {loading && <p className="state-msg">Chargement des séries…</p>}
           {error && <p className="state-msg error">{error}</p>}
 
-          {!loading && activeSet && cards.length > 0 && (
+          {isAllSets && deferredQuery.trim().length < 2 && !loading && (
+            <p className="state-msg">
+              Écris au moins 2 lettres pour chercher un Pokémon dans toutes les séries, ou choisis
+              une série dans le menu Collection.
+            </p>
+          )}
+
+          {!loading && (isAllSets ? deferredQuery.trim().length >= 2 : cards.length > 0) && (
             <>
               <p className="result-count">
                 {visible.length} carte{visible.length > 1 ? 's' : ''} affichée
-                {visible.length > 1 ? 's' : ''} · valeur de ta collection dans cette série :{' '}
-                {money(stats.ownedValue)}
+                {visible.length > 1 ? 's' : ''}
+                {!isAllSets && (
+                  <>
+                    {' '}
+                    · valeur de ta collection dans cette série : {money(stats.ownedValue)}
+                  </>
+                )}
               </p>
               <div className={density === 'compact' ? 'grid grid-compact' : 'grid'}>
-                {visible.map(({ card, normalStatus, reverseStatus }) => (
+                {visible.map(({ card, setId, setName, normalStatus, reverseStatus }) => (
                   <PokemonCardTile
-                    key={card.id}
+                    key={`${setId}:${card.id}`}
                     card={card}
                     normalStatus={normalStatus}
                     reverseStatus={reverseStatus}
-                    onSetStatus={(variant, status) =>
-                      setStatus(activeSet.id, card.id, status, variant)
-                    }
+                    setLabel={isAllSets ? setName : null}
+                    onSetStatus={(variant, status) => setStatus(setId, card.id, status, variant)}
                     onOpenDetail={() => {
                       setScannedCondition(null)
                       setDetailCard(card)
                     }}
                     population={
-                      setHasPopulation
+                      !isAllSets && setHasPopulation
                         ? (populationFile?.cards[card.id]?.printings ?? [])
                         : null
                     }
-                    potential={potentialByCardId.get(card.id) ?? null}
+                    potential={!isAllSets ? (potentialByCardId.get(card.id) ?? null) : null}
+                    listActions={
+                      <AddToListMenu
+                        compact
+                        lists={customLists.lists}
+                        setId={setId}
+                        cardId={card.id}
+                        createList={customLists.createList}
+                        addCard={customLists.addCard}
+                        removeCard={customLists.removeCard}
+                      />
+                    }
                   />
                 ))}
               </div>
@@ -968,6 +1140,16 @@ export default function App() {
             frenchCensusDate={detailPop?.frenchFetchedAt ?? null}
             potential={potentialByCardId.get(detailCard.id) ?? null}
             scannedCondition={scannedCondition}
+            listActions={
+              <AddToListMenu
+                lists={customLists.lists}
+                setId={detailCard.setId}
+                cardId={detailCard.id}
+                createList={customLists.createList}
+                addCard={customLists.addCard}
+                removeCard={customLists.removeCard}
+              />
+            }
           />
         )
       })()}
@@ -988,9 +1170,9 @@ export default function App() {
       <footer className="footer">
         <PokedocLogo compact />
         <p>
-          POKEDOC — ta collection, le catalogue des côtes sur toutes les séries, et le scan pour
-          reconnaître une carte. Côtes TCGPlayer (converties en euros) et Cardmarket. Collection
-          sauvegardée dans ton navigateur. Pour le site en ligne, exporte puis restaure ta sauvegarde.
+          POKEDOC — ta collection sur toutes les séries, tes listes d’achat, et le scan pour
+          reconnaître une carte. Côtes TCGPlayer (converties en euros) et Cardmarket. Données
+          sauvegardées dans ton navigateur.
         </p>
       </footer>
     </div>

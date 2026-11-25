@@ -34,10 +34,4 @@ export const SETS: SetInfo[] = [
   },
 ]
 
-export type AppTab =
-  | SetInfo['id']
-  | 'catalogue'
-  | 'scan'
-  | 'estimation'
-  | 'listes'
-  | 'lots'
+export type AppTab = 'collection' | 'scan' | 'estimation' | 'listes'

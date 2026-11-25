@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { formatPrice } from '../api/pokemon'
 import type { CardStatus, CardVariant, PokemonCard } from '../types'
 import { PotentialStamp } from './PotentialStamp'
@@ -27,6 +28,9 @@ interface Props {
   /** null = la série n’a pas de population. Tableau vide = cette carte n’en a pas. */
   population: PsaPrinting[] | null
   potential?: CardPotential | null
+  /** Affiché en recherche multi-séries. */
+  setLabel?: string | null
+  listActions?: ReactNode
 }
 
 function nextToggle(current: CardStatus, target: 'owned' | 'wanted'): CardStatus {
@@ -76,6 +80,8 @@ export function PokemonCardTile({
   onOpenDetail,
   population,
   potential = null,
+  setLabel = null,
+  listActions = null,
 }: Props) {
   const overall: CardStatus =
     normalStatus === 'owned' || (card.hasReverse && reverseStatus === 'owned')
@@ -118,6 +124,7 @@ export function PokemonCardTile({
           <span className="tile-price">{formatPrice(card, 'normal')}</span>
         </div>
         <h3 className="tile-name">{card.name}</h3>
+        {setLabel && <p className="tile-set-label">{setLabel}</p>}
         <div className="tile-meta-row">
           <p className="tile-meta">{card.rarity}</p>
           {potential && <PotentialStamp potential={potential} inline />}
@@ -141,6 +148,7 @@ export function PokemonCardTile({
             >
               Je cherche
             </button>
+            {listActions}
           </div>
         </div>
 

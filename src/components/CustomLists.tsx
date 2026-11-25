@@ -1,20 +1,15 @@
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   cardmarketEuroValue,
   euroValue,
   formatCardmarketPrice,
   formatPrice,
 } from '../api/pokemon'
-import type { CustomList } from '../hooks/useCustomLists'
-import { SETS } from '../sets'
-import type {
-  CardStatus,
-  CardVariant,
-  FilterStatus,
-  PokemonCard,
-  SortKey,
-} from '../types'
-import { cardmarketPricesFor, pricesFor, variantKey } from '../types'
+import {
+  parseListItemKey,
+  type CustomList,
+} from '../hooks/useCustomLists'
+import type { CardStatus, CardVariant, PokemonCard } from '../types'
 import {
   downloadText,
   formatSearchList,
@@ -22,16 +17,7 @@ import {
   type ListEntry,
   type ListFormat,
 } from '../utils/lists'
-import { matchesSearchText } from '../utils/frenchNames'
 import { downloadListImage } from '../utils/listImage'
-import { sortRarities } from '../utils/rarity'
-
-function compareCards(a: PokemonCard, b: PokemonCard, sort: SortKey): number {
-  if (sort === 'name') return a.name.localeCompare(b.name, 'fr')
-  if (sort === 'price-asc') return euroValue(a) - euroValue(b)
-  if (sort === 'price-desc') return euroValue(b) - euroValue(a)
-  return Number.parseInt(a.number, 10) - Number.parseInt(b.number, 10)
-}
 
 interface SetOption {
   id: string
@@ -44,91 +30,70 @@ interface Props {
   cardsBySet: Record<string, PokemonCard[]>
   getStatus: (setId: string, id: string, variant: CardVariant) => CardStatus
   lists: CustomList[]
-  createList: (name: string, setId: string) => string
+  createList: (name: string) => string
   renameList: (id: string, name: string) => void
   deleteList: (id: string) => void
-  setListSet: (id: string, setId: string) => void
-  toggleCard: (id: string, cardId: string, variant: CardVariant) => void
+  removeCard: (id: string, setId: string, cardId: string, variant: CardVariant) => void
   clearSelection: (id: string) => void
-  selectMany: (id: string, keys: string[], mode: 'add' | 'replace') => void
 }
 
 export function CustomLists({
-  sets = SETS,
+  sets = [],
   cardsBySet,
   getStatus,
   lists,
   createList,
   renameList,
   deleteList,
-  setListSet,
-  toggleCard,
+  removeCard,
   clearSelection,
-  selectMany,
 }: Props) {
   const [activeId, setActiveId] = useState<string | null>(lists[0]?.id ?? null)
   const [newName, setNewName] = useState('')
-  const [newSetId, setNewSetId] = useState(sets[0]?.id ?? 'sv03.5')
-  const [query, setQuery] = useState('')
-  const deferredQuery = useDeferredValue(query)
   const [format, setFormat] = useState<ListFormat>('numbers-names')
   const [copied, setCopied] = useState(false)
-  const [onlySelected, setOnlySelected] = useState(false)
-  const [filter, setFilter] = useState<FilterStatus>('all')
-  const [rarity, setRarity] = useState('all')
-  const [sort, setSort] = useState<SortKey>('number')
   const [imageBusy, setImageBusy] = useState(false)
   const [imageError, setImageError] = useState<string | null>(null)
   const detailRef = useRef<HTMLElement>(null)
 
   const active = lists.find((l) => l.id === activeId) ?? lists[0] ?? null
 
-  const setInfo = sets.find((s) => s.id === active?.setId)
-  const cards = active ? (cardsBySet[active.setId] ?? []) : []
-  const selectedSet = useMemo(() => new Set(active?.selected ?? []), [active?.selected])
-
-  const rarities = useMemo(() => {
-    const set = new Set(cards.map((c) => c.rarity))
-    return sortRarities([...set])
-  }, [cards])
-
   useEffect(() => {
-    setQuery('')
-    setFilter('all')
-    setRarity('all')
-    setSort('number')
-    setOnlySelected(false)
-  }, [active?.id, active?.setId])
+    if (active && !lists.some((l) => l.id === active.id)) {
+      setActiveId(lists[0]?.id ?? null)
+    }
+  }, [lists, active])
+
+  const setNameById = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const set of sets) map.set(set.id, set.name)
+    return map
+  }, [sets])
 
   const selectedEntries = useMemo(() => {
     if (!active) return [] as ListEntry[]
     const entries: ListEntry[] = []
-    for (const card of cards) {
-      const normalKey = variantKey(card.id, 'normal')
-      if (selectedSet.has(normalKey)) {
-        entries.push({
-          card,
-          variant: 'normal',
-          status: getStatus(active.setId, card.id, 'normal'),
-        })
-      }
-      if (card.hasReverse) {
-        const reverseKey = variantKey(card.id, 'reverse')
-        if (selectedSet.has(reverseKey)) {
-          entries.push({
-            card,
-            variant: 'reverse',
-            status: getStatus(active.setId, card.id, 'reverse'),
-          })
-        }
-      }
+    for (const key of active.selected) {
+      const parsed = parseListItemKey(key)
+      if (!parsed) continue
+      const card = (cardsBySet[parsed.setId] ?? []).find((c) => c.id === parsed.cardId)
+      if (!card) continue
+      if (parsed.variant === 'reverse' && !card.hasReverse) continue
+      entries.push({
+        card,
+        variant: parsed.variant,
+        status: getStatus(parsed.setId, parsed.cardId, parsed.variant),
+        setName: setNameById.get(parsed.setId) ?? parsed.setId,
+      })
     }
     return entries.sort((a, b) => {
-      const byCard = compareCards(a.card, b.card, sort)
-      if (byCard !== 0) return byCard
+      const bySet = (a.setName ?? '').localeCompare(b.setName ?? '', 'fr')
+      if (bySet !== 0) return bySet
+      const byNum = Number.parseInt(a.card.number, 10) - Number.parseInt(b.card.number, 10)
+      if (byNum !== 0) return byNum
       return a.variant.localeCompare(b.variant)
     })
-  }, [active, cards, getStatus, selectedSet, sort])
+  }, [active, cardsBySet, getStatus, setNameById])
 
   const searchEntries = useMemo(
     () => selectedEntries.filter((entry) => entry.status !== 'owned'),
@@ -140,10 +105,13 @@ export function CustomLists({
     () => selectedEntries.reduce((sum, e) => sum + euroValue(e.card, e.variant), 0),
     [selectedEntries],
   )
-
   const selectedCardmarketValue = useMemo(
     () => selectedEntries.reduce((sum, e) => sum + cardmarketEuroValue(e.card, e.variant), 0),
     [selectedEntries],
+  )
+  const toBuyValue = useMemo(
+    () => searchEntries.reduce((sum, e) => sum + euroValue(e.card, e.variant), 0),
+    [searchEntries],
   )
 
   const money = (n: number) =>
@@ -154,120 +122,34 @@ export function CustomLists({
     }).format(n)
 
   const listValues = useMemo(() => {
-    const map = new Map<string, { tcg: number; cardmarket: number }>()
+    const map = new Map<string, { count: number; toBuy: number }>()
     for (const list of lists) {
-      const setCards = cardsBySet[list.setId] ?? []
-      const keys = new Set(list.selected)
-      let tcg = 0
-      let cardmarket = 0
-      for (const card of setCards) {
-        if (keys.has(variantKey(card.id, 'normal'))) {
-          tcg += euroValue(card, 'normal')
-          cardmarket += cardmarketEuroValue(card, 'normal')
-        }
-        if (card.hasReverse && keys.has(variantKey(card.id, 'reverse'))) {
-          tcg += euroValue(card, 'reverse')
-          cardmarket += cardmarketEuroValue(card, 'reverse')
+      let count = 0
+      let toBuy = 0
+      for (const key of list.selected) {
+        const parsed = parseListItemKey(key)
+        if (!parsed) continue
+        const card = (cardsBySet[parsed.setId] ?? []).find((c) => c.id === parsed.cardId)
+        if (!card) continue
+        count += 1
+        if (getStatus(parsed.setId, parsed.cardId, parsed.variant) !== 'owned') {
+          toBuy += euroValue(card, parsed.variant)
         }
       }
-      map.set(list.id, { tcg, cardmarket })
+      map.set(list.id, { count, toBuy })
     }
     return map
-  }, [lists, cardsBySet])
+  }, [lists, cardsBySet, getStatus])
 
   const text = useMemo(() => {
     if (!active || searchEntries.length === 0) return ''
     const body = formatSearchList(searchEntries, format, {
       title: active.name,
-      subtitle: setInfo?.name,
+      subtitle: 'Liste d’achat (cartes pas encore possédées)',
     })
     if (format !== 'csv') return body
-    const count = searchEntries.length
-    return `${body}\ntotal_cartes;${count}\ntotal_tcgplayer_eur;${searchEntries.reduce((sum, entry) => sum + euroValue(entry.card, entry.variant), 0).toFixed(2)}\ntotal_cardmarket_eur;${searchEntries.reduce((sum, entry) => sum + cardmarketEuroValue(entry.card, entry.variant), 0).toFixed(2)}`
-  }, [active, format, searchEntries, setInfo?.name])
-
-  const visibleCards = useMemo(() => {
-    if (!active) return [] as PokemonCard[]
-    const q = deferredQuery.trim().toLowerCase()
-    const filtered = cards.filter((card) => {
-      const normalStatus = getStatus(active.setId, card.id, 'normal')
-      const reverseStatus = card.hasReverse
-        ? getStatus(active.setId, card.id, 'reverse')
-        : ('missing' as CardStatus)
-
-      if (onlySelected) {
-        const hasNormal = selectedSet.has(variantKey(card.id, 'normal'))
-        const hasReverse =
-          card.hasReverse && selectedSet.has(variantKey(card.id, 'reverse'))
-        if (!hasNormal && !hasReverse) return false
-      }
-
-      if (filter === 'owned') {
-        if (!(normalStatus === 'owned' || reverseStatus === 'owned')) return false
-      } else if (filter === 'wanted') {
-        if (!(normalStatus === 'wanted' || reverseStatus === 'wanted')) return false
-      } else if (filter === 'missing') {
-        if (!(normalStatus === 'missing' || (card.hasReverse && reverseStatus === 'missing'))) {
-          return false
-        }
-      } else if (filter === 'reverse-missing') {
-        if (!(card.hasReverse && reverseStatus === 'missing')) return false
-      } else if (filter === 'reverse-owned') {
-        if (!(card.hasReverse && reverseStatus === 'owned')) return false
-      }
-
-      if (rarity !== 'all' && card.rarity !== rarity) return false
-      if (!q) return true
-      return matchesSearchText(
-        `${card.name} ${card.number} ${card.number}/${card.printedTotal} ${card.rarity}`,
-        deferredQuery,
-      )
-    })
-    return [...filtered].sort((a, b) => compareCards(a, b, sort))
-  }, [
-    active,
-    cards,
-    deferredQuery,
-    filter,
-    getStatus,
-    onlySelected,
-    rarity,
-    selectedSet,
-    sort,
-  ])
-
-  function resetFilters() {
-    setQuery('')
-    setFilter('all')
-    setRarity('all')
-    setSort('number')
-    setOnlySelected(false)
-  }
-
-  function formatQuoteDate(raw: string | null | undefined) {
-    if (!raw) return null
-    const [year, month, day] = raw.split(/[/-]/).map((part) => Number.parseInt(part, 10))
-    if (!year || !month || !day) return null
-    return new Date(year, month - 1, day).toLocaleDateString('fr-FR', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    })
-  }
-
-  const quoteDate = useMemo(() => {
-    const raw = selectedEntries
-      .map((entry) => pricesFor(entry.card, entry.variant).updatedAt)
-      .find((value): value is string => Boolean(value))
-    return formatQuoteDate(raw)
-  }, [selectedEntries])
-
-  const cardmarketQuoteDate = useMemo(() => {
-    const raw = selectedEntries
-      .map((entry) => cardmarketPricesFor(entry.card, entry.variant).updatedAt)
-      .find((value): value is string => Boolean(value))
-    return formatQuoteDate(raw)
-  }, [selectedEntries])
+    return `${body}\ntotal_cartes;${searchEntries.length}\ntotal_tcgplayer_eur;${toBuyValue.toFixed(2)}\ntotal_cardmarket_eur;${searchEntries.reduce((sum, entry) => sum + cardmarketEuroValue(entry.card, entry.variant), 0).toFixed(2)}`
+  }, [active, format, searchEntries, toBuyValue])
 
   function openList(id: string) {
     setActiveId(id)
@@ -277,7 +159,7 @@ export function CustomLists({
   }
 
   function handleCreate() {
-    const id = createList(newName || `Liste ${lists.length + 1}`, newSetId)
+    const id = createList(newName || `Achats ${lists.length + 1}`)
     setActiveId(id)
     setNewName('')
   }
@@ -292,7 +174,7 @@ export function CustomLists({
   function download() {
     if (!active || !text) return
     const extension = format === 'csv' ? 'csv' : 'txt'
-    downloadText(text, `${slugify(active.name)}-cartes-recherchees.${extension}`)
+    downloadText(text, `${slugify(active.name)}-achats.${extension}`)
   }
 
   async function downloadImage() {
@@ -302,10 +184,10 @@ export function CustomLists({
     try {
       await downloadListImage({
         title: active.name,
-        setName: setInfo?.name ?? active.setId,
+        setName: 'Plusieurs séries',
         rows: selectedEntries.map((entry) => ({
           number: entry.card.number,
-          name: entry.card.name,
+          name: `${entry.card.name}${entry.setName ? ` · ${entry.setName}` : ''}`,
           variantLabel: entry.variant === 'reverse' ? 'Reverse' : 'Normale',
           rarity: entry.card.rarity,
           tcgPrice: formatPrice(entry.card, entry.variant),
@@ -317,475 +199,196 @@ export function CustomLists({
         filename: `${slugify(active.name)}-liste.png`,
       })
     } catch {
-      setImageError('Impossible de créer l’image. Réessaie.')
+      setImageError('Impossible de créer l’image.')
     } finally {
       setImageBusy(false)
     }
   }
 
-  function selectAllVisible() {
-    if (!active) return
-    const keys: string[] = []
-    for (const card of visibleCards) {
-      keys.push(variantKey(card.id, 'normal'))
-      if (card.hasReverse) keys.push(variantKey(card.id, 'reverse'))
-    }
-    selectMany(active.id, keys, 'add')
-  }
-
   return (
-    <section className="custom-lists">
-      <header className="estimate-hero panel">
-        <div>
-          <p className="eyebrow">Listes perso</p>
-          <h2>Crée ta liste, coche, copie</h2>
-          <p className="muted">
-            Clique une liste pour comparer les cotes TCGPlayer et Cardmarket, carte par carte.
-          </p>
-        </div>
-      </header>
+    <div className="lists-layout">
+      <aside className="panel lists-sidebar">
+        <h2>Mes listes</h2>
+        <p className="muted lists-intro">
+          Listes d’achat multi-séries. Ajoute des cartes depuis Collection avec le bouton « + Liste ».
+        </p>
 
-      <section className="panel list-create">
-        <h3>Nouvelle liste</h3>
-        <div className="list-create-row">
-          <label>
-            Nom
-            <input
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              placeholder="Ex. Achats du week-end"
-            />
-          </label>
-          <label>
-            Collection
-            <select value={newSetId} onChange={(e) => setNewSetId(e.target.value)}>
-              {sets.map((set) => (
-                <option key={set.id} value={set.id}>
-                  {set.name}
-                </option>
-              ))}
-            </select>
-          </label>
+        <div className="lists-create">
+          <input
+            type="text"
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            placeholder="Ex. Achats week-end"
+            aria-label="Nom de la nouvelle liste"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleCreate()
+            }}
+          />
           <button type="button" className="btn primary" onClick={handleCreate}>
-            Créer la liste
+            Créer
           </button>
         </div>
-      </section>
 
-      {lists.length === 0 ? (
-        <p className="state-msg">Aucune liste pour le moment. Crée-en une ci-dessus.</p>
-      ) : (
-        <>
-          <div className="list-picker panel">
+        {lists.length === 0 ? (
+          <p className="state-msg">Aucune liste. Crée-en une, puis ajoute des cartes depuis Collection.</p>
+        ) : (
+          <ul className="lists-nav">
             {lists.map((list) => {
-              const setName = sets.find((s) => s.id === list.setId)?.shortName ?? list.setId
-              const value = listValues.get(list.id) ?? { tcg: 0, cardmarket: 0 }
+              const values = listValues.get(list.id)
+              const activeList = active?.id === list.id
               return (
-                <button
-                  key={list.id}
-                  type="button"
-                  className={list.id === active?.id ? 'list-chip active' : 'list-chip'}
-                  onClick={() => openList(list.id)}
-                >
-                  <strong>{list.name}</strong>
-                  <span>
-                    {setName} · {list.selected.length} carte(s)
-                  </span>
-                  <em className="list-chip-price">
-                    TCG {money(value.tcg)}
-                    <span className="list-chip-price-cm">CM {money(value.cardmarket)}</span>
-                  </em>
-                </button>
+                <li key={list.id}>
+                  <button
+                    type="button"
+                    className={activeList ? 'lists-nav-item active' : 'lists-nav-item'}
+                    onClick={() => openList(list.id)}
+                  >
+                    <span className="lists-nav-name">{list.name}</span>
+                    <span className="lists-nav-meta">
+                      {values?.count ?? 0} carte{(values?.count ?? 0) > 1 ? 's' : ''}
+                      {values && values.toBuy > 0 ? ` · ${money(values.toBuy)}` : ''}
+                    </span>
+                  </button>
+                </li>
               )
             })}
-          </div>
+          </ul>
+        )}
+      </aside>
 
-          {active && (
-            <section className="panel list-editor" ref={detailRef}>
-              <div className="list-editor-head">
-                <label>
+      <section className="panel lists-detail" ref={detailRef}>
+        {!active ? (
+          <p className="state-msg">Choisis ou crée une liste pour commencer.</p>
+        ) : (
+          <>
+            <header className="lists-detail-head">
+              <div>
+                <label className="lists-rename">
                   Nom de la liste
                   <input
+                    type="text"
                     value={active.name}
                     onChange={(e) => renameList(active.id, e.target.value)}
                   />
                 </label>
-                <label>
-                  Collection
-                  <select
-                    value={active.setId}
-                    onChange={(e) => {
-                      if (
-                        active.selected.length === 0 ||
-                        window.confirm(
-                          'Changer de collection efface la sélection actuelle. Continuer ?',
-                        )
-                      ) {
-                        setListSet(active.id, e.target.value)
-                      }
-                    }}
-                  >
-                    {sets.map((set) => (
-                      <option key={set.id} value={set.id}>
-                        {set.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                <p className="hero-sub">
+                  {selectedEntries.length} carte{selectedEntries.length > 1 ? 's' : ''} · à acheter{' '}
+                  <strong>{money(toBuyValue)}</strong>
+                  {alreadyOwnedCount > 0
+                    ? ` · ${alreadyOwnedCount} déjà possédée${alreadyOwnedCount > 1 ? 's' : ''}`
+                    : ''}
+                </p>
+              </div>
+              <div className="hero-tool-actions">
                 <button
                   type="button"
                   className="btn ghost danger"
                   onClick={() => {
                     if (window.confirm(`Supprimer la liste « ${active.name} » ?`)) {
                       deleteList(active.id)
-                      setActiveId(lists.find((l) => l.id !== active.id)?.id ?? null)
                     }
                   }}
                 >
                   Supprimer
                 </button>
+                <button
+                  type="button"
+                  className="btn ghost"
+                  disabled={selectedEntries.length === 0}
+                  onClick={() => {
+                    if (window.confirm('Vider toutes les cartes de cette liste ?')) {
+                      clearSelection(active.id)
+                    }
+                  }}
+                >
+                  Vider
+                </button>
               </div>
+            </header>
 
-              <div className="list-price-panel">
-                <div className="list-price-compare">
-                  <div>
-                    <span className="stat-label">Total TCGPlayer</span>
-                    <strong className="list-price-total">{money(selectedValue)}</strong>
-                    <small>Côte américaine convertie en euros</small>
-                  </div>
-                  <div>
-                    <span className="stat-label">Total Cardmarket</span>
-                    <strong className="list-price-total list-price-total-cm">
-                      {money(selectedCardmarketValue)}
-                    </strong>
-                    <small>Côte européenne en euros</small>
-                  </div>
-                </div>
-                <div className="list-price-side">
-                  <small>
-                    {selectedEntries.length} carte
-                    {selectedEntries.length > 1 ? 's' : ''}
-                    {setInfo ? ` · ${setInfo.name}` : ''}
-                  </small>
-                  {selectedEntries.length > 0 && (
-                    <p className="list-price-note">
-                      TCGPlayer : {quoteDate ?? 'dernier relevé'}. Cardmarket :{' '}
-                      {cardmarketQuoteDate ?? 'dernier relevé'}. Indicatif pour comparer, pas un
-                      prix d’achat garanti.
-                    </p>
-                  )}
-                  <div className="export-actions">
-                    <button type="button" className="btn ghost" onClick={selectAllVisible}>
-                      Tout cocher (filtrées)
-                    </button>
-                    <button
-                      type="button"
-                      className="btn ghost"
-                      onClick={() => clearSelection(active.id)}
+            {selectedEntries.length === 0 ? (
+              <p className="state-msg">
+                Liste vide. Va dans Collection, ouvre une carte, puis clique sur « + Liste ».
+              </p>
+            ) : (
+              <ul className="lists-cart">
+                {selectedEntries.map((entry) => {
+                  const parsedSetId = entry.card.setId
+                  return (
+                    <li
+                      key={`${parsedSetId}|${entry.card.id}|${entry.variant}`}
+                      className="lists-cart-row"
                     >
-                      Tout décocher
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <section className="list-contents" aria-label="Cartes de la liste">
-                <div className="list-contents-head">
-                  <h3>
-                    Cartes dans « {active.name} »
-                    {selectedEntries.length > 0 ? ` (${selectedEntries.length})` : ''}
-                  </h3>
-                  <button
-                    type="button"
-                    className="btn primary"
-                    onClick={downloadImage}
-                    disabled={selectedEntries.length === 0 || imageBusy}
-                  >
-                    {imageBusy ? 'Création…' : 'Télécharger en image'}
-                  </button>
-                </div>
-                {imageError && <p className="state-msg error">{imageError}</p>}
-                {selectedEntries.length === 0 ? (
-                  <p className="state-msg">
-                    Cette liste est vide. Coche des cartes plus bas pour les ajouter.
-                  </p>
-                ) : (
-                  <ul className="list-contents-rows">
-                    {selectedEntries.map((entry) => (
-                      <li key={variantKey(entry.card.id, entry.variant)}>
-                        <img
-                          src={entry.card.imageSmall}
-                          alt=""
-                          width={42}
-                          height={58}
-                          crossOrigin="anonymous"
-                          onError={(e) => {
-                            const img = e.currentTarget
-                            if (entry.card.imageFallback && img.dataset.fallbackTried !== '1') {
-                              img.dataset.fallbackTried = '1'
-                              img.src = entry.card.imageFallback
-                            }
-                          }}
-                        />
-                        <div>
-                          <strong>
-                            {entry.card.number} — {entry.card.name}
-                          </strong>
-                          <span>
-                            {entry.variant === 'reverse' ? 'Reverse' : 'Normale'}
-                            {' · '}
-                            {entry.card.rarity}
-                          </span>
-                        </div>
-                        <div className="list-contents-price">
-                          <em>
-                            <span className="price-source">TCG</span>
-                            {formatPrice(entry.card, entry.variant)}
-                          </em>
-                          <em className="price-cm">
-                            <span className="price-source">CM</span>
-                            {formatCardmarketPrice(entry.card, entry.variant)}
-                          </em>
-                          <button
-                            type="button"
-                            className="list-row-remove"
-                            onClick={() => toggleCard(active.id, entry.card.id, entry.variant)}
-                          >
-                            Retirer
-                          </button>
-                        </div>
-                      </li>
-                    ))}
-                    <li className="list-contents-total">
-                      <span>Totaux</span>
-                      <div className="list-contents-totals">
+                      <img
+                        src={entry.card.imageSmall}
+                        alt=""
+                        width={48}
+                        height={67}
+                        loading="lazy"
+                      />
+                      <div className="lists-cart-copy">
                         <strong>
-                          <span className="price-source">TCG</span>
-                          {money(selectedValue)}
+                          {entry.card.number} — {entry.card.name}
+                          {entry.variant === 'reverse' ? ' (reverse)' : ''}
                         </strong>
-                        <strong className="price-cm">
-                          <span className="price-source">CM</span>
-                          {money(selectedCardmarketValue)}
-                        </strong>
+                        <span>
+                          {entry.setName} · {entry.card.rarity} · {formatPrice(entry.card, entry.variant)}
+                          {entry.status === 'owned' ? ' · déjà possédée' : ''}
+                        </span>
                       </div>
+                      <button
+                        type="button"
+                        className="btn ghost danger"
+                        onClick={() =>
+                          removeCard(active.id, parsedSetId, entry.card.id, entry.variant)
+                        }
+                      >
+                        Retirer
+                      </button>
                     </li>
-                  </ul>
-                )}
-              </section>
+                  )
+                })}
+              </ul>
+            )}
 
-              <section className="list-copy-box" aria-label="Liste des cartes recherchées">
-                <h3>Liste des cartes recherchées</h3>
-                <p className="muted">
-                  {selectedEntries.length === 0
-                    ? 'Coche des cartes plus bas. Cette liste reprend celles que tu n’as pas encore.'
-                    : searchEntries.length === 0
-                      ? 'Toutes les cartes cochées sont déjà marquées « J’ai ».'
-                      : alreadyOwnedCount > 0
-                        ? `À partir des cartes cochées que tu n’as pas encore. ${alreadyOwnedCount} carte${alreadyOwnedCount > 1 ? 's' : ''} déjà marquée${alreadyOwnedCount > 1 ? 's' : ''} « J’ai » ${alreadyOwnedCount > 1 ? 'ne sont' : 'n’est'} pas dans la liste.`
-                        : 'À partir des cartes cochées que tu n’as pas encore.'}
-                </p>
-                <div className="export-filters">
+            <div className="lists-export">
+              <h3>Exporter les cartes à acheter</h3>
+              <p className="muted">
+                Les cartes déjà « J’ai » sont exclues de l’export ({alreadyOwnedCount}).
+              </p>
+              <div className="controls-row">
                 <label>
                   Format
                   <select
                     value={format}
                     onChange={(e) => setFormat(e.target.value as ListFormat)}
                   >
-                    <option value="numbers">Numéros (1, 4, 25R…)</option>
-                    <option value="numbers-names">Numéro, nom et version</option>
-                    <option value="csv">Tableau CSV</option>
+                    <option value="numbers-names">Numéros + noms</option>
+                    <option value="numbers">Numéros seuls</option>
+                    <option value="csv">CSV</option>
                   </select>
                 </label>
+                <button type="button" className="btn ghost" disabled={!text} onClick={copy}>
+                  {copied ? 'Copié' : 'Copier'}
+                </button>
+                <button type="button" className="btn ghost" disabled={!text} onClick={download}>
+                  Télécharger
+                </button>
+                <button
+                  type="button"
+                  className="btn ghost"
+                  disabled={selectedEntries.length === 0 || imageBusy}
+                  onClick={downloadImage}
+                >
+                  {imageBusy ? 'Image…' : 'Image PNG'}
+                </button>
               </div>
-                <textarea
-                  className="export-box"
-                  readOnly
-                  rows={6}
-                  value={text}
-                  placeholder="La liste des cartes recherchées s’affiche ici."
-                />
-                <div className="export-actions">
-                  <button
-                    type="button"
-                    className="btn primary"
-                    onClick={copy}
-                    disabled={searchEntries.length === 0}
-                  >
-                    {copied ? 'Copié !' : 'Copier la liste'}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn ghost"
-                    onClick={download}
-                    disabled={searchEntries.length === 0}
-                  >
-                    Télécharger la liste
-                  </button>
-                </div>
-              </section>
-
-              <h3 className="list-picker-title">Ajouter ou retirer des cartes</h3>
-              <section className="controls-stack panel list-controls-wrap">
-                <div className="status-pills" role="group" aria-label="Filtrer par statut">
-                  {(
-                    [
-                      ['all', 'Toutes'],
-                      ['owned', 'Possédées'],
-                      ['missing', 'Manquantes'],
-                      ['wanted', 'Recherchées'],
-                      ['reverse-missing', 'Reverse manquantes'],
-                      ['reverse-owned', 'Reverse possédées'],
-                    ] as [FilterStatus, string][]
-                  ).map(([id, label]) => (
-                    <button
-                      key={id}
-                      type="button"
-                      className={filter === id ? 'status-pill active' : 'status-pill'}
-                      onClick={() => setFilter(id)}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="controls-row list-controls-row">
-                  <label className="search">
-                    Recherche
-                    <input
-                      value={query}
-                      onChange={(e) => setQuery(e.target.value)}
-                      placeholder="Nom ou numéro"
-                    />
-                  </label>
-
-                  <label>
-                    Rareté
-                    <select value={rarity} onChange={(e) => setRarity(e.target.value)}>
-                      <option value="all">Toutes</option>
-                      {rarities.map((r) => (
-                        <option key={r} value={r}>
-                          {r}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-
-                  <label>
-                    Tri
-                    <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)}>
-                      <option value="number">Numéro</option>
-                      <option value="name">Nom</option>
-                      <option value="price-desc">Côte décroissante</option>
-                      <option value="price-asc">Côte croissante</option>
-                    </select>
-                  </label>
-
-                  <label className="checkbox-line">
-                    <input
-                      type="checkbox"
-                      checked={onlySelected}
-                      onChange={(e) => setOnlySelected(e.target.checked)}
-                    />
-                    Seulement ma sélection
-                  </label>
-
-                  {(query || filter !== 'all' || rarity !== 'all' || sort !== 'number' || onlySelected) && (
-                    <button type="button" className="btn ghost" onClick={resetFilters}>
-                      Effacer les filtres
-                    </button>
-                  )}
-                </div>
-              </section>
-              <p className="result-count">
-                {visibleCards.length} carte{visibleCards.length > 1 ? 's' : ''} affichée
-                {visibleCards.length > 1 ? 's' : ''}
-                {setInfo ? ` · ${setInfo.name}` : ''}
-              </p>
-
-              <div className="select-grid">
-                {visibleCards.map((card) => (
-                  <SelectCard
-                    key={card.id}
-                    card={card}
-                    selectedSet={selectedSet}
-                    onToggle={(variant) => toggleCard(active.id, card.id, variant)}
-                  />
-                ))}
-              </div>
-            </section>
-          )}
-        </>
-      )}
-    </section>
-  )
-}
-
-function SelectCard({
-  card,
-  selectedSet,
-  onToggle,
-}: {
-  card: PokemonCard
-  selectedSet: Set<string>
-  onToggle: (variant: CardVariant) => void
-}) {
-  const normalOn = selectedSet.has(variantKey(card.id, 'normal'))
-  const reverseOn = card.hasReverse && selectedSet.has(variantKey(card.id, 'reverse'))
-  const active = normalOn || reverseOn
-
-  return (
-    <article className={active ? 'select-tile active' : 'select-tile'}>
-      <button type="button" className="tile-media" onClick={() => onToggle('normal')}>
-        <img
-          src={card.imageSmall}
-          alt={card.name}
-          loading="lazy"
-          width={245}
-          height={342}
-          onError={(e) => {
-            const img = e.currentTarget
-            if (card.imageFallback && img.dataset.fallbackTried !== '1') {
-              img.dataset.fallbackTried = '1'
-              img.src = card.imageFallback
-            }
-          }}
-        />
-      </button>
-      <div className="tile-body">
-        <div className="tile-top">
-          <span className="tile-num">
-            {card.number}/{card.printedTotal}
-          </span>
-        </div>
-        <h3 className="tile-name">{card.name}</h3>
-        <p className="tile-meta">{card.rarity}</p>
-        <div className="tile-actions">
-          <button
-            type="button"
-            className={normalOn ? 'chip active-owned' : 'chip'}
-            onClick={() => onToggle('normal')}
-          >
-            <span>{normalOn ? 'Normale ✓' : 'Normale'}</span>
-            <span className="chip-price">
-              TCG {formatPrice(card, 'normal')}
-              <span className="chip-price-cm">CM {formatCardmarketPrice(card, 'normal')}</span>
-            </span>
-          </button>
-          {card.hasReverse && (
-            <button
-              type="button"
-              className={reverseOn ? 'chip active-wanted' : 'chip'}
-              onClick={() => onToggle('reverse')}
-            >
-              <span>{reverseOn ? 'Reverse ✓' : 'Reverse'}</span>
-              <span className="chip-price">
-                TCG {formatPrice(card, 'reverse')}
-                <span className="chip-price-cm">CM {formatCardmarketPrice(card, 'reverse')}</span>
-              </span>
-            </button>
-          )}
-        </div>
-      </div>
-    </article>
+              {imageError && <p className="state-msg error">{imageError}</p>}
+              {text && <pre className="lists-export-preview">{text}</pre>}
+            </div>
+          </>
+        )}
+      </section>
+    </div>
   )
 }

@@ -6,9 +6,12 @@ import type { CollectionSetInfo } from '../utils/collectionSets'
 interface Props {
   sets: CollectionSetInfo[]
   activeSetId: string | null
+  /** `all` = recherche sur toutes les séries. */
+  selectedSetId: string | 'all'
   isCollectionActive: boolean
   ownedCountBySet: Record<string, number>
-  onSelectSet: (setId: string) => void
+  onSelectSet: (setId: string | 'all') => void
+  onOpenCollection: () => void
 }
 
 type LangFilter = 'intl' | 'ja'
@@ -16,9 +19,11 @@ type LangFilter = 'intl' | 'ja'
 export function CollectionMenu({
   sets,
   activeSetId,
+  selectedSetId,
   isCollectionActive,
   ownedCountBySet,
   onSelectSet,
+  onOpenCollection,
 }: Props) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
@@ -27,7 +32,7 @@ export function CollectionMenu({
   const searchRef = useRef<HTMLInputElement>(null)
 
   const activeSet = useMemo(
-    () => sets.find((s) => s.id === activeSetId) ?? sets[0] ?? null,
+    () => sets.find((s) => s.id === activeSetId) ?? null,
     [sets, activeSetId],
   )
 
@@ -49,21 +54,12 @@ export function CollectionMenu({
   }, [open])
 
   const mySets = useMemo(
-    () =>
-      sets.filter(
-        (set) => set.featured || (ownedCountBySet[set.id] ?? 0) > 0,
-      ),
+    () => sets.filter((set) => set.featured || (ownedCountBySet[set.id] ?? 0) > 0),
     [sets, ownedCountBySet],
   )
 
-  const intlCount = useMemo(
-    () => sets.filter((s) => s.language !== 'ja').length,
-    [sets],
-  )
-  const jaCount = useMemo(
-    () => sets.filter((s) => s.language === 'ja').length,
-    [sets],
-  )
+  const intlCount = useMemo(() => sets.filter((s) => s.language !== 'ja').length, [sets])
+  const jaCount = useMemo(() => sets.filter((s) => s.language === 'ja').length, [sets])
 
   const groupedSets = useMemo(() => {
     const trimmed = query.trim()
@@ -92,11 +88,23 @@ export function CollectionMenu({
     }))
   }, [sets, query, lang])
 
-  function handlePick(setId: string) {
+  function handlePick(setId: string | 'all') {
     onSelectSet(setId)
     setOpen(false)
     setQuery('')
   }
+
+  function handleTrigger() {
+    if (!isCollectionActive) {
+      onOpenCollection()
+      setOpen(true)
+      return
+    }
+    setOpen((prev) => !prev)
+  }
+
+  const pillLabel =
+    selectedSetId === 'all' ? 'Toutes' : (activeSet?.shortName ?? activeSet?.name ?? null)
 
   return (
     <div className="nav-dropdown" ref={wrapRef}>
@@ -105,11 +113,11 @@ export function CollectionMenu({
         className={isCollectionActive ? 'tab active nav-drop-trigger' : 'tab nav-drop-trigger'}
         aria-expanded={open}
         aria-haspopup="menu"
-        onClick={() => setOpen((prev) => !prev)}
+        onClick={handleTrigger}
       >
         <span>Collection</span>
-        {isCollectionActive && activeSet && (
-          <span className="tab-series-pill">{activeSet.shortName}</span>
+        {isCollectionActive && pillLabel && (
+          <span className="tab-series-pill">{pillLabel}</span>
         )}
         <span className={open ? 'nav-caret open' : 'nav-caret'} aria-hidden="true">
           ▾
@@ -149,13 +157,31 @@ export function CollectionMenu({
           </div>
 
           <div className="nav-submenu-body">
+            <div className="nav-submenu-group">
+              <div className="nav-submenu-list">
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={
+                    isCollectionActive && selectedSetId === 'all'
+                      ? 'nav-submenu-item active'
+                      : 'nav-submenu-item'
+                  }
+                  onClick={() => handlePick('all')}
+                >
+                  <span className="nav-submenu-name">Toutes les séries</span>
+                  <span className="nav-submenu-meta">Recherche globale</span>
+                </button>
+              </div>
+            </div>
+
             {!query.trim() && mySets.length > 0 && (
               <div className="nav-submenu-group">
                 <p className="nav-submenu-title">Mes séries</p>
                 <div className="nav-submenu-list">
                   {mySets.map((set) => {
                     const owned = ownedCountBySet[set.id] ?? 0
-                    const active = isCollectionActive && activeSetId === set.id
+                    const active = isCollectionActive && selectedSetId === set.id
                     return (
                       <button
                         key={`mine-${set.id}`}
@@ -166,7 +192,11 @@ export function CollectionMenu({
                       >
                         <span className="nav-submenu-name">{set.name}</span>
                         <span className="nav-submenu-meta">
-                          {owned > 0 ? `${owned} possédée${owned > 1 ? 's' : ''}` : set.featured ? 'FR' : ''}
+                          {owned > 0
+                            ? `${owned} possédée${owned > 1 ? 's' : ''}`
+                            : set.featured
+                              ? 'FR'
+                              : ''}
                         </span>
                       </button>
                     )
@@ -187,7 +217,7 @@ export function CollectionMenu({
                   <div className="nav-submenu-list">
                     {group.items.map((set) => {
                       const owned = ownedCountBySet[set.id] ?? 0
-                      const active = isCollectionActive && activeSetId === set.id
+                      const active = isCollectionActive && selectedSetId === set.id
                       return (
                         <button
                           key={set.id}
