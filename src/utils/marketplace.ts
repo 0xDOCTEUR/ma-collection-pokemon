@@ -27,16 +27,24 @@ export function searchUrl(market: Marketplace, query: string): string {
   return `https://www.ebay.fr/sch/i.html?_nkw=${q}&_sop=15`
 }
 
-/** Texte de recherche : nom + numéro (ex. « Bulbizarre 1/165 »). */
+/** Numéro d’affichage type catalogue : 1 → 001, 12 → 012, TG01 reste TG01. */
+function padCatalogNum(value: string | number): string {
+  const raw = String(value).trim()
+  if (!/^\d+$/.test(raw)) return raw
+  return raw.padStart(3, '0')
+}
+
+/** Texte de recherche : nom + numéro (ex. « Bulbizarre 001/165 »). */
 export function cardBuyQuery(card: {
   name: string
   number: string
   printedTotal?: number
 }): string {
+  const local = padCatalogNum(card.number)
   const num =
     card.printedTotal && card.printedTotal > 0
-      ? `${card.number}/${card.printedTotal}`
-      : card.number
+      ? `${local}/${padCatalogNum(card.printedTotal)}`
+      : local
   return `${card.name} ${num}`.replace(/\s+/g, ' ').trim()
 }
 
