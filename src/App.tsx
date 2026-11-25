@@ -36,7 +36,6 @@ import { matchesSearchText } from './utils/frenchNames'
 import { fetchTcgdexFrenchSet, type TcgdexFrenchCardInfo } from './utils/frenchSets'
 import { sortRarities } from './utils/rarity'
 import {
-  formatCensusDate,
   latestCensusDate,
   populationSortGroup,
   primaryPrinting,
@@ -177,7 +176,6 @@ export default function App() {
   const [sort, setSort] = useState<SortKey>('number')
   const [density, setDensity] = useState<CollectionDensity>(() => readDensity())
   const [openTool, setOpenTool] = useState<'quick' | 'export' | null>(null)
-  const [showPopHelp, setShowPopHelp] = useState(false)
   const [showScrollTop, setShowScrollTop] = useState(false)
   const [detailCard, setDetailCard] = useState<PokemonCard | null>(null)
   const [catalogCard, setCatalogCard] = useState<PsaHuntCard | null>(null)
@@ -449,8 +447,6 @@ export default function App() {
     }
     return map
   }, [hunt, activeSet, cards, populationFile])
-
-  const censusLabel = formatCensusDate(latestCensusDate(populationFile))
 
   const scanTargets = useMemo(() => buildScanTargets(cardsBySet, hunt), [cardsBySet, hunt])
 
@@ -1163,50 +1159,6 @@ export default function App() {
               publiés.
             </p>
           )}
-          {setHasPopulation && populationFile && (
-            <div className="pop-hint-wrap">
-              <button
-                type="button"
-                className="pop-hint-toggle"
-                aria-expanded={showPopHelp}
-                onClick={() => setShowPopHelp((v) => !v)}
-              >
-                {showPopHelp
-                  ? 'Masquer l’aide PSA ▴'
-                  : `Recensement PSA${censusLabel ? ` (${censusLabel})` : ''} · Comment lire ces chiffres ? ▾`}
-              </button>
-              {showPopHelp && (
-                <p className="pop-hint">
-                  PSA 10 = cartes notées 10/10. Le chiffre « anglais » sert au tri : plus il est
-                  petit, plus cette version anglaise est rare. Les cartes notées moins de 100 fois
-                  restent en bas du tri « plus rares ».{' '}
-                  <a href={populationFile.source} target="_blank" rel="noreferrer">
-                    {populationFile.sourceName}
-                  </a>
-                  {populationFile.frenchFetchedAt && (
-                    <>
-                      {' '}
-                      Le chiffre « français » compte seulement les cartes françaises (relevé du{' '}
-                      {formatCensusDate(populationFile.frenchFetchedAt)}
-                      {populationFile.frenchSource && (
-                        <>
-                          {' '}
-                          ·{' '}
-                          <a href={populationFile.frenchSource} target="_blank" rel="noreferrer">
-                            {populationFile.frenchSourceName ?? 'GemRate'}
-                          </a>
-                        </>
-                      )}
-                      ).
-                    </>
-                  )}{' '}
-                  Sous la rareté, seuls les signaux utiles apparaissent : marge ouverte (vert) ou à
-                  suivre (jaune), avec le rapport note 10 / carte sans note (ex. ×2,1).
-                </p>
-              )}
-            </div>
-          )}
-
           {loading && <p className="state-msg">Chargement des séries…</p>}
           {error && <p className="state-msg error">{error}</p>}
 
