@@ -32,9 +32,19 @@ export function CardImageLightbox({ src, alt, fallbackSrc = null, onClose }: Pro
       role="dialog"
       aria-modal="true"
       aria-label={`Image agrandie : ${alt}`}
-      onClick={onClose}
+      onClick={(e) => {
+        e.stopPropagation()
+        onClose()
+      }}
     >
-      <button type="button" className="card-zoom-close btn ghost" onClick={onClose}>
+      <button
+        type="button"
+        className="card-zoom-close btn ghost"
+        onClick={(e) => {
+          e.stopPropagation()
+          onClose()
+        }}
+      >
         Fermer
       </button>
       <img
