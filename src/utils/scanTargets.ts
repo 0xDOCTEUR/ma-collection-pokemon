@@ -1,6 +1,6 @@
 import type { PokemonCard } from '../types'
 import type { PsaHuntCard, PsaHuntData } from './psaHunt'
-import { huntImageUrl } from './psaHunt'
+import { catalogSetName, huntImageUrl } from './psaHunt'
 import { SETS } from '../sets'
 
 /** Carte searchable pour le scan : collection locale ou catalogue mondial. */
@@ -60,7 +60,7 @@ export function buildScanTargets(
       name: card.name,
       number: card.number || '0',
       printedTotal: Number.parseInt(card.number, 10) > 0 ? Math.max(Number.parseInt(card.number, 10), 165) : 165,
-      setLabel: `${card.set.name} · ${card.set.language === 'fr' ? 'FR' : card.set.language === 'ja' ? 'JP' : 'EN'}`,
+      setLabel: `${catalogSetName(card.set)} · ${card.set.language === 'fr' ? 'FR' : card.set.language === 'ja' ? 'JP' : 'EN'}`,
       imageSmall: huntImageUrl(card) ?? '',
       rarity: card.printing || 'Normale',
       hunt: card,

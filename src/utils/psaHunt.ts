@@ -4,7 +4,39 @@ import { printingLabel } from './population'
 export const USD_TO_EUR = 0.92
 
 /** À changer quand public/data/psa-hunt.json ou psa-french.json est régénéré. */
-export const PSA_HUNT_VERSION = '2026-11-23'
+export const PSA_HUNT_VERSION = '2026-11-25'
+
+/**
+ * Noms affichés. La source anglaise dit « 30th Celebration » :
+ * en français, l’extension s’appelle 30ᵉ Anniversaire.
+ */
+const SET_LABELS: Record<string, string> = {
+  me55: '30ᵉ Anniversaire',
+  'french-30c-fr-30th-celebration': '30ᵉ Anniversaire',
+  me55c: '30ᵉ Anniversaire — Collection classique',
+  'french-30c-fr-30th-celebration-classic-collection': '30ᵉ Anniversaire — Collection classique',
+  'jp-24721': '30ᵉ Anniversaire (Japon)',
+  'jp-24856': '30ᵉ Anniversaire — decks Mentali et Noctali (Japon)',
+}
+
+/** Mots en plus pour la recherche : « 30 ans », « collection 30 ans », nom anglais. */
+const SET_SEARCH: Record<string, string> = {
+  me55: '30e anniversaire collection 30 ans 30th celebration',
+  'french-30c-fr-30th-celebration': '30e anniversaire collection 30 ans 30th celebration',
+  me55c: '30e anniversaire collection 30 ans collection classique 30th celebration classic collection',
+  'french-30c-fr-30th-celebration-classic-collection':
+    '30e anniversaire collection 30 ans collection classique 30th celebration classic collection',
+  'jp-24721': '30e anniversaire collection 30 ans 30th celebration japon',
+  'jp-24856': '30e anniversaire collection 30 ans mentali noctali deck premium japon',
+}
+
+export function catalogSetName(set: { id: string; name: string }): string {
+  return SET_LABELS[set.id] ?? set.name
+}
+
+export function catalogSetSearch(set: { id: string; name: string }): string {
+  return `${catalogSetName(set)} ${set.name} ${SET_SEARCH[set.id] ?? ''}`
+}
 
 export interface PsaHuntSet {
   id: string
@@ -188,11 +220,18 @@ export function cardPotential(
   psaEur: number | null,
   rawEur: number | null,
 ): CardPotential {
-  if (psaEur == null || rawEur == null || psaEur <= 0 || rawEur <= 0 || total <= 0) {
+  if (psaEur == null || rawEur == null || psaEur <= 0 || rawEur <= 0) {
     return {
       level: 'unknown',
       title: 'Pas assez d’infos',
       reason: 'Il manque un prix. Sans le prix de la note 10 et celui de la carte sans note, on ne voit pas s’il reste de la marge.',
+    }
+  }
+  if (total <= 0) {
+    return {
+      level: 'unknown',
+      title: 'Pas assez d’infos',
+      reason: 'Les côtes sont là. Le nombre de cartes déjà notées n’est pas encore publié, donc on ne voit pas si les notes 10 sont rares.',
     }
   }
 

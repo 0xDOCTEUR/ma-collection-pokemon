@@ -3,6 +3,8 @@ import {
   upsideScore,
   cardPageUrl,
   cardPotential,
+  catalogSetName,
+  catalogSetSearch,
   huntImageUrl,
   huntPrintingLabel,
   INDICATOR_FILTERS,
@@ -202,7 +204,7 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
       .filter((set) => language === 'all' || set.language === language)
       .filter((set) => series === 'all' || set.series === series)
       .slice()
-      .sort((a, b) => a.name.localeCompare(b.name, 'fr'))
+      .sort((a, b) => catalogSetName(a).localeCompare(catalogSetName(b), 'fr'))
   }, [data, language, series])
 
   useEffect(() => {
@@ -294,7 +296,7 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
       if (series !== 'all' && card.set.series !== series) return false
       if (setId !== 'all' && card.set.id !== setId) return false
       if (searching) {
-        const haystack = foldName(`${card.name} ${card.number} ${card.set.name}`)
+        const haystack = foldName(`${card.name} ${card.number} ${catalogSetSearch(card.set)}`)
         if (!needles.some((needle) => haystack.includes(needle))) return false
       }
       if (indicator !== 'all') {
@@ -353,7 +355,7 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
         if (order !== 0) return order
       }
       if (!focused && activeSort === 'number') {
-        const setOrder = a.set.name.localeCompare(b.set.name, 'fr')
+        const setOrder = catalogSetName(a.set).localeCompare(catalogSetName(b.set), 'fr')
         if (setOrder !== 0) return setOrder
       }
       return bySort(a, b)
@@ -441,7 +443,7 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
               <option value="all">Toutes les séries ({setOptions.length})</option>
               {setOptions.map((set) => (
                 <option key={set.id} value={set.id}>
-                  {set.name}
+                  {catalogSetName(set)}
                 </option>
               ))}
             </select>
@@ -755,20 +757,24 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
                       )}
                       <div className="hunt-body">
                         <p className="tile-num">
-                          #{card.number || '—'} · {card.set.name}
+                          #{card.number || '—'} · {catalogSetName(card.set)}
                           {language === 'all' ? ` · ${languageLabel(card.set.language)}` : ''}
                         </p>
                         <h3>{frenchCardName(card.name)}</h3>
                         <p className="tile-meta">
                           {seriesLabel(card.set.series)} · {huntPrintingLabel(card.printing)}
                         </p>
-                        <p className="hunt-pop">
-                          {formatCount(card.psa10)} exemplaires notés 10
-                          <span>
-                            sur {formatCount(card.total)} cartes notées (
-                            {formatGemRate(asPrinting(card))})
-                          </span>
-                        </p>
+                        {card.total > 0 ? (
+                          <p className="hunt-pop">
+                            {formatCount(card.psa10)} exemplaires notés 10
+                            <span>
+                              sur {formatCount(card.total)} cartes notées (
+                              {formatGemRate(asPrinting(card))})
+                            </span>
+                          </p>
+                        ) : (
+                          <p className="hunt-pop">Recensement PSA pas encore publié</p>
+                        )}
                         <p className="hunt-prices">
                           <span>
                             <small>Côte notée 10</small>

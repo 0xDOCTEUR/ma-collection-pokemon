@@ -6,6 +6,7 @@ import { formatCount, formatGemRate, type PsaPrinting } from '../utils/populatio
 import {
   cardPageUrl,
   cardPotential,
+  catalogSetName,
   huntImageUrl,
   huntPrintingLabel,
   languageLabel,
@@ -74,7 +75,7 @@ export function CatalogCardSheet({ card, onClose, highlightedCondition = null }:
         <header className="card-sheet-head">
           <div>
             <p className="card-sheet-num">
-              #{card.number || '—'} · {card.set.name}
+              #{card.number || '—'} · {catalogSetName(card.set)}
             </p>
             <h2 id={titleId}>{frenchCardName(card.name)}</h2>
             <p className="muted">
@@ -206,24 +207,31 @@ export function CatalogCardSheet({ card, onClose, highlightedCondition = null }:
                   rare parmi les cartes notées.
                 </p>
               </div>
-              <table className="pop-table">
-                <thead>
-                  <tr>
-                    <th>Version</th>
-                    <th>Cartes notées</th>
-                    <th>Notes 10</th>
-                    <th>Part de 10</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr className="is-compared">
-                    <td>{huntPrintingLabel(card.printing)}</td>
-                    <td>{formatCount(card.total)}</td>
-                    <td>{formatCount(card.psa10)}</td>
-                    <td>{formatGemRate(printing)}</td>
-                  </tr>
-                </tbody>
-              </table>
+              {card.total > 0 ? (
+                <table className="pop-table">
+                  <thead>
+                    <tr>
+                      <th>Version</th>
+                      <th>Cartes notées</th>
+                      <th>Notes 10</th>
+                      <th>Part de 10</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="is-compared">
+                      <td>{huntPrintingLabel(card.printing)}</td>
+                      <td>{formatCount(card.total)}</td>
+                      <td>{formatCount(card.psa10)}</td>
+                      <td>{formatGemRate(printing)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              ) : (
+                <p className="pop-note">
+                  Le recensement PSA n’est pas encore publié pour cette carte. Les côtes, elles, sont
+                  là.
+                </p>
+              )}
               <p className="pop-note">
                 Source catalogue ({languageLabel(card.set.language)}).{' '}
                 <a href={cardPageUrl(card.slug)} target="_blank" rel="noreferrer">

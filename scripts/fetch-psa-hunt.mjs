@@ -91,6 +91,59 @@ async function fetchText(url, attempt = 1) {
   return response.text()
 }
 
+function numberOrNull(value) {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : null
+}
+
+/** Séries trop récentes pour la page de recensement : on prend quand même la liste et les côtes. */
+async function rowsFromSetApi(slug) {
+  const response = await fetch(`https://api.cardprice.com/api/sets/${encodeURIComponent(slug)}/cards`, {
+    headers: { accept: 'application/json' },
+    signal: AbortSignal.timeout(25000),
+  })
+  if (!response.ok) return []
+  const payload = await response.json()
+  const cards = payload.cards ?? []
+  const details = await mapPool(cards, CONCURRENCY, async (card) => {
+    try {
+      const detailResponse = await fetch(
+        `https://api.cardprice.com/api/card/${encodeURIComponent(card.id)}`,
+        { headers: { accept: 'application/json' }, signal: AbortSignal.timeout(25000) },
+      )
+      if (!detailResponse.ok) return null
+      return await detailResponse.json()
+    } catch {
+      return null
+    }
+  })
+  const rows = []
+  for (let i = 0; i < cards.length; i += 1) {
+    const card = cards[i]
+    const detail = details[i] ?? {}
+    const graded = detail.graded ?? null
+    const populations = (detail.population ?? []).filter(
+      (row) => row.company === 'psa' && Number(row.total) > 0,
+    )
+    const base = {
+      cardId: card.id,
+      name: card.name,
+      number: String(card.number ?? ''),
+      psa10Usd: numberOrNull(graded?.psa10),
+      rawUsd: numberOrNull(graded?.ungraded) ?? numberOrNull(card.price) ?? numberOrNull(detail.latestPrice),
+      slug: card.slug,
+    }
+    if (populations.length === 0) {
+      rows.push({ ...base, printing: '', total: 0, psa10: 0 })
+      continue
+    }
+    for (const row of populations) {
+      const printing = typeof row.printing === 'string' ? row.printing : ''
+      rows.push({ ...base, printing, total: Number(row.total), psa10: Number(row.gem) || 0 })
+    }
+  }
+  return rows
+}
+
 async function mapPool(items, limit, worker) {
   const results = new Array(items.length)
   let next = 0
@@ -138,13 +191,24 @@ let failed = 0
 const collected = await mapPool(unique, CONCURRENCY, async (set) => {
   try {
     const html = await fetchText(`${SOURCE}/pop/psa/${encodeURIComponent(set.slug)}`)
-    const rows = parsePopHtml(html)
+    let rows = parsePopHtml(html)
+    if (rows.length === 0) rows = await rowsFromSetApi(set.slug)
     done += 1
     if (done % 25 === 0 || rows.length === 0) {
       console.log(`${done}/${unique.length} ${set.slug} : ${rows.length}`)
     }
     return { set, rows }
   } catch (error) {
+    try {
+      const rows = await rowsFromSetApi(set.slug)
+      if (rows.length > 0) {
+        done += 1
+        console.log(`${set.slug} : page de recensement absente, ${rows.length} cartes via la liste`)
+        return { set, rows }
+      }
+    } catch (fallbackError) {
+      console.error(`Échec ${set.slug} :`, fallbackError instanceof Error ? fallbackError.message : fallbackError)
+    }
     failed += 1
     done += 1
     console.error(`Échec ${set.slug} :`, error instanceof Error ? error.message : error)
