@@ -147,13 +147,13 @@ export function CollectionMenu({
     e.preventDefault()
     const trimmed = query.trim()
     if (trimmed.length < 2) return
+    // Toujours partir en recherche globale avec le Pokémon survolé, sinon le texte tapé.
     if (pokemonSuggestions.length > 0) {
       const picked = pokemonSuggestions[suggestIndex] ?? pokemonSuggestions[0]
       handlePokemonSearch(picked.name)
       return
     }
-    const firstSet = groupedSets[0]?.items[0]
-    if (firstSet) handlePick(firstSet.id)
+    handlePokemonSearch(trimmed)
   }
 
   const pillLabel =
@@ -183,13 +183,14 @@ export function CollectionMenu({
           <div className="nav-submenu-head">
             <input
               ref={searchRef}
-              type="search"
+              type="text"
               className="nav-submenu-search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={onSearchKeyDown}
               placeholder="Série ou Pokémon (151, Mewtwo…)"
               aria-label="Rechercher une série ou un Pokémon"
+              autoComplete="off"
             />
             {!query.trim() && jaCount > 0 && (
               <div className="nav-submenu-langs" role="group" aria-label="Langue des séries">

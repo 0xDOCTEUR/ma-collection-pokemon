@@ -607,9 +607,12 @@ export default function App() {
   function searchPokemonEverywhere(name: string) {
     const next = name.trim()
     if (next.length < 2) return
+    // Fixe la requête avant de basculer sur « Toutes », pour ne pas arriver sur une page vide.
     setQuery(next)
-    setSelectedSetId('all')
+    setFilter('all')
+    setRarity('all')
     setTab('collection')
+    setSelectedSetId('all')
   }
 
   const setHasAnyReverse = useMemo(() => cards.some((c) => c.hasReverse), [cards])
