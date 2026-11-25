@@ -18,6 +18,7 @@ import { useCollection } from './hooks/useCollection'
 import { useCustomLists } from './hooks/useCustomLists'
 import { SETS, type AppTab } from './sets'
 import type { CardStatus, CardVariant, FilterStatus, PokemonCard, SortKey } from './types'
+import { matchesSearchText } from './utils/frenchNames'
 import { sortRarities } from './utils/rarity'
 import {
   formatCensusDate,
@@ -289,10 +290,9 @@ export default function App() {
 
       if (rarity !== 'all' && card.rarity !== rarity) return false
       if (!q) return true
-      return (
-        card.name.toLowerCase().includes(q) ||
-        card.number.includes(q) ||
-        `${card.number}/${card.printedTotal}`.includes(q)
+      return matchesSearchText(
+        `${card.name} ${card.number} ${card.number}/${card.printedTotal} ${card.rarity}`,
+        deferredQuery,
       )
     })
 

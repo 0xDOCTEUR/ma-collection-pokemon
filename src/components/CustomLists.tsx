@@ -22,6 +22,7 @@ import {
   type ListEntry,
   type ListFormat,
 } from '../utils/lists'
+import { matchesSearchText } from '../utils/frenchNames'
 import { downloadListImage } from '../utils/listImage'
 import { sortRarities } from '../utils/rarity'
 
@@ -209,10 +210,9 @@ export function CustomLists({
 
       if (rarity !== 'all' && card.rarity !== rarity) return false
       if (!q) return true
-      return (
-        card.name.toLowerCase().includes(q) ||
-        card.number.includes(q) ||
-        `${card.number}/${card.printedTotal}`.includes(q)
+      return matchesSearchText(
+        `${card.name} ${card.number} ${card.number}/${card.printedTotal} ${card.rarity}`,
+        deferredQuery,
       )
     })
     return [...filtered].sort((a, b) => compareCards(a, b, sort))

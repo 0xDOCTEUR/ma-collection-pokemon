@@ -855,16 +855,53 @@ export function foldName(value: string): string {
   return value.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
 }
 
+/**
+ * Texte prêt pour la recherche : sans accents, tirets ni ponctuation.
+ * « Mewtwo V-UNION » et « mewtwo v union » deviennent la même chose.
+ */
+export function searchKey(value: string): string {
+  return foldName(value)
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+    .replace(/\s+/g, ' ')
+}
+
 /** Le texte tapé, plus le nom anglais si un nom français a été reconnu. */
 export function searchNeedles(query: string): string[] {
-  const folded = foldName(query.trim())
+  const folded = searchKey(query)
   if (!folded) return []
   const needles = new Set<string>([folded])
-  const whole = FRENCH_NAMES[folded]
-  if (whole) needles.add(whole)
-  for (const part of folded.split(/[^a-z0-9]+/)) {
+  const compact = folded.replace(/ /g, '')
+  if (compact !== folded) needles.add(compact)
+
+  const whole = FRENCH_NAMES[folded] ?? FRENCH_NAMES[compact]
+  if (whole) {
+    needles.add(searchKey(whole))
+    needles.add(foldName(whole).replace(/[^a-z0-9]+/g, ''))
+  }
+  for (const part of folded.split(' ')) {
     const english = FRENCH_NAMES[part]
-    if (english) needles.add(english)
+    if (!english) continue
+    const englishKey = searchKey(english)
+    needles.add(englishKey)
+    // Remplace le mot français par l’anglais dans la requête complète.
+    needles.add(searchKey(folded.replace(new RegExp(`\\b${part}\\b`, 'g'), englishKey)))
   }
   return [...needles]
+}
+
+/** Vrai si le texte (nom, numéro, série…) correspond à la recherche tapée. */
+export function matchesSearchText(haystack: string, query: string): boolean {
+  const needles = searchNeedles(query)
+  if (needles.length === 0) return true
+  const hay = searchKey(haystack)
+  if (!hay) return false
+  const hayCompact = hay.replace(/ /g, '')
+  return needles.some((needle) => {
+    const n = searchKey(needle)
+    if (!n) return false
+    if (hay.includes(n)) return true
+    const nCompact = n.replace(/ /g, '')
+    return Boolean(nCompact) && hayCompact.includes(nCompact)
+  })
 }

@@ -18,7 +18,7 @@ import {
   type PsaHuntData,
 } from '../utils/psaHunt'
 import { PotentialStamp } from './PotentialStamp'
-import { foldName, searchNeedles } from '../utils/frenchNames'
+import { matchesSearchText } from '../utils/frenchNames'
 import {
   cardHasGeneration,
   cardHasSpecies,
@@ -292,8 +292,7 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
 
   const matches = useMemo(() => {
     if (!data) return []
-    const needles = searchNeedles(query)
-    const searching = needles.length > 0
+    const searching = query.trim().length > 0
     const priceCap = readNumber(maxPrice)
     const rawFloor = readNumber(minRaw)
     const popCap = readNumber(maxPsa10)
@@ -319,9 +318,14 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
       if (series !== 'all' && card.set.series !== series) return false
       if (setId !== 'all' && card.set.id !== setId) return false
       if (rarity && card.rarity !== rarity) return false
-      if (searching) {
-        const haystack = foldName(`${card.name} ${card.number} ${card.rarity} ${catalogSetSearch(card.set)}`)
-        if (!needles.some((needle) => haystack.includes(needle))) return false
+      if (
+        searching &&
+        !matchesSearchText(
+          `${card.name} ${card.number} ${card.rarity} ${catalogSetSearch(card.set)}`,
+          query,
+        )
+      ) {
+        return false
       }
       if (!browsingSet && indicator !== 'all') {
         const potential = cardPotential(

@@ -6,6 +6,7 @@ import {
   type LooseConditionId,
   type ScanMatch,
 } from '../utils/cardScan'
+import { matchesSearchText } from '../utils/frenchNames'
 import { frenchCardName } from '../utils/generations'
 import type { ScanTarget } from '../utils/scanTargets'
 
@@ -139,10 +140,8 @@ export function CardScan({ targets, embedded = false, onClose, onConfirm }: Prop
     let list = targets
     if (number) list = list.filter((target) => target.number === number)
     if (nameNeedle) {
-      list = list.filter(
-        (target) =>
-          target.name.toLowerCase().includes(nameNeedle) ||
-          target.setLabel.toLowerCase().includes(nameNeedle),
+      list = list.filter((target) =>
+        matchesSearchText(`${target.name} ${target.setLabel}`, manualName),
       )
     }
     if (list.length === 0) {
