@@ -1558,6 +1558,47 @@ textarea:focus {
   transform: translateY(0);
 }
 
+.card-sheet-art-col {
+  display: grid;
+  gap: 0.55rem;
+  align-content: start;
+}
+
+.variant-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.variant-tab {
+  padding: 0.28rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(10, 14, 20, 0.65);
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.variant-tab.is-on {
+  border-color: rgba(78, 168, 222, 0.65);
+  background: rgba(78, 168, 222, 0.16);
+  color: #9fd0f0;
+}
+
+.variant-note,
+.variant-psa {
+  margin: 0;
+  font-size: 0.72rem;
+  line-height: 1.35;
+  color: var(--muted);
+}
+
+.variant-psa {
+  color: rgba(240, 210, 140, 0.9);
+}
+
 .card-sheet-art-btn {
   display: block;
   width: 100%;

@@ -1,4 +1,4 @@
-import { useEffect, useId, useState, type ReactNode } from 'react'
+import { useEffect, useId, useMemo, useState, type ReactNode } from 'react'
 import {
   fetchCardmarketLive,
   formatCardmarketPrice,
@@ -12,6 +12,7 @@ import type {
   PokemonCard,
   PriceRangeDays,
 } from '../types'
+import { buildVisualVariants } from '../utils/cardVariants'
 import { buildTrendPoints, recordPriceSnapshot } from '../utils/priceHistory'
 import { PriceTrendChart } from './PriceTrendChart'
 import { AdvicePrices } from './AdvicePrices'
@@ -75,8 +76,17 @@ export function CardDetailSheet({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [zoomOpen, setZoomOpen] = useState(false)
+  const [variantId, setVariantId] = useState('normal')
 
   const historyKey = card.tcgdexId || card.id
+  const variants = useMemo(() => buildVisualVariants(card, population), [card, population])
+  const activeVariant = variants.find((row) => row.id === variantId) ?? variants[0]
+
+  useEffect(() => {
+    setVariantId((prev) =>
+      variants.some((row) => row.id === prev) ? prev : (variants[0]?.id ?? 'normal'),
+    )
+  }, [card.id, variants])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -118,6 +128,8 @@ export function CardDetailSheet({
   }, [card.tcgdexId, historyKey])
 
   const points = buildTrendPoints(historyKey, stats, range)
+  const artSrc = activeVariant?.imageUrl || card.imageLarge || card.imageSmall
+  const artFallback = activeVariant?.fallbackUrl || card.imageFallback || card.imageSmall
 
   return (
     <div className="card-sheet-backdrop" onClick={onClose} role="presentation">
@@ -142,27 +154,53 @@ export function CardDetailSheet({
         </header>
 
         <div className="card-sheet-body">
-          <button
-            type="button"
-            className="card-sheet-art-btn"
-            onClick={() => setZoomOpen(true)}
-            title="Voir l’image en grand"
-          >
-            <img
-              className="card-sheet-art"
-              src={card.imageLarge || card.imageSmall}
-              alt={card.name}
-              width={245}
-              height={342}
-              onError={(e) => {
-                const img = e.currentTarget
-                if (card.imageFallback && img.dataset.fallbackTried !== '1') {
-                  img.dataset.fallbackTried = '1'
-                  img.src = card.imageFallback
-                }
-              }}
-            />
-          </button>
+          <div className="card-sheet-art-col">
+            {variants.length > 1 && (
+              <div className="variant-tabs" role="tablist" aria-label="Versions de la carte">
+                {variants.map((row) => (
+                  <button
+                    key={row.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={row.id === activeVariant?.id}
+                    className={row.id === activeVariant?.id ? 'variant-tab is-on' : 'variant-tab'}
+                    onClick={() => setVariantId(row.id)}
+                  >
+                    {row.label}
+                  </button>
+                ))}
+              </div>
+            )}
+            <button
+              type="button"
+              className="card-sheet-art-btn"
+              onClick={() => setZoomOpen(true)}
+              title="Voir l’image en grand"
+            >
+              <img
+                key={`${card.id}:${activeVariant?.id}:${artSrc}`}
+                className="card-sheet-art"
+                src={artSrc}
+                alt={`${card.name} · ${activeVariant?.label ?? 'Normale'}`}
+                width={245}
+                height={342}
+                onError={(e) => {
+                  const img = e.currentTarget
+                  if (artFallback && img.dataset.fallbackTried !== '1' && img.src !== artFallback) {
+                    img.dataset.fallbackTried = '1'
+                    img.src = artFallback
+                  }
+                }}
+              />
+            </button>
+            {activeVariant?.note && <p className="variant-note">{activeVariant.note}</p>}
+            {activeVariant?.psa && (
+              <p className="variant-psa">
+                PSA · {activeVariant.label} : {formatCount(activeVariant.psa.total)} notées ·{' '}
+                {formatCount(activeVariant.psa.psa10)} en 10
+              </p>
+            )}
+          </div>
 
           <div className="card-sheet-main">
             {onSetStatus && (
@@ -282,9 +320,9 @@ export function CardDetailSheet({
       </aside>
       {zoomOpen ? (
         <CardImageLightbox
-          src={card.imageLarge || card.imageSmall}
-          alt={card.name}
-          fallbackSrc={card.imageFallback}
+          src={artSrc}
+          alt={`${card.name} · ${activeVariant?.label ?? 'Normale'}`}
+          fallbackSrc={artFallback}
           onClose={() => setZoomOpen(false)}
         />
       ) : null}
