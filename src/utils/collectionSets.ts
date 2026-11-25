@@ -1,7 +1,6 @@
 import { SETS, type SetInfo } from '../sets'
 import type { PokemonCard } from '../types'
 import {
-  frenchCardImageUrl,
   normalizeCardNum,
   resolveSetLogo,
   type TcgdexFrenchCardInfo,
@@ -200,13 +199,10 @@ export function buildCatalogSetCards(
       )[0] ?? rows[0]
 
     const frInfo = frenchCards?.get(normalizeCardNum(primary.number)) ?? null
-    const fallbackImg = cardImageUrl(cardId) ?? ''
-    const frSmall =
-      frInfo?.imageSmall ||
-      (primary.set.language !== 'ja' ? frenchCardImageUrl(setId, primary.number, 'low') : null)
-    const frLarge =
-      frInfo?.imageLarge ||
-      (primary.set.language !== 'ja' ? frenchCardImageUrl(setId, primary.number, 'high') : null)
+    // Image confirmée TCGdex seulement (les URL « devinées » 404 souvent sur V/VSTAR/TG).
+    const cardpriceImg = cardImageUrl(cardId) ?? ''
+    const frSmall = frInfo?.imageSmall || ''
+    const frLarge = frInfo?.imageLarge || ''
 
     const normalUsd = primary.rawUsd
     const reverseUsd = reverseRow?.rawUsd ?? null
@@ -220,9 +216,10 @@ export function buildCatalogSetCards(
       rarity: primary.rarity || 'Autre',
       artist: '',
       types: [],
-      imageSmall: frSmall || fallbackImg,
-      imageLarge: frLarge || fallbackImg,
-      imageFallback: fallbackImg || undefined,
+      imageSmall: frSmall || cardpriceImg,
+      imageLarge: frLarge || cardpriceImg,
+      imageFallback:
+        frSmall && cardpriceImg && frSmall !== cardpriceImg ? cardpriceImg : undefined,
       hasNormal: true,
       hasReverse: reverseRow != null,
       prices: {

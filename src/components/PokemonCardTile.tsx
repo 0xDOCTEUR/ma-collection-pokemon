@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { useEffect, useState } from 'react'
 import { formatPrice } from '../api/pokemon'
 import type { CardStatus, CardVariant, PokemonCard } from '../types'
 import { PotentialStamp } from './PotentialStamp'
@@ -30,6 +31,7 @@ interface Props {
   potential?: CardPotential | null
   /** Affiché en recherche multi-séries. */
   setLabel?: string | null
+  onOpenSet?: () => void
   listActions?: ReactNode
 }
 
@@ -81,8 +83,13 @@ export function PokemonCardTile({
   population,
   potential = null,
   setLabel = null,
+  onOpenSet,
   listActions = null,
 }: Props) {
+  const [imgBroken, setImgBroken] = useState(false)
+  useEffect(() => {
+    setImgBroken(false)
+  }, [card.id, card.imageSmall])
   const overall: CardStatus =
     normalStatus === 'owned' || (card.hasReverse && reverseStatus === 'owned')
       ? 'owned'
@@ -94,24 +101,33 @@ export function PokemonCardTile({
     <article className={`tile status-${overall}`}>
       <button
         type="button"
-        className="tile-media"
+        className={imgBroken ? 'tile-media is-broken' : 'tile-media'}
         onClick={onOpenDetail}
         title="Voir la cote, la population et le graphique"
       >
-        <img
-          src={card.imageSmall}
-          alt={card.name}
-          loading="lazy"
-          width={245}
-          height={342}
-          onError={(e) => {
-            const img = e.currentTarget
-            if (card.imageFallback && img.dataset.fallbackTried !== '1') {
-              img.dataset.fallbackTried = '1'
-              img.src = card.imageFallback
-            }
-          }}
-        />
+        {!imgBroken ? (
+          <img
+            key={card.imageSmall || card.id}
+            src={card.imageSmall}
+            alt={card.name}
+            loading="lazy"
+            width={245}
+            height={342}
+            onError={(e) => {
+              const img = e.currentTarget
+              if (card.imageFallback && img.dataset.fallbackTried !== '1') {
+                img.dataset.fallbackTried = '1'
+                img.src = card.imageFallback
+                return
+              }
+              setImgBroken(true)
+            }}
+          />
+        ) : (
+          <span className="tile-media-fallback" aria-hidden="true">
+            {card.name}
+          </span>
+        )}
         <span className="tile-badge">{STATUS_LABEL[overall]}</span>
         <span className="tile-detail-hint">Cote</span>
       </button>
@@ -124,7 +140,14 @@ export function PokemonCardTile({
           <span className="tile-price">{formatPrice(card, 'normal')}</span>
         </div>
         <h3 className="tile-name">{card.name}</h3>
-        {setLabel && <p className="tile-set-label">{setLabel}</p>}
+        {setLabel &&
+          (onOpenSet ? (
+            <button type="button" className="tile-set-label is-link" onClick={onOpenSet}>
+              {setLabel}
+            </button>
+          ) : (
+            <p className="tile-set-label">{setLabel}</p>
+          ))}
         <div className="tile-meta-row">
           <p className="tile-meta">{card.rarity}</p>
           {potential && <PotentialStamp potential={potential} inline />}
@@ -154,9 +177,7 @@ export function PokemonCardTile({
 
         {card.hasReverse && (
           <div className="variant-block reverse">
-            <p className="variant-title">
-              Reverse · {formatPrice(card, 'reverse')}
-            </p>
+            <p className="variant-title">Reverse · {formatPrice(card, 'reverse')}</p>
             <div className="tile-actions">
               <button
                 type="button"

@@ -3214,16 +3214,115 @@ textarea:focus {
 }
 
 .grid.grid-compact {
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  gap: 0.55rem;
 }
 
 .grid.grid-compact .tile-body {
-  padding: 0.65rem;
+  padding: 0.5rem 0.55rem 0.6rem;
 }
 
 .grid.grid-compact .tile-name {
-  font-size: 0.92rem;
+  font-size: 0.84rem;
+}
+
+.grid.grid-compact .tile-pop,
+.grid.grid-compact .variant-block.reverse,
+.grid.grid-compact .tile-detail-hint {
+  display: none;
+}
+
+.grid.grid-compact .variant-title {
+  font-size: 0.68rem;
+}
+
+.grid.grid-compact .chip,
+.grid.grid-compact .add-list-trigger {
+  padding: 0.22rem 0.4rem;
+  font-size: 0.68rem;
+}
+
+.grid.grid-list {
+  grid-template-columns: 1fr;
+  gap: 0.4rem;
+}
+
+.grid.grid-list .tile {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  align-items: stretch;
+}
+
+.grid.grid-list .tile:hover {
+  transform: none;
+}
+
+.grid.grid-list .tile-media {
+  border-radius: 0;
+}
+
+.grid.grid-list .tile-media img,
+.grid.grid-list .tile-media-fallback {
+  aspect-ratio: auto;
+  height: 100%;
+  min-height: 88px;
+  object-fit: cover;
+}
+
+.grid.grid-list .tile-detail-hint,
+.grid.grid-list .tile-pop,
+.grid.grid-list .variant-block.reverse {
+  display: none;
+}
+
+.grid.grid-list .tile-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) auto;
+  gap: 0.35rem 0.75rem;
+  align-items: center;
+  padding: 0.55rem 0.75rem;
+}
+
+.grid.grid-list .tile-top,
+.grid.grid-list .tile-name,
+.grid.grid-list .tile-set-label,
+.grid.grid-list .tile-meta-row {
+  grid-column: 1;
+}
+
+.grid.grid-list .tile-name {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.grid.grid-list .variant-block {
+  grid-column: 2;
+  grid-row: 1 / span 4;
+  margin: 0;
+  align-self: center;
+}
+
+.grid.grid-list .variant-title {
+  display: none;
+}
+
+.grid.grid-list .tile-actions {
+  flex-wrap: nowrap;
+}
+
+@media (max-width: 720px) {
+  .grid.grid-list .tile {
+    grid-template-columns: 56px minmax(0, 1fr);
+  }
+
+  .grid.grid-list .tile-body {
+    grid-template-columns: 1fr;
+  }
+
+  .grid.grid-list .variant-block {
+    grid-column: 1;
+    grid-row: auto;
+  }
 }
 
 /* --- Ajout direct à la collection dans les fiches Catalogue & Détail --- */
@@ -3325,6 +3424,37 @@ textarea:focus {
   font-size: 0.72rem;
   color: var(--gold);
   opacity: 0.9;
+}
+
+button.tile-set-label.is-link {
+  display: inline-block;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+  color: var(--gold);
+}
+
+button.tile-set-label.is-link:hover {
+  color: #ffe08a;
+}
+
+.tile-media.is-broken {
+  min-height: 8rem;
+}
+
+.tile-media-fallback {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 245 / 342;
+  padding: 0.75rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+  text-align: center;
+  background: linear-gradient(160deg, #101620, #070a0f);
 }
 
 .add-list-menu {

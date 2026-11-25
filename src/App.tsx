@@ -139,12 +139,16 @@ function readInitialSetFilter(): string | 'all' {
   return 'sv03.5'
 }
 
-function readDensity(): 'normal' | 'compact' {
+type CollectionDensity = 'normal' | 'compact' | 'list'
+
+function readDensity(): CollectionDensity {
   try {
-    return localStorage.getItem(COLLECTION_DENSITY_KEY) === 'compact' ? 'compact' : 'normal'
+    const saved = localStorage.getItem(COLLECTION_DENSITY_KEY)
+    if (saved === 'compact' || saved === 'list' || saved === 'normal') return saved
   } catch {
-    return 'normal'
+    /* ignore */
   }
+  return 'normal'
 }
 
 export default function App() {
@@ -158,7 +162,7 @@ export default function App() {
   const [filter, setFilter] = useState<FilterStatus>('all')
   const [rarity, setRarity] = useState('all')
   const [sort, setSort] = useState<SortKey>('number')
-  const [density, setDensity] = useState<'normal' | 'compact'>(() => readDensity())
+  const [density, setDensity] = useState<CollectionDensity>(() => readDensity())
   const [openTool, setOpenTool] = useState<'quick' | 'export' | null>(null)
   const [showPopHelp, setShowPopHelp] = useState(false)
   const [showScrollTop, setShowScrollTop] = useState(false)
@@ -919,10 +923,11 @@ export default function App() {
                 </select>
               </label>
 
-              <div className="density-toggle" role="group" aria-label="Taille des cartes">
+              <div className="density-toggle" role="group" aria-label="Affichage des cartes">
                 <button
                   type="button"
                   className={density === 'normal' ? 'is-on' : ''}
+                  aria-pressed={density === 'normal'}
                   onClick={() => setDensity('normal')}
                 >
                   Grandes
@@ -930,9 +935,18 @@ export default function App() {
                 <button
                   type="button"
                   className={density === 'compact' ? 'is-on' : ''}
+                  aria-pressed={density === 'compact'}
                   onClick={() => setDensity('compact')}
                 >
                   Petites
+                </button>
+                <button
+                  type="button"
+                  className={density === 'list' ? 'is-on' : ''}
+                  aria-pressed={density === 'list'}
+                  onClick={() => setDensity('list')}
+                >
+                  Liste
                 </button>
               </div>
             </div>
@@ -1062,7 +1076,15 @@ export default function App() {
                   </>
                 )}
               </p>
-              <div className={density === 'compact' ? 'grid grid-compact' : 'grid'}>
+              <div
+                className={
+                  density === 'compact'
+                    ? 'grid grid-compact'
+                    : density === 'list'
+                      ? 'grid grid-list'
+                      : 'grid'
+                }
+              >
                 {visible.map(({ card, setId, setName, normalStatus, reverseStatus }) => (
                   <PokemonCardTile
                     key={`${setId}:${card.id}`}
@@ -1070,6 +1092,15 @@ export default function App() {
                     normalStatus={normalStatus}
                     reverseStatus={reverseStatus}
                     setLabel={isAllSets ? setName : null}
+                    onOpenSet={
+                      isAllSets
+                        ? () => {
+                            setSelectedSetId(setId)
+                            setQuery('')
+                            window.scrollTo({ top: 0, behavior: 'smooth' })
+                          }
+                        : undefined
+                    }
                     onSetStatus={(variant, status) => setStatus(setId, card.id, status, variant)}
                     onOpenDetail={() => {
                       setScannedCondition(null)
