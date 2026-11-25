@@ -37,6 +37,9 @@ export interface ScanResult {
 export interface VisualSignature {
   full: Float32Array
   art: Float32Array
+  /** Variantes légèrement décalées (uniquement sur la photo scannée) pour tolérer un cadrage imparfait. */
+  fullShifts?: Float32Array[]
+  artShifts?: Float32Array[]
 }
 
 let workerPromise: Promise<Worker> | null = null
@@ -251,7 +254,7 @@ function makeCrop(
   ry: number,
   rw: number,
   rh: number,
-  mode: 'raw' | 'inv' | 'contrast' | 'invcontrast' = 'raw',
+  mode: 'raw' | 'inv' | 'contrast' | 'invcontrast' | 'maxrgb' = 'raw',
   scaleFactor = 2.5,
 ): HTMLCanvasElement {
   const { width: sourceW, height: sourceH } = sourceSize(image)
@@ -278,7 +281,11 @@ function makeCrop(
   let mx = 0
   const gray = new Uint8Array(outW * outH)
   for (let i = 0, p = 0; i < data.length; i += 4, p += 1) {
-    const g = Math.round(0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2])
+    // max(R,G,B) rend le texte noir très net sur fond rouge/violet/bleu (cartes Feu/Psy/Eau).
+    const g =
+      mode === 'maxrgb'
+        ? Math.max(data[i], data[i + 1], data[i + 2])
+        : Math.round(0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2])
     gray[p] = g
     if (g < mn) mn = g
     if (g > mx) mx = g
@@ -289,7 +296,7 @@ function makeCrop(
     let v = gray[p]
     if (mode === 'inv') {
       v = 255 - v
-    } else if (mode === 'contrast') {
+    } else if (mode === 'contrast' || mode === 'maxrgb') {
       v = Math.round(((v - mn) / span) * 255)
     } else if (mode === 'invcontrast') {
       v = 255 - Math.round(((v - mn) / span) * 255)
@@ -348,11 +355,31 @@ function regionDescriptor(
   return vec
 }
 
-export function computeVisualSignature(source: ImageSource): VisualSignature {
-  return {
-    full: regionDescriptor(source, 0.04, 0.04, 0.92, 0.92, 16, 22),
-    art: regionDescriptor(source, 0.1, 0.12, 0.8, 0.36, 16, 16),
-  }
+export function computeVisualSignature(
+  source: ImageSource,
+  withShifts = false,
+): VisualSignature {
+  const full = regionDescriptor(source, 0.04, 0.04, 0.92, 0.92, 12, 16)
+  const art = regionDescriptor(source, 0.11, 0.12, 0.78, 0.35, 10, 8)
+  if (!withShifts) return { full, art }
+
+  const fullShifts = [
+    full,
+    regionDescriptor(source, 0.01, 0.04, 0.92, 0.92, 12, 16),
+    regionDescriptor(source, 0.07, 0.04, 0.92, 0.92, 12, 16),
+    regionDescriptor(source, 0.04, 0.01, 0.92, 0.92, 12, 16),
+    regionDescriptor(source, 0.04, 0.07, 0.92, 0.92, 12, 16),
+    regionDescriptor(source, 0.08, 0.08, 0.84, 0.84, 12, 16),
+  ]
+  const artShifts = [
+    art,
+    regionDescriptor(source, 0.07, 0.12, 0.78, 0.35, 10, 8),
+    regionDescriptor(source, 0.15, 0.12, 0.78, 0.35, 10, 8),
+    regionDescriptor(source, 0.11, 0.08, 0.78, 0.35, 10, 8),
+    regionDescriptor(source, 0.11, 0.16, 0.78, 0.35, 10, 8),
+    regionDescriptor(source, 0.14, 0.14, 0.72, 0.32, 10, 8),
+  ]
+  return { full, art, fullShifts, artShifts }
 }
 
 function dotSim(a: Float32Array, b: Float32Array): number {
@@ -361,11 +388,21 @@ function dotSim(a: Float32Array, b: Float32Array): number {
   return sum
 }
 
-function compareSignatures(a: VisualSignature, b: VisualSignature): number {
-  const full = dotSim(a.full, b.full)
-  const art = dotSim(a.art, b.art)
-  // Full Art / Illustration Rare : `full` domine ; Reverse Holo classique : `art` sauve la mise.
-  return Math.max(full, 0.52 * full + 0.48 * art, art * 0.92)
+function compareSignatures(query: VisualSignature, target: VisualSignature): number {
+  const fullList = query.fullShifts ?? [query.full]
+  const artList = query.artShifts ?? [query.art]
+  let bestFull = -1
+  for (const v of fullList) {
+    const s = dotSim(v, target.full)
+    if (s > bestFull) bestFull = s
+  }
+  let bestArt = -1
+  for (const v of artList) {
+    const s = dotSim(v, target.art)
+    if (s > bestArt) bestArt = s
+  }
+  // Full Art / Illustration Rare : `bestFull` domine ; Reverse Holo classique : `bestArt` sauve la mise.
+  return Math.max(bestFull, 0.45 * bestFull + 0.55 * bestArt, bestArt * 0.95)
 }
 
 async function fetchImageSignature(url: string): Promise<VisualSignature | null> {
@@ -557,8 +594,9 @@ function levenshtein(a: string, b: string): number {
 interface NameHit {
   species: string
   label: string
-  /** 1 = trouvé en haut (nom principal), 0 = ailleurs (ex. texte d’évolution). */
+  /** 2 = exact en haut, 1 = ailleurs ou flou. */
   priority: number
+  fuzzy?: boolean
 }
 
 const SPECIES_CATALOG = Object.entries(FRENCH_NAMES)
@@ -618,30 +656,33 @@ export function findSpeciesInText(topText: string, extraText = ''): NameHit[] {
       hits.push({ species: candidate.english, label: matched, priority: pass.priority })
     }
 
-    // 2. Correspondance floue (Levenshtein) uniquement sur le haut de la carte si rien trouvé en exact
+    // 2. Correspondance floue STRICTE uniquement sur les noms longs (>= 7 lettres, 1 seule faute,
+    //    et 1re lettre identique) — évite les faux positifs absurdes (« ental » → Mentali, « allow » → Nirondelle).
     if (pass.priority === 2 && hits.length === 0) {
-      // Aussi paires de tokens adjacents (ex. « M » + « aganon » → « maganon »)
       const rawTokens = pass.text.split(/[^a-z0-9]+/).filter(Boolean)
       const fuzzyTokens = new Set<string>(tokens)
       for (let i = 0; i < rawTokens.length - 1; i += 1) {
         const joined = rawTokens[i] + rawTokens[i + 1]
-        if (joined.length >= 5 && joined.length <= 16) fuzzyTokens.add(joined)
+        if (joined.length >= 7 && joined.length <= 16) fuzzyTokens.add(joined)
       }
 
       let bestFuzzy: { candidate: (typeof SPECIES_CATALOG)[number]; dist: number } | null = null
       for (const token of fuzzyTokens) {
-        if (token.length < 5) continue
-        // Ignore les mots génériques de carte
-        if (/^(pokemon|niveau|basic|stage|evolution|evolves|faiblesse|resistance|retraite|talent|ability|trainer|dresseur|energie|energy|illus)$/.test(token)) {
+        if (token.length < 7) continue
+        if (
+          /^(pokemon|niveau|basic|stage|evolution|evolves|faiblesse|resistance|retraite|talent|ability|trainer|dresseur|energie|energy|illus|placez|cartes|recompense)$/.test(
+            token,
+          )
+        ) {
           continue
         }
         for (const candidate of SPECIES_CATALOG) {
           for (const targetWord of [candidate.frenchCompact, candidate.englishCompact]) {
-            if (targetWord.length < 5) continue
-            const maxDist = targetWord.length >= 7 ? 2 : 1
+            if (targetWord.length < 7) continue
+            if (token[0] !== targetWord[0]) continue
             const dist = levenshtein(token, targetWord)
-            if (dist <= maxDist) {
-              if (!bestFuzzy || dist < bestFuzzy.dist || (dist === bestFuzzy.dist && targetWord.length > bestFuzzy.candidate.frenchCompact.length)) {
+            if (dist === 1) {
+              if (!bestFuzzy || targetWord.length > bestFuzzy.candidate.frenchCompact.length) {
                 bestFuzzy = { candidate, dist }
               }
             }
@@ -654,6 +695,7 @@ export function findSpeciesInText(topText: string, extraText = ''): NameHit[] {
           species: bestFuzzy.candidate.english,
           label: bestFuzzy.candidate.label,
           priority: 1,
+          fuzzy: true,
         })
       }
     }
@@ -736,7 +778,7 @@ export async function rankTargetsVisually(
   candidates: ScanTarget[],
   signature: VisualSignature | null,
   baseMatches?: Map<string, ScanMatch>,
-  maxInspect = 110,
+  maxInspect = 160,
 ): Promise<ScanMatch[]> {
   if (!signature || candidates.length === 0) {
     return candidates.slice(0, 12).map((target) => {
@@ -830,34 +872,38 @@ export function scoreMatches(
     let candidates = targetsForNumber(byNumber, hit.number)
     if (candidates.length === 0) continue
 
-    if (hit.total) {
-      const withTotal = candidates.filter((target) => String(target.printedTotal) === hit.total)
-      if (withTotal.length > 0) candidates = withTotal
-    }
-
-    const named = speciesHits.length
+    const namedAll = speciesHits.length
       ? candidates.filter((target) =>
           speciesHits.some((species) => speciesMatchesTarget(species, target)),
         )
       : []
 
-    if (named.length > 0) {
-      candidates = named
-    } else if (/^[A-Z]{2,}\d+$/.test(hit.number) && candidates.length <= 10) {
-      // Codes GG/TG assez uniques.
-    } else if (hit.total && candidates.length <= 12) {
-      // Numéro + total connus : le visuel départagera.
-    } else if (hit.total && candidates.length > 12) {
-      candidates = [...candidates]
-        .sort(
-          (a, b) =>
-            (b.hunt?.psa10Usd ?? b.hunt?.rawUsd ?? 0) - (a.hunt?.psa10Usd ?? a.hunt?.rawUsd ?? 0),
-        )
-        .slice(0, 10)
-    } else if (candidates.length > 6) {
-      const collectionOnly = candidates.filter((target) => target.collectionCard)
-      if (collectionOnly.length > 0 && collectionOnly.length <= 6) candidates = collectionOnly
-      else continue
+    if (namedAll.length > 0) {
+      const namedWithTotal = hit.total
+        ? namedAll.filter((target) => String(target.printedTotal) === hit.total)
+        : []
+      candidates = namedWithTotal.length > 0 ? namedWithTotal : namedAll
+    } else {
+      if (hit.total) {
+        const withTotal = candidates.filter((target) => String(target.printedTotal) === hit.total)
+        if (withTotal.length > 0) candidates = withTotal
+      }
+      if (/^[A-Z]{2,}\d+$/.test(hit.number) && candidates.length <= 10) {
+        // Codes GG/TG assez uniques.
+      } else if (hit.total && candidates.length <= 12) {
+        // Numéro + total connus : le visuel départagera.
+      } else if (hit.total && candidates.length > 12) {
+        candidates = [...candidates]
+          .sort(
+            (a, b) =>
+              (b.hunt?.psa10Usd ?? b.hunt?.rawUsd ?? 0) - (a.hunt?.psa10Usd ?? a.hunt?.rawUsd ?? 0),
+          )
+          .slice(0, 10)
+      } else if (candidates.length > 6) {
+        const collectionOnly = candidates.filter((target) => target.collectionCard)
+        if (collectionOnly.length > 0 && collectionOnly.length <= 6) candidates = collectionOnly
+        else continue
+      }
     }
 
     for (const target of candidates) {
@@ -1028,7 +1074,7 @@ export async function scanCardPhoto(
   const previewUrl = image.toDataURL('image/jpeg', 0.88)
   const card = extractCardCanvas(image)
   const condition = guessCondition(card)
-  const visualSignature = computeVisualSignature(card)
+  const visualSignature = computeVisualSignature(card, true)
   const printedTotals = new Set(
     targets.map((target) => String(target.printedTotal)).filter((value) => value && value !== '0'),
   )
@@ -1042,11 +1088,12 @@ export async function scanCardPhoto(
     return data.text?.trim() ?? ''
   }
 
-  // 1. Bande du nom en haut (sans binarisation : lit aussi les Full Art et textes blancs)
+  // 1. Bande du nom en haut : raw + maxrgb (cartes Feu/Psy/Eau) + inv (textes blancs Full Art)
   const topRegions: { canvas: HTMLCanvasElement; psm: PSM }[] = [
-    { canvas: makeCrop(card, 0.14, 0.025, 0.62, 0.09, 'raw', 2.5), psm: PSM.SINGLE_BLOCK },
-    { canvas: makeCrop(card, 0.04, 0.015, 0.92, 0.15, 'raw', 2.0), psm: PSM.SPARSE_TEXT },
-    { canvas: makeCrop(card, 0.04, 0.015, 0.92, 0.15, 'inv', 2.0), psm: PSM.SPARSE_TEXT },
+    { canvas: makeCrop(card, 0.14, 0.025, 0.65, 0.11, 'maxrgb', 2.6), psm: PSM.SINGLE_BLOCK },
+    { canvas: makeCrop(card, 0.14, 0.025, 0.65, 0.11, 'raw', 2.5), psm: PSM.SINGLE_BLOCK },
+    { canvas: makeCrop(card, 0.04, 0.015, 0.92, 0.16, 'raw', 2.0), psm: PSM.SPARSE_TEXT },
+    { canvas: makeCrop(card, 0.04, 0.015, 0.92, 0.16, 'inv', 2.0), psm: PSM.SPARSE_TEXT },
   ]
   const topTexts: string[] = []
   for (const r of topRegions) {
@@ -1054,12 +1101,12 @@ export async function scanCardPhoto(
     if (t) topTexts.push(t)
   }
 
-  // 2. Numéro en bas à GAUCHE (cartes récentes) ET en bas à DROITE (anciennes cartes)
+  // 2. Numéro en bas à GAUCHE (cartes récentes) ET en bas à DROITE (anciennes cartes / XY)
   const bottomRegions: { canvas: HTMLCanvasElement; psm: PSM }[] = [
-    { canvas: makeCrop(card, 0.02, 0.86, 0.44, 0.13, 'raw', 3.0), psm: PSM.SPARSE_TEXT },
-    { canvas: makeCrop(card, 0.02, 0.86, 0.44, 0.13, 'invcontrast', 3.0), psm: PSM.SPARSE_TEXT },
-    { canvas: makeCrop(card, 0.56, 0.86, 0.42, 0.13, 'raw', 3.0), psm: PSM.SPARSE_TEXT },
-    { canvas: makeCrop(card, 0.56, 0.86, 0.42, 0.13, 'invcontrast', 3.0), psm: PSM.SPARSE_TEXT },
+    { canvas: makeCrop(card, 0.02, 0.87, 0.40, 0.12, 'maxrgb', 3.2), psm: PSM.SPARSE_TEXT },
+    { canvas: makeCrop(card, 0.02, 0.87, 0.40, 0.12, 'invcontrast', 3.2), psm: PSM.SPARSE_TEXT },
+    { canvas: makeCrop(card, 0.68, 0.89, 0.30, 0.10, 'maxrgb', 4.0), psm: PSM.SPARSE_TEXT },
+    { canvas: makeCrop(card, 0.68, 0.89, 0.30, 0.10, 'invcontrast', 4.0), psm: PSM.SPARSE_TEXT },
   ]
   const bottomTexts: string[] = []
   for (const r of bottomRegions) {
@@ -1077,9 +1124,9 @@ export async function scanCardPhoto(
   if (speciesHits.length === 0 && numberHits.length === 0) {
     onProgress?.('Nouvel essai sur toute la photo…')
     const fullFallbacks = [
+      makeCrop(card, 0, 0, 1, 0.25, 'maxrgb', 2.2),
       makeCrop(card, 0, 0, 1, 0.25, 'invcontrast', 2.2),
-      makeCrop(image, 0, 0, 1, 1, 'raw', 1.4),
-      makeCrop(image, 0, 0, 1, 1, 'inv', 1.4),
+      makeCrop(image, 0, 0, 1, 1, 'maxrgb', 1.4),
     ]
     for (const canvas of fullFallbacks) {
       const t = await ocr(canvas, PSM.SPARSE_TEXT)
@@ -1102,10 +1149,19 @@ export async function scanCardPhoto(
   let finalMatches: ScanMatch[]
   // 4. Comparaison visuelle dès qu’on a plusieurs candidats (retrouve LA bonne carte même sans numéro !)
   if (visualPool.length > 1) {
-    onProgress?.(`Comparaison visuelle (${Math.min(visualPool.length, 110)} cartes)…`)
+    onProgress?.(`Comparaison visuelle (${Math.min(visualPool.length, 160)} cartes)…`)
     const baseMap = new Map(rawMatches.map((m) => [m.target.id, m]))
-    const ranked = await rankTargetsVisually(visualPool, visualSignature, baseMap)
+    const ranked = await rankTargetsVisually(visualPool, visualSignature, baseMap, 160)
     finalMatches = finalizeMatches(ranked)
+
+    // Garde-fou anti-faux-positif : si aucun numéro n’a été lu ET que toutes les cartes
+    // ont une ressemblance visuelle très faible (< 18 %), c’était probablement du bruit OCR !
+    const bestVis = finalMatches[0]?.visualPct ?? 0
+    const onlyFuzzyName = numberHits.length === 0 && speciesHits.every((h) => h.fuzzy)
+    if ((onlyFuzzyName && bestVis < 24) || (numberHits.length === 0 && bestVis < 15)) {
+      finalMatches = []
+      speciesHits = []
+    }
   } else {
     finalMatches = finalizeMatches(rawMatches)
   }
