@@ -267,7 +267,19 @@ export function CardScan({ targets, embedded = false, onClose, onConfirm }: Prop
                       onChange={() => setSelectedId(match.target.id)}
                     />
                     {match.target.imageSmall ? (
-                      <img src={match.target.imageSmall} alt="" width={48} height={68} />
+                      <img
+                        src={match.target.imageSmall}
+                        alt=""
+                        width={48}
+                        height={68}
+                        onError={(e) => {
+                          const img = e.currentTarget
+                          if (match.target.imageFallback && img.dataset.fallbackTried !== '1') {
+                            img.dataset.fallbackTried = '1'
+                            img.src = match.target.imageFallback
+                          }
+                        }}
+                      />
                     ) : (
                       <span className="scan-match-fallback" aria-hidden="true" />
                     )}

@@ -144,6 +144,13 @@ export function CardDetailSheet({
             alt={card.name}
             width={245}
             height={342}
+            onError={(e) => {
+              const img = e.currentTarget
+              if (card.imageFallback && img.dataset.fallbackTried !== '1') {
+                img.dataset.fallbackTried = '1'
+                img.src = card.imageFallback
+              }
+            }}
           />
 
           <div className="card-sheet-main">

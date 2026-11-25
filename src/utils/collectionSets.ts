@@ -1,8 +1,15 @@
 import { SETS, type SetInfo } from '../sets'
 import type { PokemonCard } from '../types'
+import {
+  frenchCardImageUrl,
+  frenchSetLogo,
+  normalizeCardNum,
+  type TcgdexFrenchCardInfo,
+} from './frenchSets'
 import { frenchCardName } from './generations'
 import type { PopulationFile, PsaPrinting } from './population'
 import {
+  cardImageUrl,
   catalogSetName,
   catalogSetSearch,
   huntImageUrl,
@@ -91,13 +98,16 @@ export function buildAllCollectionSets(hunt: PsaHuntData | null): CollectionSetI
 
     const displayName = catalogSetName(set)
     const hero = heroCardBySet.get(set.id)
+    const officialLogo = frenchSetLogo(set.id)
+    const heroImg = (hero ? huntImageUrl(hero) : null) ?? ''
     fromHunt.push({
       id: set.id,
       name: displayName,
       shortName: displayName,
       series: set.series || 'Other',
       language: set.language === 'ja' ? 'ja' : 'en',
-      logo: (hero ? huntImageUrl(hero) : null) ?? '',
+      logo: officialLogo || heroImg,
+      logoFallback: officialLogo ? heroImg : undefined,
       cardCount: count,
       featured: false,
       huntSetId: set.id,
@@ -144,7 +154,11 @@ function isReversePrinting(printing: string): boolean {
  * Construit les cartes `PokemonCard[]` d’une série issue du catalogue `psa-hunt.json`
  * pour la suivre dans Collection (cases J’ai / Recherchée / Reverse + côtes).
  */
-export function buildCatalogSetCards(setId: string, hunt: PsaHuntData): PokemonCard[] {
+export function buildCatalogSetCards(
+  setId: string,
+  hunt: PsaHuntData,
+  frenchCards?: Map<string, TcgdexFrenchCardInfo> | null,
+): PokemonCard[] {
   const byCardId = new Map<string, PsaHuntCard[]>()
   for (const row of hunt.cards) {
     if (row.set.id !== setId) continue
@@ -164,20 +178,30 @@ export function buildCatalogSetCards(setId: string, hunt: PsaHuntData): PokemonC
         (a, b) => (a.printing === '' ? -1 : 0) - (b.printing === '' ? -1 : 0) || b.total - a.total,
       )[0] ?? rows[0]
 
-    const img = huntImageUrl(primary) ?? ''
+    const frInfo = frenchCards?.get(normalizeCardNum(primary.number)) ?? null
+    const fallbackImg = cardImageUrl(cardId) ?? ''
+    const frSmall =
+      frInfo?.imageSmall ||
+      (primary.set.language !== 'ja' ? frenchCardImageUrl(setId, primary.number, 'low') : null)
+    const frLarge =
+      frInfo?.imageLarge ||
+      (primary.set.language !== 'ja' ? frenchCardImageUrl(setId, primary.number, 'high') : null)
+
     const normalUsd = primary.rawUsd
     const reverseUsd = reverseRow?.rawUsd ?? null
 
     cards.push({
       id: cardId,
       setId,
-      name: frenchCardName(primary.name),
+      tcgdexId: frInfo?.id,
+      name: frInfo?.name || frenchCardName(primary.name),
       number: primary.number,
       rarity: primary.rarity || 'Autre',
       artist: '',
       types: [],
-      imageSmall: img,
-      imageLarge: img,
+      imageSmall: frSmall || fallbackImg,
+      imageLarge: frLarge || fallbackImg,
+      imageFallback: fallbackImg || undefined,
       hasNormal: true,
       hasReverse: reverseRow != null,
       prices: {

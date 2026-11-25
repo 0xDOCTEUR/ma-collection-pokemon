@@ -21,6 +21,7 @@ export interface PokemonCard {
   types: string[]
   imageSmall: string
   imageLarge: string
+  imageFallback?: string
   hasReverse: boolean
   hasNormal: boolean
   prices: CardPrices

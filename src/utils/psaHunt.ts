@@ -1,3 +1,4 @@
+import { frenchCardImageUrl, frenchSetName } from './frenchSets'
 import { printingLabel } from './population'
 import { rarityFromPrinting, rarityLabel } from './rarity'
 
@@ -6,19 +7,6 @@ export const USD_TO_EUR = 0.92
 
 /** À changer quand public/data/psa-hunt.json ou psa-french.json est régénéré. */
 export const PSA_HUNT_VERSION = '2026-11-25b'
-
-/**
- * Noms affichés. La source anglaise dit « 30th Celebration » :
- * en français, l’extension s’appelle 30ᵉ Anniversaire.
- */
-const SET_LABELS: Record<string, string> = {
-  me55: '30ᵉ Anniversaire',
-  'french-30c-fr-30th-celebration': '30ᵉ Anniversaire',
-  me55c: '30ᵉ Anniversaire — Collection classique',
-  'french-30c-fr-30th-celebration-classic-collection': '30ᵉ Anniversaire — Collection classique',
-  'jp-24721': '30ᵉ Anniversaire (Japon)',
-  'jp-24856': '30ᵉ Anniversaire — decks Mentali et Noctali (Japon)',
-}
 
 /** Mots en plus pour la recherche : « 30 ans », « collection 30 ans », nom anglais. */
 const SET_SEARCH: Record<string, string> = {
@@ -32,7 +20,7 @@ const SET_SEARCH: Record<string, string> = {
 }
 
 export function catalogSetName(set: { id: string; name: string }): string {
-  return SET_LABELS[set.id] ?? set.name
+  return frenchSetName(set.id, set.name)
 }
 
 export function catalogSetSearch(set: { id: string; name: string }): string {
@@ -299,12 +287,24 @@ export function cardImageUrl(cardId: string): string | null {
   return `https://api.cardprice.com/images/cards/${encodeURIComponent(cardId)}.png`
 }
 
-/** Image française quand on connaît la série. Sinon l’image de la source anglaise. */
-export function huntImageUrl(card: PsaHuntCard): string | null {
+/** Image française TCGdex quand la série existe en français. Sinon l’image de la source anglaise. */
+export function huntImageUrl(
+  card: PsaHuntCard,
+  quality: 'low' | 'high' = 'low',
+): string | null {
   if (card.set.id === 'french-mew-fr-151' && /^\d+$/.test(card.number)) {
     const localId = card.number.padStart(3, '0')
-    return `https://assets.tcgdex.net/fr/sv/sv03.5/${localId}/low.webp`
+    return `https://assets.tcgdex.net/fr/sv/sv03.5/${localId}/${quality}.webp`
   }
+  if (card.set.language !== 'ja') {
+    const frUrl = frenchCardImageUrl(card.set.id, card.number, quality)
+    if (frUrl) return frUrl
+  }
+  return cardImageUrl(card.cardId)
+}
+
+/** Image de secours (CardPrice) si la carte précise n’a pas encore de visuel français sur TCGdex. */
+export function huntFallbackImageUrl(card: PsaHuntCard): string | null {
   return cardImageUrl(card.cardId)
 }
 

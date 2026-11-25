@@ -24,6 +24,7 @@ import { useCustomLists } from './hooks/useCustomLists'
 import { SETS, type AppTab } from './sets'
 import type { CardStatus, CardVariant, FilterStatus, PokemonCard, SortKey } from './types'
 import { matchesSearchText } from './utils/frenchNames'
+import { fetchTcgdexFrenchSet, type TcgdexFrenchCardInfo } from './utils/frenchSets'
 import { sortRarities } from './utils/rarity'
 import {
   formatCensusDate,
@@ -132,6 +133,9 @@ export default function App() {
   const [scannedCondition, setScannedCondition] = useState<LooseConditionId | null>(null)
   const [populationBySet, setPopulationBySet] = useState<Record<string, PopulationFile | null>>({})
   const [hunt, setHunt] = useState<PsaHuntData | null>(null)
+  const [tcgdexFrBySet, setTcgdexFrBySet] = useState<
+    Record<string, Map<string, TcgdexFrenchCardInfo> | null>
+  >({})
   const { collections, getStatus, setStatus, markMany, resetSet, savedAt } = useCollection()
   const customLists = useCustomLists()
 
@@ -226,6 +230,22 @@ export default function App() {
     tab === 'catalogue' || tab === 'scan' || tab === 'estimation' || tab === 'listes' || tab === 'lots'
   const activeSet = isToolTab ? null : (allCollectionSets.find((s) => s.id === tab) ?? null)
 
+  useEffect(() => {
+    if (!activeSet || activeSet.featured || activeSet.language === 'ja') return
+    if (activeSet.id in tcgdexFrBySet) return
+    let cancelled = false
+    fetchTcgdexFrenchSet(activeSet.id)
+      .then((map) => {
+        if (!cancelled) {
+          setTcgdexFrBySet((prev) => ({ ...prev, [activeSet.id]: map }))
+        }
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [activeSet, tcgdexFrBySet])
+
   const ownedCountBySet = useMemo(() => {
     const counts: Record<string, number> = {}
     for (const [setId, map] of Object.entries(collections)) {
@@ -252,12 +272,13 @@ export default function App() {
     const next: Record<string, PokemonCard[]> = { ...cardsBySet }
     if (!hunt) return next
     for (const set of trackedSets) {
-      if (!next[set.id] && !set.featured) {
-        next[set.id] = buildCatalogSetCards(set.id, hunt)
-      }
+      if (set.featured) continue
+      // Toujours reconstruire avec les données FR TCGdex dès qu’elles arrivent
+      // (sinon on garderait les noms/images anglais du 1er passage).
+      next[set.id] = buildCatalogSetCards(set.id, hunt, tcgdexFrBySet[set.id])
     }
     return next
-  }, [cardsBySet, hunt, trackedSets])
+  }, [cardsBySet, hunt, trackedSets, tcgdexFrBySet])
 
   const cards = activeSet ? (allCardsBySet[activeSet.id] ?? []) : []
 
@@ -604,17 +625,6 @@ export default function App() {
             </div>
 
             <div className="hero-tools-bar">
-              <div className="hero-stats-mini">
-                <span>
-                  Possédées <strong>{stats.owned}</strong>
-                </span>
-                <span>
-                  Manquantes <strong>{stats.missing}</strong>
-                </span>
-                <span>
-                  Recherchées <strong>{stats.wanted}</strong>
-                </span>
-              </div>
               <div className="hero-tool-actions">
                 <button
                   type="button"
@@ -630,7 +640,7 @@ export default function App() {
                   aria-expanded={openTool === 'export'}
                   onClick={() => setOpenTool((t) => (t === 'export' ? null : 'export'))}
                 >
-                  Exporter des listes
+                  Exporter
                 </button>
                 <button
                   type="button"
@@ -644,7 +654,7 @@ export default function App() {
                     }
                   }}
                 >
-                  Vider cette série
+                  Vider
                 </button>
               </div>
             </div>

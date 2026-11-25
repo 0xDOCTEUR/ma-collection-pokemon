@@ -5,6 +5,7 @@ import {
   cardPotential,
   catalogSetName,
   catalogSetSearch,
+  huntFallbackImageUrl,
   huntImageUrl,
   huntPrintingLabel,
   INDICATOR_FILTERS,
@@ -18,6 +19,11 @@ import {
   type PsaHuntData,
 } from '../utils/psaHunt'
 import { matchesSearchText } from '../utils/frenchNames'
+import {
+  fetchTcgdexFrenchSet,
+  normalizeCardNum,
+  type TcgdexFrenchCardInfo,
+} from '../utils/frenchSets'
 import {
   cardHasGeneration,
   cardHasSpecies,
@@ -235,6 +241,35 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
   useEffect(() => {
     if (setId !== 'all' && !setOptions.some((set) => set.id === setId)) setSetId('all')
   }, [setId, setOptions])
+
+  const [frenchCardsBySet, setFrenchCardsBySet] = useState<
+    Record<string, Map<string, TcgdexFrenchCardInfo> | null>
+  >({})
+
+  useEffect(() => {
+    if (setId === 'all' || setId in frenchCardsBySet) return
+    let cancelled = false
+    fetchTcgdexFrenchSet(setId)
+      .then((map) => {
+        if (!cancelled) {
+          setFrenchCardsBySet((prev) => ({ ...prev, [setId]: map }))
+        }
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [setId, frenchCardsBySet])
+
+  const frenchLabelFor = (card: PsaHuntCard): string => {
+    const fr = frenchCardsBySet[card.set.id]?.get(normalizeCardNum(card.number))
+    return fr?.name || frenchCardName(card.name)
+  }
+
+  const frenchImageFor = (card: PsaHuntCard): string | null => {
+    const fr = frenchCardsBySet[card.set.id]?.get(normalizeCardNum(card.number))
+    return fr?.imageSmall || huntImageUrl(card)
+  }
 
   const choices = useMemo(
     () => pokemonOptions(generation === 'all' ? null : Number(generation)),
@@ -841,9 +876,10 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
           {browsingSet ? (
             <div className="hunt-binder">
               {matches.map((card) => {
-                const image = huntImageUrl(card)
+                const image = frenchImageFor(card)
+                const fallbackImage = huntFallbackImageUrl(card)
                 const price = toEur(card.psa10Usd) ?? toEur(card.rawUsd)
-                const label = frenchCardName(card.name)
+                const label = frenchLabelFor(card)
                 return (
                   <button
                     key={card.key}
@@ -853,7 +889,18 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
                     aria-label={`Carte ${card.number || ''} ${label}`}
                   >
                     {image ? (
-                      <img src={image} alt="" loading="lazy" />
+                      <img
+                        src={image}
+                        alt=""
+                        loading="lazy"
+                        onError={(e) => {
+                          const img = e.currentTarget
+                          if (fallbackImage && img.dataset.fallbackTried !== '1') {
+                            img.dataset.fallbackTried = '1'
+                            img.src = fallbackImage
+                          }
+                        }}
+                      />
                     ) : (
                       <span className="binder-fallback" aria-hidden="true" />
                     )}
@@ -893,7 +940,9 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
           </div>
           <div className={`hunt-grid is-${view}`}>
             {visible.map((card, index) => {
-              const image = huntImageUrl(card)
+              const image = frenchImageFor(card)
+              const fallbackImage = huntFallbackImageUrl(card)
+              const label = frenchLabelFor(card)
               const pageUrl = cardPageUrl(card.slug)
               const psaPrice = toEur(card.psa10Usd)
               const rawPrice = toEur(card.rawUsd)
@@ -916,10 +965,21 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
                       type="button"
                       className="hunt-card-open"
                       onClick={() => onOpenCard(card)}
-                      aria-label={`Voir les côtes de ${frenchCardName(card.name)}`}
+                      aria-label={`Voir les côtes de ${label}`}
                     >
                       {image ? (
-                        <img src={image} alt="" loading="lazy" />
+                        <img
+                          src={image}
+                          alt=""
+                          loading="lazy"
+                          onError={(e) => {
+                            const img = e.currentTarget
+                            if (fallbackImage && img.dataset.fallbackTried !== '1') {
+                              img.dataset.fallbackTried = '1'
+                              img.src = fallbackImage
+                            }
+                          }}
+                        />
                       ) : (
                         <div className="hunt-fallback" aria-hidden="true" />
                       )}
@@ -928,7 +988,7 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
                           #{card.number || '—'} · {catalogSetName(card.set)}
                           {language === 'all' ? ` · ${languageLabel(card.set.language)}` : ''}
                         </p>
-                        <h3>{frenchCardName(card.name)}</h3>
+                        <h3>{label}</h3>
                         <p className="tile-meta">
                           {card.rarity ? `${card.rarity} · ` : ''}
                           {seriesLabel(card.set.series)} · {huntPrintingLabel(card.printing)}

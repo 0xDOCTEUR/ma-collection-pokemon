@@ -92,7 +92,20 @@ export function PokemonCardTile({
         onClick={onOpenDetail}
         title="Voir la cote, la population et le graphique"
       >
-        <img src={card.imageSmall} alt={card.name} loading="lazy" width={245} height={342} />
+        <img
+          src={card.imageSmall}
+          alt={card.name}
+          loading="lazy"
+          width={245}
+          height={342}
+          onError={(e) => {
+            const img = e.currentTarget
+            if (card.imageFallback && img.dataset.fallbackTried !== '1') {
+              img.dataset.fallbackTried = '1'
+              img.src = card.imageFallback
+            }
+          }}
+        />
         <span className="tile-badge">{STATUS_LABEL[overall]}</span>
         <span className="tile-detail-hint">Cote</span>
       </button>

@@ -69,18 +69,118 @@ export function speciesLabel(phrase: string): string {
   return FRENCH_LABEL.get(phrase) ?? titlePhrase(phrase)
 }
 
+const TRAINER_EXACT_FR: Record<string, string> = {
+  'fire energy': 'Énergie Feu',
+  'water energy': 'Énergie Eau',
+  'grass energy': 'Énergie Plante',
+  'lightning energy': 'Énergie Électrique',
+  'psychic energy': 'Énergie Psy',
+  'fighting energy': 'Énergie Combat',
+  'darkness energy': 'Énergie Obscurité',
+  'metal energy': 'Énergie Métal',
+  'fairy energy': 'Énergie Fée',
+  'double colorless energy': 'Double Énergie Incolore',
+  'professor oak': 'Professeur Chen',
+  "professor's research": 'Recherches Professorales',
+  "boss's orders": 'Ordres du Boss',
+  'ultra ball': 'Hyper Ball',
+  'great ball': 'Super Ball',
+  'poke ball': 'Poké Ball',
+  'rare candy': 'Super Bonbon',
+  'energy retrieval': 'Récupération d’Énergie',
+  'energy search': 'Recherche d’Énergie',
+  'energy removal': 'Suppression d’Énergie',
+  'super energy removal': 'Double Suppression d’Énergie',
+  'computer search': 'Recherche Informatique',
+  'item finder': 'Cherche VS',
+  'bill': 'Léo',
+  'switch': 'Échange',
+  'gust of wind': 'Rafale de Vent',
+  'pluspower': 'PlusPower',
+  'defender': 'Défenseur',
+  'full heal': 'Guérison Totale',
+  'revive': 'Rappel',
+  'super potion': 'Super Potion',
+  'pokedex': 'Pokédex',
+}
+
+const PREFIX_TO_SUFFIX_FR: [RegExp, string][] = [
+  [/^Team Rocket[’']s\s+/i, ' de la Team Rocket'],
+  [/^Rocket[’']s\s+/i, ' de Rocket'],
+  [/^Misty[’']s\s+/i, ' d’Ondine'],
+  [/^Brock[’']s\s+/i, ' de Pierre'],
+  [/^Erika[’']s\s+/i, ' d’Erika'],
+  [/^Giovanni[’']s\s+/i, ' de Giovanni'],
+  [/^Sabrina[’']s\s+/i, ' de Morgane'],
+  [/^Blaine[’']s\s+/i, ' d’Auguste'],
+  [/^Lt\.?\s*Surge[’']s\s+/i, ' du Major Bob'],
+  [/^Koga[’']s\s+/i, ' de Koga'],
+  [/^Cynthia[’']s\s+/i, ' de Cynthia'],
+  [/^Lillie[’']s\s+/i, ' de Lilie'],
+  [/^Iono[’']s\s+/i, ' de Mashynn'],
+  [/^Marnie[’']s\s+/i, ' de Rosemary'],
+  [/^Hop[’']s\s+/i, ' de Nabil'],
+  [/^N[’']s\s+/i, ' de N'],
+  [/^Alolan\s+/i, ' d’Alola'],
+  [/^Galarian\s+/i, ' de Galar'],
+  [/^Hisuian\s+/i, ' de Hisui'],
+  [/^Paldean\s+/i, ' de Paldea'],
+  [/^Dark\s+/i, ' Obscur'],
+  [/^Light\s+/i, ' Lumineux'],
+  [/^Shining\s+/i, ' Brillant'],
+  [/^Radiant\s+/i, ' Radieux'],
+]
+
 /** Nom de carte du catalogue (souvent anglais) → affichage français. */
 export function frenchCardName(name: string): string {
-  const species = mainSpecies(name)
-  if (!species) return name
-  const french = speciesLabel(species)
-  const flexible = species
-    .split(' ')
-    .map((part) => escapeRegExp(part))
-    .join('[.\\s’\'-]+')
-  const regex = new RegExp(flexible, 'i')
-  if (regex.test(name)) return name.replace(regex, french)
-  return french
+  const trimmed = name.trim()
+  const exactTrainer = TRAINER_EXACT_FR[trimmed.toLowerCase()]
+  if (exactTrainer) return exactTrainer
+
+  let out = trimmed
+  let movedSuffix = ''
+  for (const [re, suffix] of PREFIX_TO_SUFFIX_FR) {
+    if (re.test(out)) {
+      out = out.replace(re, '')
+      movedSuffix = suffix
+      break
+    }
+  }
+
+  // Remplace tous les noms de Pokémon trouvés (y compris les cartes Escouade « A & B »).
+  const norm = normalizeCardName(out)
+  SPECIES_REGEX.lastIndex = 0
+  const found: string[] = []
+  for (const match of norm.matchAll(SPECIES_REGEX)) {
+    const phrase = match[0].trim()
+    if (phrase && !found.includes(phrase)) found.push(phrase)
+  }
+
+  if (found.length > 0) {
+    for (const species of found) {
+      const french = speciesLabel(species)
+      const flexible = species
+        .split(' ')
+        .map((part) => escapeRegExp(part))
+        .join('[.\\s’\'-]+')
+      const regex = new RegExp(`\\b${flexible}\\b`, 'i')
+      if (regex.test(out)) out = out.replace(regex, french)
+    }
+  } else if (!movedSuffix) {
+    return trimmed
+  }
+
+  if (movedSuffix) {
+    // Insère le suffixe français avant -EX / -GX / V / VMAX / VSTAR / ex / δ s’il y en a un.
+    const tagMatch = out.match(/(\s*-?(?:ex|gx|vmax|vstar|v-union|v|δ|★|lv\.?\s*x)\b.*)$/i)
+    if (tagMatch && tagMatch.index != null) {
+      out = `${out.slice(0, tagMatch.index)}${movedSuffix}${tagMatch[1]}`
+    } else {
+      out = `${out}${movedSuffix}`
+    }
+  }
+
+  return out
 }
 
 const SPECIES_TEST = new Map<string, RegExp>()

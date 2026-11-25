@@ -519,6 +519,13 @@ export function CustomLists({
                           width={42}
                           height={58}
                           crossOrigin="anonymous"
+                          onError={(e) => {
+                            const img = e.currentTarget
+                            if (entry.card.imageFallback && img.dataset.fallbackTried !== '1') {
+                              img.dataset.fallbackTried = '1'
+                              img.src = entry.card.imageFallback
+                            }
+                          }}
                         />
                         <div>
                           <strong>
@@ -729,7 +736,20 @@ function SelectCard({
   return (
     <article className={active ? 'select-tile active' : 'select-tile'}>
       <button type="button" className="tile-media" onClick={() => onToggle('normal')}>
-        <img src={card.imageSmall} alt={card.name} loading="lazy" width={245} height={342} />
+        <img
+          src={card.imageSmall}
+          alt={card.name}
+          loading="lazy"
+          width={245}
+          height={342}
+          onError={(e) => {
+            const img = e.currentTarget
+            if (card.imageFallback && img.dataset.fallbackTried !== '1') {
+              img.dataset.fallbackTried = '1'
+              img.src = card.imageFallback
+            }
+          }}
+        />
       </button>
       <div className="tile-body">
         <div className="tile-top">

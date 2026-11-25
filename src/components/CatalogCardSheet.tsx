@@ -1,12 +1,18 @@
 import { useEffect, useId, useState } from 'react'
 import { formatEuro } from '../api/pokemon'
 import { fetchPsaPrices, loosePrices, type PsaPriceQuote } from '../utils/advicePrice'
+import {
+  fetchTcgdexFrenchSet,
+  normalizeCardNum,
+  type TcgdexFrenchCardInfo,
+} from '../utils/frenchSets'
 import { frenchCardName } from '../utils/generations'
 import { formatCount, formatGemRate, type PsaPrinting } from '../utils/population'
 import {
   cardPageUrl,
   cardPotential,
   catalogSetName,
+  huntFallbackImageUrl,
   huntImageUrl,
   huntPrintingLabel,
   languageLabel,
@@ -43,7 +49,28 @@ export function CatalogCardSheet({
   const psaEur = toEur(card.psa10Usd)
   const loose = rawEur != null && rawEur > 0 ? loosePrices(rawEur) : []
   const potential = cardPotential(card.psa10, card.total, psaEur, rawEur)
-  const image = huntImageUrl(card)
+  const [frInfo, setFrInfo] = useState<TcgdexFrenchCardInfo | null>(null)
+
+  useEffect(() => {
+    if (card.set.language === 'ja') {
+      setFrInfo(null)
+      return
+    }
+    let cancelled = false
+    setFrInfo(null)
+    fetchTcgdexFrenchSet(card.set.id)
+      .then((map) => {
+        if (!cancelled) setFrInfo(map?.get(normalizeCardNum(card.number)) ?? null)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [card.set.id, card.set.language, card.number])
+
+  const displayName = frInfo?.name || frenchCardName(card.name)
+  const image = frInfo?.imageLarge || huntImageUrl(card, 'high')
+  const fallbackImage = huntFallbackImageUrl(card)
   const printing = asPrinting(card)
   const [quote, setQuote] = useState<PsaPriceQuote | null>(null)
   const [quoteState, setQuoteState] = useState<'loading' | 'ready' | 'empty' | 'error'>('loading')
@@ -88,7 +115,7 @@ export function CatalogCardSheet({
             <p className="card-sheet-num">
               #{card.number || '—'} · {catalogSetName(card.set)}
             </p>
-            <h2 id={titleId}>{frenchCardName(card.name)}</h2>
+            <h2 id={titleId}>{displayName}</h2>
             <p className="muted">
               {languageLabel(card.set.language)} · {huntPrintingLabel(card.printing)}
             </p>
@@ -103,9 +130,16 @@ export function CatalogCardSheet({
             <img
               className="card-sheet-art"
               src={image}
-              alt={frenchCardName(card.name)}
+              alt={displayName}
               width={245}
               height={342}
+              onError={(e) => {
+                const img = e.currentTarget
+                if (fallbackImage && img.dataset.fallbackTried !== '1') {
+                  img.dataset.fallbackTried = '1'
+                  img.src = fallbackImage
+                }
+              }}
             />
           ) : (
             <div className="card-sheet-art hunt-fallback" aria-hidden="true" />

@@ -176,7 +176,19 @@ export function GlobalEstimate({ sets = SETS, cardsBySet, getStatus }: Props) {
           <ul className="top-list">
             {topOwned.map((slot) => (
               <li key={`${slot.card.id}-${slot.variant}`}>
-                <img src={slot.card.imageSmall} alt="" width={48} height={67} />
+                <img
+                  src={slot.card.imageSmall}
+                  alt=""
+                  width={48}
+                  height={67}
+                  onError={(e) => {
+                    const img = e.currentTarget
+                    if (slot.card.imageFallback && img.dataset.fallbackTried !== '1') {
+                      img.dataset.fallbackTried = '1'
+                      img.src = slot.card.imageFallback
+                    }
+                  }}
+                />
                 <div>
                   <strong>
                     {slot.card.name}
