@@ -2,9 +2,11 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { LOOSE_CONDITIONS } from '../utils/advicePrice'
 import {
   conditionLabel,
+  rankTargetsVisually,
   scanCardPhoto,
   type LooseConditionId,
   type ScanMatch,
+  type VisualSignature,
 } from '../utils/cardScan'
 import { matchesSearchText } from '../utils/frenchNames'
 import { frenchCardName } from '../utils/generations'
@@ -25,8 +27,11 @@ export function CardScan({ targets, embedded = false, onClose, onConfirm }: Prop
   const videoRef = useRef<HTMLVideoElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
+  const signatureRef = useRef<VisualSignature | null>(null)
   const [step, setStep] = useState<Step>('capture')
+  const [readingStatus, setReadingStatus] = useState('Lecture du nom et du numéro…')
   const [message, setMessage] = useState<string | null>(null)
+  const [manualBusy, setManualBusy] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [matches, setMatches] = useState<ScanMatch[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -86,17 +91,19 @@ export function CardScan({ targets, embedded = false, onClose, onConfirm }: Prop
 
   async function analyze(blob: Blob) {
     setStep('reading')
+    setReadingStatus('Recadrage de la carte…')
     setMessage(null)
     setManualNumber('')
     setManualName('')
+    signatureRef.current = null
     try {
-      const result = await scanCardPhoto(blob, targets)
+      const result = await scanCardPhoto(blob, targets, setReadingStatus)
+      signatureRef.current = result.visualSignature
       setPreviewUrl(result.previewUrl)
       setMatches(result.matches)
       setSelectedId(result.matches[0]?.target.id ?? null)
       setConditionId(result.condition.id)
       setConditionReason(result.condition.reason)
-      // Préremplit la recherche manuelle avec ce que l’OCR a lu.
       if (result.numbers[0]) setManualNumber(result.numbers[0])
       if (result.names[0]) setManualName(result.names[0])
       if (result.matches.length === 0) {
@@ -108,8 +115,8 @@ export function CardScan({ targets, embedded = false, onClose, onConfirm }: Prop
           .join(', ')
         setMessage(
           lu
-            ? `Pas de carte assez sûre (lu : ${lu}). Vérifie ou cherche à la main ci-dessous.`
-            : 'Pas de carte assez sûre. Cadre la carte entière, nom et numéro lisibles, peu de reflet — ou cherche à la main.',
+            ? `Pas de carte assez sûre (lu : ${lu}). Tape juste le nom du Pokémon ci-dessous : la photo aidera à retrouver la bonne carte.`
+            : 'Le texte de cette photo est trop flou ou trop brillant. Tape juste le nom du Pokémon ci-dessous (ex. Maganon ou Mewtwo) : on compare ensuite visuellement avec ta photo.',
         )
       }
       setStep('result')
@@ -144,7 +151,7 @@ export function CardScan({ targets, embedded = false, onClose, onConfirm }: Prop
     void analyze(file)
   }
 
-  function applyManual() {
+  async function applyManual() {
     const rawNumber = manualNumber.trim()
     const number = /^\d+$/.test(rawNumber)
       ? String(Number.parseInt(rawNumber, 10))
@@ -161,15 +168,27 @@ export function CardScan({ targets, embedded = false, onClose, onConfirm }: Prop
       setMessage('Aucune carte trouvée avec ce numéro / ce nom.')
       return
     }
-    const next = list.slice(0, 12).map((target) => ({
-      target,
-      number: target.number,
-      score: 100,
-      why: 'Recherche à la main',
-    }))
-    setMatches(next)
-    setSelectedId(next[0]?.target.id ?? null)
     setMessage(null)
+    if (signatureRef.current && list.length > 1) {
+      setManualBusy(true)
+      try {
+        const ranked = await rankTargetsVisually(list, signatureRef.current)
+        const next = ranked.slice(0, 12)
+        setMatches(next)
+        setSelectedId(next[0]?.target.id ?? null)
+      } finally {
+        setManualBusy(false)
+      }
+    } else {
+      const next = list.slice(0, 12).map((target) => ({
+        target,
+        number: target.number,
+        score: 100,
+        why: 'Recherche à la main',
+      }))
+      setMatches(next)
+      setSelectedId(next[0]?.target.id ?? null)
+    }
     setStep('result')
   }
 
@@ -182,9 +201,9 @@ export function CardScan({ targets, embedded = false, onClose, onConfirm }: Prop
           <p className="card-sheet-num">Scan</p>
           <h2 id={titleId}>Reconnaître une carte</h2>
           <p className="muted">
-            Toutes les séries du catalogue. Cadre la carte (même un peu loin, on la recadre). Nom en
-            haut, numéro en bas à droite — y compris GG03/GG70. La photo reste sur ton appareil.
-            L’état proposé est une estimation : tu confirmes avant le prix.
+            Toutes les séries du catalogue. Cadre la carte (nom en haut, numéro en bas à gauche ou à
+            droite) : l’appli lit le texte puis compare visuellement la carte. La photo reste sur ton
+            appareil.
           </p>
         </div>
         {onClose && (
@@ -217,18 +236,19 @@ export function CardScan({ targets, embedded = false, onClose, onConfirm }: Prop
                 ref={fileRef}
                 type="file"
                 accept="image/*"
-                capture="environment"
                 hidden
-                onChange={(event) => onFile(event.target.files?.[0])}
+                onChange={(event) => {
+                  const file = event.target.files?.[0]
+                  event.target.value = ''
+                  onFile(file)
+                }}
               />
             </div>
             {message && <p className="state-msg">{message}</p>}
           </>
         )}
 
-        {step === 'reading' && (
-          <p className="state-msg">Lecture du nom, du numéro et estimation de l’état…</p>
-        )}
+        {step === 'reading' && <p className="state-msg">{readingStatus}</p>}
 
         {(step === 'result' || step === 'error') && (
           <>
@@ -262,11 +282,11 @@ export function CardScan({ targets, embedded = false, onClose, onConfirm }: Prop
                   </label>
                 ))}
               </div>
-            ) : (
+            ) : !message ? (
               <p className="state-msg">
-                Aucune carte assez sûre. Cherche à la main ci-dessous, ou reprends une photo.
+                Aucune carte assez sûre. Tape le nom du Pokémon ci-dessous ou reprends une photo.
               </p>
-            )}
+            ) : null}
 
             <div className="scan-manual">
               <label>
@@ -274,8 +294,10 @@ export function CardScan({ targets, embedded = false, onClose, onConfirm }: Prop
                 <input
                   value={manualNumber}
                   onChange={(event) => setManualNumber(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') void applyManual()
+                  }}
                   placeholder="150"
-                  inputMode="numeric"
                 />
               </label>
               <label>
@@ -283,11 +305,19 @@ export function CardScan({ targets, embedded = false, onClose, onConfirm }: Prop
                 <input
                   value={manualName}
                   onChange={(event) => setManualName(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') void applyManual()
+                  }}
                   placeholder="Mewtwo"
                 />
               </label>
-              <button type="button" className="btn ghost" onClick={applyManual}>
-                Chercher
+              <button
+                type="button"
+                className="btn ghost"
+                disabled={manualBusy}
+                onClick={() => void applyManual()}
+              >
+                {manualBusy ? 'Comparaison…' : 'Chercher'}
               </button>
             </div>
 
