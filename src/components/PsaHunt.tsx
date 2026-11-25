@@ -93,10 +93,28 @@ function readNumber(value: string): number | null {
   return Number.isFinite(parsed) ? parsed : null
 }
 
-function cardNumberValue(value: string): number {
-  const match = value.match(/\d+/)
-  if (!match) return Number.POSITIVE_INFINITY
-  return Number.parseInt(match[0], 10)
+/** Numéro simple d’abord (1, 2, 3…), puis les numéros avec lettres (TG, SV…). */
+function compareCardNumber(a: PsaHuntCard, b: PsaHuntCard): number {
+  const rank = (value: string) => {
+    const text = value.trim()
+    const prefixed = text.match(/^([A-Za-z]+)(\d+)/)
+    if (prefixed) {
+      return { group: 1, prefix: prefixed[1].toUpperCase(), n: Number.parseInt(prefixed[2], 10) }
+    }
+    const plain = text.match(/\d+/)
+    if (plain) return { group: 0, prefix: '', n: Number.parseInt(plain[0], 10) }
+    return { group: 2, prefix: text.toUpperCase(), n: Number.POSITIVE_INFINITY }
+  }
+  const left = rank(a.number)
+  const right = rank(b.number)
+  return (
+    left.group - right.group ||
+    left.prefix.localeCompare(right.prefix, 'en') ||
+    left.n - right.n ||
+    a.number.localeCompare(b.number, 'en', { numeric: true }) ||
+    a.printing.localeCompare(b.printing, 'en') ||
+    a.name.localeCompare(b.name, 'fr')
+  )
 }
 
 function formatTypedNumber(value: string): string | null {
@@ -299,7 +317,7 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
         const haystack = foldName(`${card.name} ${card.number} ${catalogSetSearch(card.set)}`)
         if (!needles.some((needle) => haystack.includes(needle))) return false
       }
-      if (indicator !== 'all') {
+      if (!browsingSet && indicator !== 'all') {
         const potential = cardPotential(
           card.psa10,
           card.total,
@@ -323,13 +341,7 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
     })
 
     const bySort = (a: PsaHuntCard, b: PsaHuntCard) => {
-      if (activeSort === 'number') {
-        return (
-          cardNumberValue(a.number) - cardNumberValue(b.number) ||
-          a.printing.localeCompare(b.printing, 'en') ||
-          a.name.localeCompare(b.name, 'en')
-        )
-      }
+      if (activeSort === 'number') return compareCardNumber(a, b)
       if (activeSort === 'pop') {
         return a.psa10 - b.psa10 || a.total - b.total || a.name.localeCompare(b.name, 'fr')
       }
@@ -381,8 +393,9 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
     indicator,
   ])
 
-  const visible = matches.slice(0, shown)
+  const visible = browsingSet ? matches : matches.slice(0, shown)
   const pokemonName = pokemon ? speciesLabel(pokemon) : ''
+  const selectedSet = data?.sets.find((set) => set.id === setId) ?? null
 
   const frenchView = language === 'fr'
   const limitBits = [
@@ -435,6 +448,7 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
                   setQuery('')
                   setGeneration('all')
                   setSort('number')
+                  setIndicator('all')
                   setPricedOnly(false)
                   setKeepLimits(false)
                 }
@@ -467,7 +481,7 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
           </label>
           {browsingSet && (
             <p className="hunt-series-hint">
-              Cartes de la série dans l’ordre des numéros (1, 2, 3…).
+              Série complète, dans l’ordre des numéros. Clique une image pour voir les côtes.
             </p>
           )}
         </div>
@@ -486,6 +500,7 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
                 .filter(Boolean)
                 .join(' ')}
               aria-pressed={indicator === option.id}
+              disabled={browsingSet}
               onClick={() => setIndicator(option.id)}
             >
               {option.label}
@@ -659,8 +674,8 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
           <p className="hunt-count">
             <small>
               {countLabel(matches.length)}
-              {setId !== 'all'
-                ? ` · ${setOptions.find((set) => set.id === setId)?.name ?? 'série'}`
+              {selectedSet
+                ? ` · ${catalogSetName(selectedSet)} · dans l’ordre des numéros`
                 : pokemon
                   ? ` · ${pokemonName}`
                   : query.trim()
@@ -699,6 +714,35 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
         <p className="panel state-msg">{emptyMessage()}</p>
       ) : (
         <div className="panel hunt-results">
+          {browsingSet ? (
+            <div className="hunt-binder">
+              {matches.map((card) => {
+                const image = huntImageUrl(card)
+                const price = toEur(card.psa10Usd) ?? toEur(card.rawUsd)
+                const label = frenchCardName(card.name)
+                return (
+                  <button
+                    key={card.key}
+                    type="button"
+                    className="hunt-binder-card"
+                    onClick={() => onOpenCard(card)}
+                    aria-label={`Carte ${card.number || ''} ${label}`}
+                  >
+                    {image ? (
+                      <img src={image} alt="" loading="lazy" />
+                    ) : (
+                      <span className="binder-fallback" aria-hidden="true" />
+                    )}
+                    <span className="binder-num">#{card.number || '—'}</span>
+                    <strong>{label}</strong>
+                    {card.printing ? <em>{huntPrintingLabel(card.printing)}</em> : null}
+                    <small>{money(price)}</small>
+                  </button>
+                )
+              })}
+            </div>
+          ) : (
+            <>
           <div className="hunt-toolbar">
             <div className="hunt-view" role="group" aria-label="Affichage des cartes">
               <span>Affichage</span>
@@ -813,10 +857,12 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
               )
             })}
           </div>
+            </>
+          )}
         </div>
       )}
 
-      {shown < matches.length && (
+      {!browsingSet && shown < matches.length && (
         <button type="button" className="btn ghost hunt-more" onClick={() => setShown((count) => count + PAGE)}>
           Afficher {Math.min(PAGE, matches.length - shown).toLocaleString('fr-FR')} cartes de plus
         </button>
