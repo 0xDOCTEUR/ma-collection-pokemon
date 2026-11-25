@@ -923,38 +923,35 @@ export default function App() {
                     }
                   />
                 </label>
-                <div className="search-scope" role="group" aria-label="Où chercher">
-                  <button
-                    type="button"
-                    className={!isAllSets ? 'is-on' : ''}
-                    aria-pressed={!isAllSets}
-                    title={
-                      isAllSets
-                        ? `Revenir à ${allCollectionSets.find((s) => s.id === lastSeriesId)?.name ?? 'la dernière série'}`
-                        : 'Chercher seulement dans la série ouverte'
-                    }
-                    onClick={searchInLastSeries}
-                  >
-                    Cette série
-                  </button>
-                  <button
-                    type="button"
-                    className={isAllSets ? 'is-on' : ''}
-                    aria-pressed={isAllSets}
-                    title="Chercher un Pokémon dans toutes les séries"
-                    onClick={searchInAllSets}
-                  >
-                    Toutes
-                  </button>
-                </div>
-                {!isAllSets && query.trim().length >= 2 && (
-                  <button
-                    type="button"
-                    className="search-expand-link"
-                    onClick={searchInAllSets}
-                  >
-                    Chercher « {query.trim()} » dans toutes les séries →
-                  </button>
+                {!isAllSets && (
+                  <>
+                    <div className="search-scope" role="group" aria-label="Où chercher">
+                      <button
+                        type="button"
+                        className="is-on"
+                        aria-pressed
+                        title="Chercher seulement dans la série ouverte"
+                      >
+                        Cette série
+                      </button>
+                      <button
+                        type="button"
+                        title="Chercher un Pokémon dans toutes les séries"
+                        onClick={searchInAllSets}
+                      >
+                        Toutes
+                      </button>
+                    </div>
+                    {query.trim().length >= 2 && (
+                      <button
+                        type="button"
+                        className="search-expand-link"
+                        onClick={searchInAllSets}
+                      >
+                        Chercher « {query.trim()} » dans toutes les séries →
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
 
