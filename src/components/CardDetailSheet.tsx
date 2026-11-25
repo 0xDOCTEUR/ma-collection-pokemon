@@ -245,7 +245,7 @@ export function CardDetailSheet({
                 type="button"
                 className="btn primary buy-all-btn"
                 onClick={() => openCardBuySearches(card)}
-                title={`Chercher « ${cardBuyQuery(card)} » sur Cardmarket, Leboncoin et Vinted`}
+                title="Ouvrir Cardmarket, Leboncoin et Vinted avec les bons mots-clés"
               >
                 Acheter
               </button>
@@ -254,9 +254,10 @@ export function CardDetailSheet({
                   <a
                     key={market.id}
                     className="buy-link"
-                    href={searchUrl(market.id, cardBuyQuery(card))}
+                    href={searchUrl(market.id, cardBuyQuery(card, market.id))}
                     target="_blank"
                     rel="noreferrer"
+                    title={cardBuyQuery(card, market.id)}
                   >
                     {market.label}
                   </a>

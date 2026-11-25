@@ -34,29 +34,39 @@ function padCatalogNum(value: string | number): string {
   return raw.padStart(3, '0')
 }
 
-/** Texte de recherche : nom + numéro (ex. « Bulbizarre 001/165 »). */
-export function cardBuyQuery(card: {
+/** Numéro simple sans zéros : 001 → 1, TG01 reste TG01. */
+function plainCatalogNum(value: string | number): string {
+  const raw = String(value).trim()
+  if (!/^\d+$/.test(raw)) return raw
+  return String(Number.parseInt(raw, 10))
+}
+
+type BuyCard = {
   name: string
   number: string
   printedTotal?: number
-}): string {
+}
+
+/**
+ * Mots-clés selon le site :
+ * - Cardmarket : « Bulbizarre 1 »
+ * - Leboncoin / Vinted : « bulbizarre 001/165 »
+ */
+export function cardBuyQuery(card: BuyCard, market: Marketplace = 'cardmarket'): string {
+  if (market === 'cardmarket') {
+    return `${card.name} ${plainCatalogNum(card.number)}`.replace(/\s+/g, ' ').trim()
+  }
   const local = padCatalogNum(card.number)
-  const num =
-    card.printedTotal && card.printedTotal > 0
-      ? `${local}/${padCatalogNum(card.printedTotal)}`
-      : local
-  return `${card.name} ${num}`.replace(/\s+/g, ' ').trim()
+  const total =
+    card.printedTotal && card.printedTotal > 0 ? padCatalogNum(card.printedTotal) : null
+  const num = total ? `${local}/${total}` : local
+  return `${card.name} ${num}`.replace(/\s+/g, ' ').trim().toLowerCase()
 }
 
 /** Ouvre Cardmarket, Leboncoin et Vinted dans de nouveaux onglets. */
-export function openCardBuySearches(card: {
-  name: string
-  number: string
-  printedTotal?: number
-}): void {
-  const query = cardBuyQuery(card)
+export function openCardBuySearches(card: BuyCard): void {
   for (const market of BUY_MARKETPLACES) {
-    window.open(searchUrl(market.id, query), '_blank', 'noopener,noreferrer')
+    window.open(searchUrl(market.id, cardBuyQuery(card, market.id)), '_blank', 'noopener,noreferrer')
   }
 }
 
