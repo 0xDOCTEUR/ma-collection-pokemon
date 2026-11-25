@@ -19,7 +19,8 @@ export function searchUrl(market: Marketplace, query: string): string {
     return `https://www.leboncoin.fr/recherche?text=${q}&category=${LEBONCOIN_COLLECTION}`
   }
   if (market === 'cardmarket') {
-    return `https://www.cardmarket.com/fr/Pokemon/Products/Search?searchString=${q}`
+    // searchMode=v2 = barre de recherche du haut (pas le filtre « Nom » avancé).
+    return `https://www.cardmarket.com/fr/Pokemon/Products/Search?category=-1&searchMode=v2&searchString=${q}`
   }
   if (market === 'vinted') {
     return `https://www.vinted.fr/catalog?search_text=${q}&catalog[]=2319`
@@ -49,14 +50,16 @@ type BuyCard = {
 
 /**
  * Mots-clés selon le site :
- * - Cardmarket : « Bulbizarre 1 »
+ * - Cardmarket : « Bulbizarre 1 » (barre du haut)
  * - Leboncoin / Vinted : « bulbizarre 001/165 »
  */
 export function cardBuyQuery(card: BuyCard, market: Marketplace = 'cardmarket'): string {
+  // Si le numéro stocké contient déjà un « / », ne garder que la partie locale.
+  const localRaw = String(card.number).split('/')[0]?.trim() || String(card.number)
   if (market === 'cardmarket') {
-    return `${card.name} ${plainCatalogNum(card.number)}`.replace(/\s+/g, ' ').trim()
+    return `${card.name} ${plainCatalogNum(localRaw)}`.replace(/\s+/g, ' ').trim()
   }
-  const local = padCatalogNum(card.number)
+  const local = padCatalogNum(localRaw)
   const total =
     card.printedTotal && card.printedTotal > 0 ? padCatalogNum(card.printedTotal) : null
   const num = total ? `${local}/${total}` : local
