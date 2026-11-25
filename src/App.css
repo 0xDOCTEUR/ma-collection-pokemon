@@ -16,10 +16,10 @@
   margin-bottom: 1.15rem;
   position: sticky;
   top: 0.45rem;
-  z-index: 30;
+  z-index: 50;
   padding: 0.45rem 0.65rem 0.45rem 0.75rem;
   border-radius: 18px;
-  background: rgba(10, 14, 20, 0.9);
+  background: rgba(10, 14, 20, 0.92);
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
   backdrop-filter: blur(16px);
@@ -195,7 +195,7 @@
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: 0 22px 54px rgba(0, 0, 0, 0.58);
   overflow: hidden;
-  z-index: 40;
+  z-index: 60;
 }
 
 .nav-submenu-head {
@@ -1241,7 +1241,7 @@
   align-items: end;
   padding: 1rem 1.25rem;
   margin-bottom: 1.25rem;
-  animation: rise 0.8s ease 0.2s both;
+  scroll-margin-top: 5.5rem;
 }
 
 label {
@@ -1255,27 +1255,29 @@ input,
 select {
   width: 100%;
   border-radius: 12px;
-  border: 1px solid var(--line);
-  background: rgba(0, 0, 0, 0.28);
-  padding: 0.7rem 0.85rem;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: #121925;
+  padding: 0.68rem 0.85rem;
   outline: none;
   color: var(--text);
+  font-weight: 500;
 }
 
-/* Menus natifs Windows : fond clair + texte foncé = lisible */
+/* Menus déroulants harmonisés au thème sombre (lisibles sur Windows, macOS et mobile) */
 select {
-  color-scheme: light;
-  background-color: #f4f1ec;
-  color: #0c1118;
-  border-color: rgba(255, 255, 255, 0.22);
+  color-scheme: dark;
+  background-color: #121925;
+  color: var(--text);
+  border-color: rgba(255, 255, 255, 0.16);
   font-weight: 600;
+  cursor: pointer;
 }
 
 select option,
 select optgroup {
-  background-color: #ffffff;
-  color: #0c1118;
-  font-weight: 600;
+  background-color: #121925;
+  color: #f4f1ec;
+  font-weight: 500;
 }
 
 input:focus,
@@ -1461,13 +1463,12 @@ textarea:focus {
 .card-sheet-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 40;
+  z-index: 100;
   display: grid;
   place-items: end center;
   padding: 0.75rem;
-  background: rgba(4, 8, 14, 0.72);
+  background: rgba(4, 8, 14, 0.76);
   backdrop-filter: blur(8px);
-  animation: rise 0.25s ease both;
 }
 
 .card-sheet {
@@ -2846,5 +2847,395 @@ textarea:focus {
       'price'
       'potential'
       'links';
+  }
+}
+
+/* --- Bandeau compact de série (Collection) --- */
+.hero.hero-compact {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.9rem;
+  padding: 1.05rem 1.25rem;
+  margin-bottom: 0.95rem;
+  animation: none;
+}
+
+.hero-compact-main {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.set-logo-compact {
+  width: 68px;
+  height: 68px;
+  object-fit: contain;
+  border-radius: 10px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.35));
+}
+
+.hero-compact-copy {
+  flex: 1;
+  min-width: 200px;
+}
+
+.hero-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+.hero-compact-copy h1 {
+  font-size: clamp(1.35rem, 2.6vw, 1.9rem);
+  margin: 0;
+  line-height: 1.15;
+}
+
+.hero-compact-copy .save-pill {
+  margin: 0;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.6rem;
+}
+
+.hero-sub {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.hero-sub strong {
+  color: var(--text);
+}
+
+.progress-ring-sm {
+  width: 74px;
+  height: 74px;
+  flex-shrink: 0;
+}
+
+.progress-ring-sm strong {
+  font-size: 1.1rem;
+}
+
+.progress-ring-sm span {
+  font-size: 0.62rem;
+}
+
+.hero-tools-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.hero-stats-mini {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem 1.1rem;
+  font-size: 0.84rem;
+  color: var(--muted);
+}
+
+.hero-stats-mini strong {
+  color: var(--text);
+  margin-left: 0.2rem;
+}
+
+.hero-tool-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.hero-tool-actions .btn {
+  padding: 0.42rem 0.78rem;
+  font-size: 0.84rem;
+}
+
+/* --- Sections Filtres unifiées (Collection, Catalogue, Listes) --- */
+.controls-stack {
+  display: grid;
+  gap: 0.85rem;
+  padding: 0.95rem 1.15rem;
+  margin-bottom: 1rem;
+  scroll-margin-top: 5.5rem;
+}
+
+.status-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.status-pill {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--muted);
+  padding: 0.36rem 0.75rem;
+  font-size: 0.83rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.status-pill:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.status-pill small {
+  font-size: 0.72rem;
+  padding: 0.08rem 0.38rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+}
+
+.status-pill.active {
+  background: linear-gradient(135deg, var(--red), var(--red-deep));
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(230, 57, 70, 0.28);
+}
+
+.status-pill.active small {
+  background: rgba(0, 0, 0, 0.22);
+}
+
+.controls-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.5fr) repeat(2, minmax(150px, 1fr)) auto;
+  gap: 0.75rem;
+  align-items: end;
+}
+
+.list-controls-row {
+  grid-template-columns: minmax(180px, 1.4fr) repeat(2, minmax(140px, 1fr)) auto auto;
+}
+
+.density-toggle {
+  display: inline-flex;
+  padding: 0.22rem;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: #121925;
+  gap: 0.2rem;
+}
+
+.density-toggle button {
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--muted);
+  padding: 0.48rem 0.7rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.density-toggle button.is-on {
+  background: rgba(255, 213, 106, 0.16);
+  color: var(--gold);
+}
+
+.filter-btn-active {
+  border-color: rgba(255, 213, 106, 0.48) !important;
+  color: var(--gold) !important;
+  background: rgba(255, 213, 106, 0.09) !important;
+}
+
+.active-filters-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.filter-tag {
+  border: 1px solid rgba(255, 213, 106, 0.35);
+  border-radius: 999px;
+  background: rgba(255, 213, 106, 0.1);
+  color: #ffe7a3;
+  padding: 0.24rem 0.62rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+}
+
+.filter-tag:hover {
+  background: rgba(255, 213, 106, 0.2);
+}
+
+.filter-clear-link {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.24rem 0.45rem;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.filter-clear-link:hover {
+  color: var(--text);
+}
+
+/* --- Aide PSA pliable --- */
+.pop-hint-wrap {
+  margin-bottom: 0.75rem;
+}
+
+.pop-hint-toggle {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.2rem 0;
+  cursor: pointer;
+}
+
+.pop-hint-toggle:hover {
+  color: var(--gold);
+}
+
+.pop-hint-wrap .pop-hint {
+  margin-top: 0.45rem;
+}
+
+/* --- Grille compacte & pastille sous la rareté (zéro chevauchement sur l'image) --- */
+.tile-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.45rem;
+  margin-bottom: 0.25rem;
+}
+
+.tile-meta-row .tile-meta {
+  margin: 0;
+}
+
+.grid.grid-compact {
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 0.75rem;
+}
+
+.grid.grid-compact .tile-body {
+  padding: 0.65rem;
+}
+
+.grid.grid-compact .tile-name {
+  font-size: 0.92rem;
+}
+
+/* --- Ajout direct à la collection dans les fiches Catalogue & Détail --- */
+.sheet-collection-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 0.9rem;
+  margin-bottom: 0.85rem;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sheet-collection-state {
+  display: block;
+  font-size: 0.92rem;
+  color: var(--text);
+}
+
+.sheet-collection-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+/* --- Sauvegarde compacte en bas de page --- */
+.backup-panel.backup-compact {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  padding: 0.85rem 1.15rem;
+  margin-top: 2rem;
+}
+
+.backup-copy {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem 0.75rem;
+  font-size: 0.88rem;
+}
+
+.backup-actions {
+  display: flex;
+  gap: 0.45rem;
+}
+
+.backup-actions .btn {
+  padding: 0.42rem 0.85rem;
+  font-size: 0.84rem;
+}
+
+/* --- Bouton retour en haut --- */
+.scroll-top-btn {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 45;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  background: rgba(12, 17, 26, 0.92);
+  color: var(--text);
+  padding: 0.52rem 0.9rem;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(10px);
+}
+
+.scroll-top-btn:hover {
+  border-color: rgba(255, 213, 106, 0.55);
+  color: var(--gold);
+}
+
+@media (max-width: 820px) {
+  .controls-row,
+  .list-controls-row {
+    grid-template-columns: 1fr;
+  }
+
+  .density-toggle {
+    width: 100%;
+  }
+
+  .density-toggle button {
+    flex: 1;
   }
 }

@@ -13,6 +13,7 @@ import {
   toEur,
   type PsaHuntCard,
 } from '../utils/psaHunt'
+import type { CardStatus } from '../types'
 import { PotentialStamp } from './PotentialStamp'
 
 interface Props {
@@ -20,13 +21,23 @@ interface Props {
   onClose: () => void
   /** État confirmé après un scan. */
   highlightedCondition?: string | null
+  collectionStatus?: CardStatus
+  collectionVariantLabel?: string
+  onSetCollectionStatus?: (status: CardStatus) => void
 }
 
 function asPrinting(card: PsaHuntCard): PsaPrinting {
   return { label: card.printing || 'Normal', total: card.total, psa10: card.psa10, updatedAt: null }
 }
 
-export function CatalogCardSheet({ card, onClose, highlightedCondition = null }: Props) {
+export function CatalogCardSheet({
+  card,
+  onClose,
+  highlightedCondition = null,
+  collectionStatus = 'missing',
+  collectionVariantLabel,
+  onSetCollectionStatus,
+}: Props) {
   const titleId = useId()
   const rawEur = toEur(card.rawUsd)
   const psaEur = toEur(card.psa10Usd)
@@ -101,6 +112,43 @@ export function CatalogCardSheet({ card, onClose, highlightedCondition = null }:
           )}
 
           <div className="card-sheet-main">
+            {onSetCollectionStatus && (
+              <div className="sheet-collection-bar">
+                <div>
+                  <span className="stat-label">
+                    Ma collection{collectionVariantLabel ? ` · ${collectionVariantLabel}` : ''}
+                  </span>
+                  <strong className="sheet-collection-state">
+                    {collectionStatus === 'owned'
+                      ? 'Dans ta collection'
+                      : collectionStatus === 'wanted'
+                        ? 'Marquée comme recherchée'
+                        : 'Pas encore ajoutée'}
+                  </strong>
+                </div>
+                <div className="sheet-collection-actions">
+                  <button
+                    type="button"
+                    className={collectionStatus === 'owned' ? 'chip active-owned' : 'chip'}
+                    onClick={() =>
+                      onSetCollectionStatus(collectionStatus === 'owned' ? 'missing' : 'owned')
+                    }
+                  >
+                    {collectionStatus === 'owned' ? '✓ J’ai' : '+ J’ai'}
+                  </button>
+                  <button
+                    type="button"
+                    className={collectionStatus === 'wanted' ? 'chip active-wanted' : 'chip'}
+                    onClick={() =>
+                      onSetCollectionStatus(collectionStatus === 'wanted' ? 'missing' : 'wanted')
+                    }
+                  >
+                    {collectionStatus === 'wanted' ? '★ Recherchée' : 'Je cherche'}
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div className="card-sheet-prices">
               <div>
                 <span className="stat-label">Côte sans note</span>

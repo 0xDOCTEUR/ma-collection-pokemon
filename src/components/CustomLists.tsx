@@ -618,65 +618,76 @@ export function CustomLists({
               </section>
 
               <h3 className="list-picker-title">Ajouter ou retirer des cartes</h3>
-              <section className="controls panel list-controls">
-                <label className="search">
-                  Recherche
-                  <input
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Nom ou numéro"
-                  />
-                </label>
+              <section className="controls-stack panel list-controls-wrap">
+                <div className="status-pills" role="group" aria-label="Filtrer par statut">
+                  {(
+                    [
+                      ['all', 'Toutes'],
+                      ['owned', 'Possédées'],
+                      ['missing', 'Manquantes'],
+                      ['wanted', 'Recherchées'],
+                      ['reverse-missing', 'Reverse manquantes'],
+                      ['reverse-owned', 'Reverse possédées'],
+                    ] as [FilterStatus, string][]
+                  ).map(([id, label]) => (
+                    <button
+                      key={id}
+                      type="button"
+                      className={filter === id ? 'status-pill active' : 'status-pill'}
+                      onClick={() => setFilter(id)}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
 
-                <label>
-                  Statut
-                  <select
-                    value={filter}
-                    onChange={(e) => setFilter(e.target.value as FilterStatus)}
-                  >
-                    <option value="all">Toutes</option>
-                    <option value="owned">Possédées</option>
-                    <option value="missing">Manquantes</option>
-                    <option value="wanted">Recherchées</option>
-                    <option value="reverse-missing">Reverse manquantes</option>
-                    <option value="reverse-owned">Reverse possédées</option>
-                  </select>
-                </label>
+                <div className="controls-row list-controls-row">
+                  <label className="search">
+                    Recherche
+                    <input
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      placeholder="Nom ou numéro"
+                    />
+                  </label>
 
-                <label>
-                  Rareté
-                  <select value={rarity} onChange={(e) => setRarity(e.target.value)}>
-                    <option value="all">Toutes</option>
-                    {rarities.map((r) => (
-                      <option key={r} value={r}>
-                        {r}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                  <label>
+                    Rareté
+                    <select value={rarity} onChange={(e) => setRarity(e.target.value)}>
+                      <option value="all">Toutes</option>
+                      {rarities.map((r) => (
+                        <option key={r} value={r}>
+                          {r}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
 
-                <label>
-                  Tri
-                  <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)}>
-                    <option value="number">Numéro</option>
-                    <option value="name">Nom</option>
-                    <option value="price-desc">Côte décroissante</option>
-                    <option value="price-asc">Côte croissante</option>
-                  </select>
-                </label>
+                  <label>
+                    Tri
+                    <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)}>
+                      <option value="number">Numéro</option>
+                      <option value="name">Nom</option>
+                      <option value="price-desc">Côte décroissante</option>
+                      <option value="price-asc">Côte croissante</option>
+                    </select>
+                  </label>
 
-                <label className="checkbox-line">
-                  <input
-                    type="checkbox"
-                    checked={onlySelected}
-                    onChange={(e) => setOnlySelected(e.target.checked)}
-                  />
-                  Afficher seulement la sélection
-                </label>
+                  <label className="checkbox-line">
+                    <input
+                      type="checkbox"
+                      checked={onlySelected}
+                      onChange={(e) => setOnlySelected(e.target.checked)}
+                    />
+                    Seulement ma sélection
+                  </label>
 
-                <button type="button" className="btn ghost danger" onClick={resetFilters}>
-                  Réinitialiser
-                </button>
+                  {(query || filter !== 'all' || rarity !== 'all' || sort !== 'number' || onlySelected) && (
+                    <button type="button" className="btn ghost" onClick={resetFilters}>
+                      Effacer les filtres
+                    </button>
+                  )}
+                </div>
               </section>
               <p className="result-count">
                 {visibleCards.length} carte{visibleCards.length > 1 ? 's' : ''} affichée

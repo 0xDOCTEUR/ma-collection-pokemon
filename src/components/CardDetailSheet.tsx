@@ -5,7 +5,13 @@ import {
   formatEuro,
   formatPrice,
 } from '../api/pokemon'
-import type { CardmarketLiveStats, PokemonCard, PriceRangeDays } from '../types'
+import type {
+  CardmarketLiveStats,
+  CardStatus,
+  CardVariant,
+  PokemonCard,
+  PriceRangeDays,
+} from '../types'
 import { buildTrendPoints, recordPriceSnapshot } from '../utils/priceHistory'
 import { PriceTrendChart } from './PriceTrendChart'
 import { AdvicePrices } from './AdvicePrices'
@@ -37,6 +43,9 @@ interface Props {
   potential?: CardPotential | null
   /** État confirmé après un scan, pour le prix conseillé sans note. */
   scannedCondition?: string | null
+  normalStatus?: CardStatus
+  reverseStatus?: CardStatus
+  onSetStatus?: (variant: CardVariant, status: CardStatus) => void
 }
 
 export function CardDetailSheet({
@@ -53,6 +62,9 @@ export function CardDetailSheet({
   frenchCensusDate = null,
   potential = null,
   scannedCondition = null,
+  normalStatus = 'missing',
+  reverseStatus = 'missing',
+  onSetStatus,
 }: Props) {
   const titleId = useId()
   const [range, setRange] = useState<PriceRangeDays>(30)
@@ -135,6 +147,53 @@ export function CardDetailSheet({
           />
 
           <div className="card-sheet-main">
+            {onSetStatus && (
+              <div className="sheet-collection-bar">
+                <div>
+                  <span className="stat-label">Ma collection</span>
+                  <strong className="sheet-collection-state">
+                    {normalStatus === 'owned' || (card.hasReverse && reverseStatus === 'owned')
+                      ? 'Dans ta collection'
+                      : normalStatus === 'wanted' ||
+                          (card.hasReverse && reverseStatus === 'wanted')
+                        ? 'Marquée comme recherchée'
+                        : 'Pas encore ajoutée'}
+                  </strong>
+                </div>
+                <div className="sheet-collection-actions">
+                  <button
+                    type="button"
+                    className={normalStatus === 'owned' ? 'chip active-owned' : 'chip'}
+                    onClick={() =>
+                      onSetStatus('normal', normalStatus === 'owned' ? 'missing' : 'owned')
+                    }
+                  >
+                    {normalStatus === 'owned' ? '✓ J’ai' : '+ J’ai'}
+                  </button>
+                  <button
+                    type="button"
+                    className={normalStatus === 'wanted' ? 'chip active-wanted' : 'chip'}
+                    onClick={() =>
+                      onSetStatus('normal', normalStatus === 'wanted' ? 'missing' : 'wanted')
+                    }
+                  >
+                    {normalStatus === 'wanted' ? '★ Recherchée' : 'Je cherche'}
+                  </button>
+                  {card.hasReverse && (
+                    <button
+                      type="button"
+                      className={reverseStatus === 'owned' ? 'chip active-owned' : 'chip'}
+                      onClick={() =>
+                        onSetStatus('reverse', reverseStatus === 'owned' ? 'missing' : 'owned')
+                      }
+                    >
+                      {reverseStatus === 'owned' ? '✓ J’ai reverse' : '+ Reverse'}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
             <div className="card-sheet-prices">
               <div>
                 <span className="stat-label">TCGPlayer</span>

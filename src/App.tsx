@@ -75,12 +75,46 @@ function trackSlot(
   }
 }
 
+const FILTER_STATUS_LABEL: Record<FilterStatus, string> = {
+  all: 'Toutes',
+  owned: 'Possédées',
+  missing: 'Manquantes',
+  wanted: 'Recherchées',
+  'reverse-missing': 'Reverse manquantes',
+  'reverse-owned': 'Reverse possédées',
+}
+
 const COLLECTION_HUNT_SET: Record<string, string> = {
   'sv03.5': 'sv3pt5',
 }
 
+const HUNT_TO_COLLECTION_SET: Record<string, string> = {
+  sv3pt5: 'sv03.5',
+}
+
+const LAST_SET_KEY = 'pokedoc-last-set'
+const COLLECTION_DENSITY_KEY = 'pokedoc-collection-density'
+
+function readInitialTab(): AppTab {
+  try {
+    const saved = localStorage.getItem(LAST_SET_KEY)
+    if (saved) return saved
+  } catch {
+    /* ignore */
+  }
+  return 'sv03.5'
+}
+
+function readDensity(): 'normal' | 'compact' {
+  try {
+    return localStorage.getItem(COLLECTION_DENSITY_KEY) === 'compact' ? 'compact' : 'normal'
+  } catch {
+    return 'normal'
+  }
+}
+
 export default function App() {
-  const [tab, setTab] = useState<AppTab>('sv03.5')
+  const [tab, setTab] = useState<AppTab>(() => readInitialTab())
   const [cardsBySet, setCardsBySet] = useState<Record<string, PokemonCard[]>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -89,6 +123,10 @@ export default function App() {
   const [filter, setFilter] = useState<FilterStatus>('all')
   const [rarity, setRarity] = useState('all')
   const [sort, setSort] = useState<SortKey>('number')
+  const [density, setDensity] = useState<'normal' | 'compact'>(() => readDensity())
+  const [openTool, setOpenTool] = useState<'quick' | 'export' | null>(null)
+  const [showPopHelp, setShowPopHelp] = useState(false)
+  const [showScrollTop, setShowScrollTop] = useState(false)
   const [detailCard, setDetailCard] = useState<PokemonCard | null>(null)
   const [catalogCard, setCatalogCard] = useState<PsaHuntCard | null>(null)
   const [scannedCondition, setScannedCondition] = useState<LooseConditionId | null>(null)
@@ -96,6 +134,20 @@ export default function App() {
   const [hunt, setHunt] = useState<PsaHuntData | null>(null)
   const { collections, getStatus, setStatus, markMany, resetSet, savedAt } = useCollection()
   const customLists = useCustomLists()
+
+  useEffect(() => {
+    const onScroll = () => setShowScrollTop(window.scrollY > 520)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(COLLECTION_DENSITY_KEY, density)
+    } catch {
+      /* ignore */
+    }
+  }, [density])
 
   useEffect(() => {
     let cancelled = false
@@ -369,7 +421,43 @@ export default function App() {
     setFilter('all')
     setRarity('all')
     setSort('number')
-  }, [tab])
+    setOpenTool(null)
+    if (!isToolTab) {
+      try {
+        localStorage.setItem(LAST_SET_KEY, tab)
+      } catch {
+        /* ignore */
+      }
+    }
+  }, [tab, isToolTab])
+
+  const setHasAnyReverse = useMemo(() => cards.some((c) => c.hasReverse), [cards])
+
+  const statusCounts = useMemo(() => {
+    let owned = 0
+    let missing = 0
+    let wanted = 0
+    let reverseMissing = 0
+    let reverseOwned = 0
+    for (const { card, normalStatus, reverseStatus } of enriched) {
+      if (normalStatus === 'owned' || (card.hasReverse && reverseStatus === 'owned')) owned += 1
+      if (normalStatus === 'missing' || (card.hasReverse && reverseStatus === 'missing')) missing += 1
+      if (normalStatus === 'wanted' || (card.hasReverse && reverseStatus === 'wanted')) wanted += 1
+      if (card.hasReverse && reverseStatus === 'missing') reverseMissing += 1
+      if (card.hasReverse && reverseStatus === 'owned') reverseOwned += 1
+    }
+    return { all: enriched.length, owned, missing, wanted, reverseMissing, reverseOwned }
+  }, [enriched])
+
+  const hasActiveCollectionFilters =
+    query.trim() !== '' || filter !== 'all' || rarity !== 'all' || sort !== 'number'
+
+  function clearCollectionFilters() {
+    setQuery('')
+    setFilter('all')
+    setRarity('all')
+    setSort('number')
+  }
 
   const savedLabel = savedAt
     ? `Sauvegardé à ${new Date(savedAt).toLocaleTimeString('fr-FR', {
@@ -479,174 +567,281 @@ export default function App() {
         )
       ) : (
         <>
-          <header className="hero">
-            <div className="hero-copy">
-              <PokedocLogo className="hero-logo" />
-              <p className="brand">{activeSet?.name}</p>
-              <h1>Ta collection, claire et à jour</h1>
-              <p className="lede">
-                Noms en français, versions normales et reverse, côtes en euros. Tout est enregistré
-                automatiquement dans ce navigateur.
-              </p>
-              <p className="save-pill">{savedLabel}</p>
-              <div className="hero-cta">
-                <a className="btn primary" href="#grille">
-                  Voir les cartes
-                </a>
-                <button type="button" className="btn ghost" onClick={() => setTab('estimation')}>
-                  Voir l’estimation globale
-                </button>
-              </div>
-            </div>
-            <div className="hero-visual">
-              {activeSet && (
+          <header className="hero hero-compact panel">
+            <div className="hero-compact-main">
+              {activeSet && activeSet.logo && (
                 <img
                   src={activeSet.logo}
                   alt={`Logo ${activeSet.name}`}
-                  className="set-logo"
+                  className="set-logo-compact"
                   onError={(e) => {
                     if (activeSet.logoFallback) {
                       ;(e.currentTarget as HTMLImageElement).src = activeSet.logoFallback
+                    } else {
+                      ;(e.currentTarget as HTMLImageElement).style.display = 'none'
                     }
                   }}
                 />
               )}
-              <div className="progress-ring" style={{ ['--p' as string]: `${stats.progress}%` }}>
+              <div className="hero-compact-copy">
+                <div className="hero-title-row">
+                  <h1>{activeSet?.name ?? 'Collection'}</h1>
+                  <span className="save-pill">{savedLabel}</span>
+                </div>
+                <p className="hero-sub">
+                  {stats.owned}/{stats.totalSlots} cartes possédées · Valeur estimée{' '}
+                  <strong>{money(stats.ownedValue)}</strong> · Restant{' '}
+                  <strong>{money(stats.missingValue)}</strong>
+                </p>
+              </div>
+              <div
+                className="progress-ring progress-ring-sm"
+                style={{ ['--p' as string]: `${stats.progress}%` }}
+              >
                 <strong>{Math.round(stats.progress)}%</strong>
                 <span>complétée</span>
               </div>
             </div>
+
+            <div className="hero-tools-bar">
+              <div className="hero-stats-mini">
+                <span>
+                  Possédées <strong>{stats.owned}</strong>
+                </span>
+                <span>
+                  Manquantes <strong>{stats.missing}</strong>
+                </span>
+                <span>
+                  Recherchées <strong>{stats.wanted}</strong>
+                </span>
+              </div>
+              <div className="hero-tool-actions">
+                <button
+                  type="button"
+                  className={openTool === 'quick' ? 'btn ghost filter-btn-active' : 'btn ghost'}
+                  aria-expanded={openTool === 'quick'}
+                  onClick={() => setOpenTool((t) => (t === 'quick' ? null : 'quick'))}
+                >
+                  + Ajout rapide
+                </button>
+                <button
+                  type="button"
+                  className={openTool === 'export' ? 'btn ghost filter-btn-active' : 'btn ghost'}
+                  aria-expanded={openTool === 'export'}
+                  onClick={() => setOpenTool((t) => (t === 'export' ? null : 'export'))}
+                >
+                  Exporter des listes
+                </button>
+                <button
+                  type="button"
+                  className="btn ghost danger"
+                  onClick={() => {
+                    if (
+                      activeSet &&
+                      window.confirm(`Vider toutes tes cartes cochées dans « ${activeSet.name} » ?`)
+                    ) {
+                      resetSet(activeSet.id)
+                    }
+                  }}
+                >
+                  Vider cette série
+                </button>
+              </div>
+            </div>
           </header>
 
-          <section className="stats panel">
-            <div>
-              <span className="stat-label">Possédées</span>
-              <strong>
-                {stats.owned}
-                <small>/{stats.totalSlots}</small>
-              </strong>
-            </div>
-            <div>
-              <span className="stat-label">Manquantes</span>
-              <strong>{stats.missing}</strong>
-            </div>
-            <div>
-              <span className="stat-label">Recherchées</span>
-              <strong>{stats.wanted}</strong>
-            </div>
-            <div>
-              <span className="stat-label">Valeur de ta sélection</span>
-              <strong>{money(stats.ownedValue)}</strong>
-            </div>
-            <div>
-              <span className="stat-label">Coût restant estimé</span>
-              <strong>{money(stats.missingValue)}</strong>
-            </div>
-          </section>
-
-          {activeSet && (
+          {openTool === 'quick' && activeSet && (
             <QuickAdd
               cards={cards}
               onApply={(ids, status, variant) => markMany(activeSet.id, ids, status, variant)}
             />
           )}
 
-          {activeSet && (
+          {openTool === 'export' && activeSet && (
             <ExportPanel setName={activeSet.name} cards={cards} getStatus={getActiveStatus} />
           )}
 
-          <section className="controls panel" id="grille">
-            <label className="search">
-              Recherche
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Nom ou numéro"
-              />
-            </label>
+          <section className="controls-stack panel" id="grille">
+            <div className="status-pills" role="group" aria-label="Filtrer par statut">
+              {(
+                [
+                  ['all', 'Toutes', statusCounts.all],
+                  ['owned', 'Possédées', statusCounts.owned],
+                  ['missing', 'Manquantes', statusCounts.missing],
+                  ['wanted', 'Recherchées', statusCounts.wanted],
+                  ...(setHasAnyReverse
+                    ? ([
+                        ['reverse-missing', 'Reverse manquantes', statusCounts.reverseMissing],
+                        ['reverse-owned', 'Reverse possédées', statusCounts.reverseOwned],
+                      ] as [FilterStatus, string, number][])
+                    : []),
+                ] as [FilterStatus, string, number][]
+              ).map(([id, label, count]) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={filter === id ? 'status-pill active' : 'status-pill'}
+                  onClick={() => setFilter(id)}
+                >
+                  <span>{label}</span>
+                  <small>{count}</small>
+                </button>
+              ))}
+            </div>
 
-            <label>
-              Statut
-              <select value={filter} onChange={(e) => setFilter(e.target.value as FilterStatus)}>
-                <option value="all">Toutes</option>
-                <option value="owned">Possédées</option>
-                <option value="missing">Manquantes</option>
-                <option value="wanted">Recherchées</option>
-                <option value="reverse-missing">Reverse manquantes</option>
-                <option value="reverse-owned">Reverse possédées</option>
-              </select>
-            </label>
+            <div className="controls-row">
+              <label className="search">
+                Recherche
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Nom ou numéro…"
+                />
+              </label>
 
-            <label>
-              Rareté
-              <select value={rarity} onChange={(e) => setRarity(e.target.value)}>
-                <option value="all">Toutes</option>
-                {rarities.map((r) => (
-                  <option key={r} value={r}>
-                    {r}
-                  </option>
-                ))}
-              </select>
-            </label>
+              <label>
+                Rareté
+                <select value={rarity} onChange={(e) => setRarity(e.target.value)}>
+                  <option value="all">Toutes les raretés</option>
+                  {rarities.map((r) => (
+                    <option key={r} value={r}>
+                      {r}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
-            <label>
-              Tri
-              <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)}>
-                <option value="number">Numéro</option>
-                <option value="name">Nom</option>
-                <option value="price-desc">Côte décroissante</option>
-                <option value="price-asc">Côte croissante</option>
-                <option value="pop-asc">PSA 10 : plus rares d’abord</option>
-                <option value="pop-desc">PSA 10 : plus courantes d’abord</option>
-              </select>
-            </label>
+              <label>
+                Tri
+                <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)}>
+                  <option value="number">Numéro</option>
+                  <option value="name">Nom</option>
+                  <option value="price-desc">Côte décroissante</option>
+                  <option value="price-asc">Côte croissante</option>
+                  <option value="pop-asc">PSA 10 : plus rares d’abord</option>
+                  <option value="pop-desc">PSA 10 : plus courantes d’abord</option>
+                </select>
+              </label>
 
-            <button
-              type="button"
-              className="btn ghost danger"
-              onClick={() => {
-                if (
-                  activeSet &&
-                  window.confirm(`Effacer ta collection « ${activeSet.name} » enregistrée ?`)
-                ) {
-                  resetSet(activeSet.id)
-                }
-              }}
-            >
-              Réinitialiser
-            </button>
+              <div className="density-toggle" role="group" aria-label="Taille des cartes">
+                <button
+                  type="button"
+                  className={density === 'normal' ? 'is-on' : ''}
+                  onClick={() => setDensity('normal')}
+                >
+                  Grandes
+                </button>
+                <button
+                  type="button"
+                  className={density === 'compact' ? 'is-on' : ''}
+                  onClick={() => setDensity('compact')}
+                >
+                  Petites
+                </button>
+              </div>
+            </div>
+
+            {hasActiveCollectionFilters && (
+              <div className="active-filters-bar" aria-label="Filtres actifs">
+                {filter !== 'all' && (
+                  <button
+                    type="button"
+                    className="filter-tag"
+                    onClick={() => setFilter('all')}
+                  >
+                    <span>Statut : {FILTER_STATUS_LABEL[filter]}</span>
+                    <span aria-hidden="true">×</span>
+                  </button>
+                )}
+                {query.trim() && (
+                  <button
+                    type="button"
+                    className="filter-tag"
+                    onClick={() => setQuery('')}
+                  >
+                    <span>Recherche : « {query.trim()} »</span>
+                    <span aria-hidden="true">×</span>
+                  </button>
+                )}
+                {rarity !== 'all' && (
+                  <button
+                    type="button"
+                    className="filter-tag"
+                    onClick={() => setRarity('all')}
+                  >
+                    <span>Rareté : {rarity}</span>
+                    <span aria-hidden="true">×</span>
+                  </button>
+                )}
+                {sort !== 'number' && (
+                  <button
+                    type="button"
+                    className="filter-tag"
+                    onClick={() => setSort('number')}
+                  >
+                    <span>Tri modifié</span>
+                    <span aria-hidden="true">×</span>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="filter-clear-link"
+                  onClick={clearCollectionFilters}
+                >
+                  Effacer les filtres
+                </button>
+              </div>
+            )}
           </section>
 
           {populationFile && !setHasPopulation && activeSet && (
             <p className="pop-hint">
-              Pas encore de population PSA pour {activeSet.name} : la série vient de sortir, les
-              chiffres ne sont pas publiés.
+              Pas encore de population PSA pour {activeSet.name} : les chiffres ne sont pas encore
+              publiés.
             </p>
           )}
           {setHasPopulation && populationFile && (
-            <p className="pop-hint">
-              PSA 10 = cartes notées 10/10. Le chiffre « anglais » sert au tri : plus il est petit,
-              plus cette version anglaise est rare. Les cartes notées moins de 100 fois restent en
-              bas du tri « plus rares ».
-              {censusLabel ? ` Recensement anglais du ${censusLabel}.` : ''}{' '}
-              <a href={populationFile.source} target="_blank" rel="noreferrer">
-                {populationFile.sourceName}
-              </a>
-              {populationFile.frenchFetchedAt && (
-                <>
-                  {' '}
-                  Le chiffre « français » compte seulement les cartes françaises, pas la même quantité.
-                  {` Recensement français du ${formatCensusDate(populationFile.frenchFetchedAt)}.`}{' '}
-                  {populationFile.frenchSource && (
-                    <a href={populationFile.frenchSource} target="_blank" rel="noreferrer">
-                      {populationFile.frenchSourceName ?? 'GemRate'}
-                    </a>
-                  )}
-                </>
-              )}{' '}
-              La pastille sur l’image dit s’il reste de la marge : verte pour une marge ouverte,
-              jaune pour à suivre, rouge quand la hausse facile est moins probable.
-            </p>
+            <div className="pop-hint-wrap">
+              <button
+                type="button"
+                className="pop-hint-toggle"
+                aria-expanded={showPopHelp}
+                onClick={() => setShowPopHelp((v) => !v)}
+              >
+                {showPopHelp
+                  ? 'Masquer l’aide PSA ▴'
+                  : `Recensement PSA${censusLabel ? ` (${censusLabel})` : ''} · Comment lire ces chiffres ? ▾`}
+              </button>
+              {showPopHelp && (
+                <p className="pop-hint">
+                  PSA 10 = cartes notées 10/10. Le chiffre « anglais » sert au tri : plus il est
+                  petit, plus cette version anglaise est rare. Les cartes notées moins de 100 fois
+                  restent en bas du tri « plus rares ».{' '}
+                  <a href={populationFile.source} target="_blank" rel="noreferrer">
+                    {populationFile.sourceName}
+                  </a>
+                  {populationFile.frenchFetchedAt && (
+                    <>
+                      {' '}
+                      Le chiffre « français » compte seulement les cartes françaises (relevé du{' '}
+                      {formatCensusDate(populationFile.frenchFetchedAt)}
+                      {populationFile.frenchSource && (
+                        <>
+                          {' '}
+                          ·{' '}
+                          <a href={populationFile.frenchSource} target="_blank" rel="noreferrer">
+                            {populationFile.frenchSourceName ?? 'GemRate'}
+                          </a>
+                        </>
+                      )}
+                      ).
+                    </>
+                  )}{' '}
+                  La pastille sous la rareté indique la marge : verte pour une marge ouverte, jaune
+                  pour à suivre, rouge quand la hausse facile est moins probable.
+                </p>
+              )}
+            </div>
           )}
 
           {loading && <p className="state-msg">Chargement des séries…</p>}
@@ -656,9 +851,10 @@ export default function App() {
             <>
               <p className="result-count">
                 {visible.length} carte{visible.length > 1 ? 's' : ''} affichée
-                {visible.length > 1 ? 's' : ''} · sélection estimée à {money(stats.ownedValue)}
+                {visible.length > 1 ? 's' : ''} · valeur de ta collection dans cette série :{' '}
+                {money(stats.ownedValue)}
               </p>
-              <div className="grid">
+              <div className={density === 'compact' ? 'grid grid-compact' : 'grid'}>
                 {visible.map(({ card, normalStatus, reverseStatus }) => (
                   <PokemonCardTile
                     key={card.id}
@@ -686,16 +882,28 @@ export default function App() {
         </>
       )}
 
-      {catalogCard && (
-        <CatalogCardSheet
-          card={catalogCard}
-          highlightedCondition={scannedCondition}
-          onClose={() => {
-            setCatalogCard(null)
-            setScannedCondition(null)
-          }}
-        />
-      )}
+      {catalogCard && (() => {
+        const mappedSetId = HUNT_TO_COLLECTION_SET[catalogCard.set.id] ?? catalogCard.set.id
+        const mappedCardId =
+          HUNT_TO_COLLECTION_SET[catalogCard.set.id] && cardsBySet[mappedSetId]
+            ? (cardsBySet[mappedSetId].find((c) => c.number === catalogCard.number)?.id ??
+              catalogCard.cardId)
+            : catalogCard.cardId
+        const variant: CardVariant = /reverse/i.test(catalogCard.printing) ? 'reverse' : 'normal'
+        return (
+          <CatalogCardSheet
+            card={catalogCard}
+            highlightedCondition={scannedCondition}
+            collectionStatus={getStatus(mappedSetId, mappedCardId, variant)}
+            collectionVariantLabel={variant === 'reverse' ? 'Reverse' : 'Normale'}
+            onSetCollectionStatus={(next) => setStatus(mappedSetId, mappedCardId, next, variant)}
+            onClose={() => {
+              setCatalogCard(null)
+              setScannedCondition(null)
+            }}
+          />
+        )
+      })()}
 
       {detailCard && (() => {
         const detailPop =
@@ -708,6 +916,11 @@ export default function App() {
               setDetailCard(null)
               setScannedCondition(null)
             }}
+            normalStatus={getStatus(detailCard.setId, detailCard.id, 'normal')}
+            reverseStatus={
+              detailCard.hasReverse ? getStatus(detailCard.setId, detailCard.id, 'reverse') : 'missing'
+            }
+            onSetStatus={(variant, next) => setStatus(detailCard.setId, detailCard.id, next, variant)}
             population={detailPop?.cards[detailCard.id]?.printings ?? null}
             rank={
               detailCard.setId === activeSet?.id
@@ -728,6 +941,17 @@ export default function App() {
           />
         )
       })()}
+
+      {showScrollTop && (
+        <button
+          type="button"
+          className="scroll-top-btn"
+          aria-label="Remonter en haut de la page"
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        >
+          ↑ Haut
+        </button>
+      )}
 
       <BackupPanel />
 

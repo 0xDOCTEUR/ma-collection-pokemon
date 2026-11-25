@@ -17,7 +17,6 @@ import {
   type PsaHuntCard,
   type PsaHuntData,
 } from '../utils/psaHunt'
-import { PotentialStamp } from './PotentialStamp'
 import { matchesSearchText } from '../utils/frenchNames'
 import {
   cardHasGeneration,
@@ -288,7 +287,7 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
   const precise = pokemon !== '' || query.trim() !== ''
   const relaxed = precise && !keepLimits
   const browsingSet = setId !== 'all'
-  const activeSort: SortMode = browsingSet ? 'number' : sort
+  const activeSort: SortMode = sort
 
   const matches = useMemo(() => {
     if (!data) return []
@@ -300,7 +299,7 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
     const gradedFloor = readNumber(minGraded)
     const focused = pokemon !== ''
     // Une série choisie : on montre toute la série, sans cacher les cartes sans prix.
-    const skipLimits = browsingSet || ((focused || searching) && !keepLimits)
+    const skipLimits = (browsingSet && !keepLimits) || ((focused || searching) && !keepLimits)
     const frenchView = language === 'fr'
 
     const list = data.cards.filter((card) => {
@@ -327,7 +326,7 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
       ) {
         return false
       }
-      if (!browsingSet && indicator !== 'all') {
+      if (indicator !== 'all') {
         const potential = cardPotential(
           card.psa10,
           card.total,
@@ -463,6 +462,78 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
   if (error) return <p className="state-msg error">{error}</p>
   if (!data) return <p className="state-msg">Chargement des notes PSA…</p>
 
+  const advancedCount = [
+    generation !== 'all',
+    language !== DEFAULTS.language,
+    maxPrice.trim() !== '',
+    minRaw.trim() !== '',
+    minPsa10.trim() !== '',
+    maxPsa10.trim() !== '',
+    minGraded.trim() !== '',
+  ].filter(Boolean).length
+
+  const activeChips: { id: string; label: string; clear: () => void }[] = []
+  if (selectedSet) {
+    activeChips.push({
+      id: 'set',
+      label: `Série : ${catalogSetName(selectedSet)}`,
+      clear: () => setSetId('all'),
+    })
+  }
+  if (series !== 'all') {
+    activeChips.push({
+      id: 'series',
+      label: `Période : ${seriesLabel(series)}`,
+      clear: () => {
+        setSeries('all')
+        setSetId('all')
+      },
+    })
+  }
+  if (indicator !== 'all') {
+    activeChips.push({
+      id: 'indicator',
+      label: `Indicateur : ${indicator}`,
+      clear: () => setIndicator('all'),
+    })
+  }
+  if (query.trim()) {
+    activeChips.push({
+      id: 'query',
+      label: `Recherche : « ${query.trim()} »`,
+      clear: () => setQuery(''),
+    })
+  }
+  if (pokemon) {
+    activeChips.push({
+      id: 'pokemon',
+      label: `Pokémon : ${pokemonName}`,
+      clear: () => setPokemon(''),
+    })
+  }
+  if (rarity) {
+    activeChips.push({
+      id: 'rarity',
+      label: `Rareté : ${rarity}`,
+      clear: () => setRarity(''),
+    })
+  }
+  if (generation !== 'all') {
+    const genLabel = GENERATION_OPTIONS.find((g) => String(g.id) === generation)?.label ?? generation
+    activeChips.push({
+      id: 'gen',
+      label: `Génération : ${genLabel}`,
+      clear: () => setGeneration('all'),
+    })
+  }
+  if (language !== DEFAULTS.language) {
+    activeChips.push({
+      id: 'lang',
+      label: `Version : ${language === 'all' ? 'EN + JP' : languageLabel(language)}`,
+      clear: () => setLanguage(DEFAULTS.language),
+    })
+  }
+
   return (
     <section className="hunt">
       <form className="panel hunt-form" onSubmit={(event) => event.preventDefault()}>
@@ -475,11 +546,8 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
                 const next = event.target.value
                 setSetId(next)
                 if (next !== 'all') {
-                  setPokemon('')
-                  setQuery('')
                   setGeneration('all')
                   setSort('number')
-                  setIndicator('all')
                   setPricedOnly(false)
                   setKeepLimits(false)
                 }
@@ -513,8 +581,8 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
           {browsingSet && (
             <p className="hunt-series-hint">
               {rarity
-                ? `Cartes « ${rarity} », dans l’ordre des numéros.`
-                : 'Série complète, dans l’ordre des numéros. Clique une image pour voir les côtes.'}
+                ? `Cartes « ${rarity} ». Tu peux changer l’ordre ou filtrer par indicateur ci-dessous.`
+                : 'Série complète affichée. Clique une image pour voir les côtes ou l’ajouter à ta collection.'}
             </p>
           )}
         </div>
@@ -533,7 +601,6 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
                 .filter(Boolean)
                 .join(' ')}
               aria-pressed={indicator === option.id}
-              disabled={browsingSet}
               onClick={() => setIndicator(option.id)}
             >
               {option.label}
@@ -554,15 +621,7 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
             <span>Pokémon</span>
             <select
               value={pokemon}
-              onChange={(event) => {
-                const next = event.target.value
-                setPokemon(next)
-                if (next) {
-                  setSeries('all')
-                  setSetId('all')
-                  setQuery('')
-                }
-              }}
+              onChange={(event) => setPokemon(event.target.value)}
             >
               <option value="">Tous les Pokémon</option>
               {choices.map((option) => (
@@ -587,7 +646,6 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
             <span>Ordre</span>
             <select
               value={activeSort}
-              disabled={browsingSet}
               onChange={(event) => setSort(event.target.value as SortMode)}
             >
               <option value="number">Numéro dans la série</option>
@@ -597,6 +655,25 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
             </select>
           </label>
         </div>
+
+        {activeChips.length > 0 && (
+          <div className="active-filters-bar" aria-label="Filtres actifs">
+            {activeChips.map((chip) => (
+              <button
+                key={chip.id}
+                type="button"
+                className="filter-tag"
+                onClick={chip.clear}
+              >
+                <span>{chip.label}</span>
+                <span aria-hidden="true">×</span>
+              </button>
+            ))}
+            <button type="button" className="filter-clear-link" onClick={resetFilters}>
+              Tout effacer
+            </button>
+          </div>
+        )}
 
         {precise && relaxed && (
           <div className="hunt-notice">
@@ -739,17 +816,19 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
           <div className="hunt-actions">
             <button
               type="button"
-              className="btn ghost"
+              className={moreFilters || advancedCount > 0 ? 'btn ghost filter-btn-active' : 'btn ghost'}
               aria-expanded={moreFilters}
               onClick={() => setMoreFilters((open) => !open)}
             >
-              {moreFilters ? 'Fermer les filtres' : 'Filtres'}
+              {moreFilters
+                ? 'Fermer les filtres avancés'
+                : `Filtres avancés${advancedCount > 0 ? ` (${advancedCount})` : ''}`}
             </button>
             <button type="button" className="btn ghost" onClick={clearLimits}>
               Enlever les limites
             </button>
             <button type="button" className="btn ghost" onClick={resetFilters}>
-              Filtres d’origine
+              Tout réinitialiser
             </button>
           </div>
         </div>
@@ -839,7 +918,6 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
                       onClick={() => onOpenCard(card)}
                       aria-label={`Voir les côtes de ${frenchCardName(card.name)}`}
                     >
-                      <PotentialStamp potential={potential} />
                       {image ? (
                         <img src={image} alt="" loading="lazy" />
                       ) : (

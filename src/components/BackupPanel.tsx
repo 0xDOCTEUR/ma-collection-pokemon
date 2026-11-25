@@ -21,20 +21,17 @@ export function BackupPanel() {
   }
 
   return (
-    <section className="panel backup-panel">
-      <div>
-        <h2>Sauvegarde</h2>
-        <p className="muted">
-          Exporte ta collection et tes listes pour les retrouver sur le site en ligne (ou un autre
-          appareil).
-        </p>
+    <section className="panel backup-panel backup-compact">
+      <div className="backup-copy">
+        <strong>Sauvegarde</strong>
+        <span className="muted">Exporte ou restaure ta collection et tes listes sur un autre appareil.</span>
       </div>
-      <div className="export-actions">
-        <button type="button" className="btn primary" onClick={downloadBackup}>
-          Télécharger ma sauvegarde
+      <div className="backup-actions">
+        <button type="button" className="btn ghost" onClick={downloadBackup}>
+          Exporter
         </button>
         <button type="button" className="btn ghost" onClick={() => inputRef.current?.click()}>
-          Restaurer une sauvegarde
+          Restaurer
         </button>
         <input
           ref={inputRef}

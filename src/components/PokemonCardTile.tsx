@@ -93,7 +93,6 @@ export function PokemonCardTile({
         title="Voir la cote, la population et le graphique"
       >
         <img src={card.imageSmall} alt={card.name} loading="lazy" width={245} height={342} />
-        {potential && <PotentialStamp potential={potential} />}
         <span className="tile-badge">{STATUS_LABEL[overall]}</span>
         <span className="tile-detail-hint">Cote</span>
       </button>
@@ -106,7 +105,10 @@ export function PokemonCardTile({
           <span className="tile-price">{formatPrice(card, 'normal')}</span>
         </div>
         <h3 className="tile-name">{card.name}</h3>
-        <p className="tile-meta">{card.rarity}</p>
+        <div className="tile-meta-row">
+          <p className="tile-meta">{card.rarity}</p>
+          {potential && <PotentialStamp potential={potential} inline />}
+        </div>
         <PopulationLine printings={population} />
 
         <div className="variant-block">
