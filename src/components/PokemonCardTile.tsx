@@ -137,10 +137,6 @@ export function PokemonCardTile({
             <span className="tile-check" aria-hidden="true">
               ✓
             </span>
-          ) : overall === 'wanted' ? (
-            <span className="tile-check" aria-hidden="true">
-              ★
-            </span>
           ) : null}
         </span>
         <span className="tile-detail-hint">Cote</span>
