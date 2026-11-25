@@ -13,6 +13,7 @@ import type {
   PriceRangeDays,
 } from '../types'
 import { buildVisualVariants } from '../utils/cardVariants'
+import { BUY_MARKETPLACES, cardBuyQuery, openCardBuySearches, searchUrl } from '../utils/marketplace'
 import { buildTrendPoints, recordPriceSnapshot } from '../utils/priceHistory'
 import { PriceTrendChart } from './PriceTrendChart'
 import { AdvicePrices } from './AdvicePrices'
@@ -238,6 +239,30 @@ export function CardDetailSheet({
                 </div>
               </div>
             )}
+
+            <div className="buy-bar">
+              <button
+                type="button"
+                className="btn primary buy-all-btn"
+                onClick={() => openCardBuySearches(card)}
+                title={`Chercher « ${cardBuyQuery(card)} » sur Cardmarket, Leboncoin et Vinted`}
+              >
+                Acheter
+              </button>
+              <div className="buy-links" aria-label="Sites d’achat">
+                {BUY_MARKETPLACES.map((market) => (
+                  <a
+                    key={market.id}
+                    className="buy-link"
+                    href={searchUrl(market.id, cardBuyQuery(card))}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {market.label}
+                  </a>
+                ))}
+              </div>
+            </div>
 
             <div className="card-sheet-prices">
               <div>
