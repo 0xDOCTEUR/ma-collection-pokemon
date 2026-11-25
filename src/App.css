@@ -1532,15 +1532,10 @@ textarea:focus {
   max-width: 7.2rem;
 }
 
-.tile-media-wrap {
-  position: relative;
-}
-
 .tile-detail-hint {
   position: absolute;
   right: 0.55rem;
   top: 0.55rem;
-  z-index: 2;
   padding: 0.2rem 0.5rem;
   border-radius: 999px;
   font-size: 0.65rem;
@@ -1550,7 +1545,6 @@ textarea:focus {
   color: var(--wanted);
   background: rgba(0, 0, 0, 0.72);
   border: 1px solid rgba(78, 168, 222, 0.45);
-  cursor: pointer;
   opacity: 0;
   transform: translateY(-4px);
   transition:
@@ -1559,7 +1553,7 @@ textarea:focus {
 }
 
 .tile:hover .tile-detail-hint,
-.tile-media-wrap:focus-within .tile-detail-hint {
+.tile-media:focus-visible .tile-detail-hint {
   opacity: 1;
   transform: translateY(0);
 }
