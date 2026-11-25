@@ -1,4 +1,5 @@
 import {
+  useDeferredValue,
   useEffect,
   useMemo,
   useRef,
@@ -40,6 +41,7 @@ export function CollectionMenu({
 }: Props) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
+  const deferredQuery = useDeferredValue(query)
   const [lang, setLang] = useState<LangFilter>('intl')
   const [suggestIndex, setSuggestIndex] = useState(0)
   const wrapRef = useRef<HTMLDivElement>(null)
@@ -58,11 +60,12 @@ export function CollectionMenu({
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setOpen(false)
     }
-    window.addEventListener('mousedown', onPointer)
+    window.addEventListener('pointerdown', onPointer)
     window.addEventListener('keydown', onKey)
-    window.setTimeout(() => searchRef.current?.focus(), 20)
+    const focusId = window.setTimeout(() => searchRef.current?.focus(), 20)
     return () => {
-      window.removeEventListener('mousedown', onPointer)
+      window.clearTimeout(focusId)
+      window.removeEventListener('pointerdown', onPointer)
       window.removeEventListener('keydown', onKey)
     }
   }, [open])
@@ -76,16 +79,16 @@ export function CollectionMenu({
   const jaCount = useMemo(() => sets.filter((s) => s.language === 'ja').length, [sets])
 
   const pokemonSuggestions = useMemo(
-    () => buildPokemonSuggestions(hunt, query, 8),
-    [hunt, query],
+    () => buildPokemonSuggestions(hunt, deferredQuery, 8),
+    [hunt, deferredQuery],
   )
 
   useEffect(() => {
     setSuggestIndex(0)
-  }, [query])
+  }, [deferredQuery])
 
   const groupedSets = useMemo(() => {
-    const trimmed = query.trim()
+    const trimmed = deferredQuery.trim()
     const filtered = sets.filter((set) => {
       if (trimmed) return matchesSearchText(set.searchText, trimmed)
       return lang === 'ja' ? set.language === 'ja' : set.language !== 'ja'
@@ -109,7 +112,7 @@ export function CollectionMenu({
       label: seriesLabel(series),
       items: map.get(series) ?? [],
     }))
-  }, [sets, query, lang])
+  }, [sets, deferredQuery, lang])
 
   function handlePick(setId: string | 'all') {
     onSelectSet(setId)
@@ -133,6 +136,8 @@ export function CollectionMenu({
   }
 
   function onSearchKeyDown(e: ReactKeyboardEvent<HTMLInputElement>) {
+    // Empêche le menu parent / la page d’avaler les touches pendant la saisie.
+    e.stopPropagation()
     if (e.key === 'ArrowDown' && pokemonSuggestions.length > 0) {
       e.preventDefault()
       setSuggestIndex((i) => Math.min(i + 1, pokemonSuggestions.length - 1))
@@ -158,7 +163,7 @@ export function CollectionMenu({
 
   const pillLabel =
     selectedSetId === 'all' ? 'Toutes' : (activeSet?.shortName ?? activeSet?.name ?? null)
-  const showPokemon = query.trim().length >= 2 && pokemonSuggestions.length > 0
+  const showPokemon = deferredQuery.trim().length >= 2 && pokemonSuggestions.length > 0
 
   return (
     <div className="nav-dropdown" ref={wrapRef}>
@@ -166,7 +171,7 @@ export function CollectionMenu({
         type="button"
         className={isCollectionActive ? 'tab active nav-drop-trigger' : 'tab nav-drop-trigger'}
         aria-expanded={open}
-        aria-haspopup="menu"
+        aria-haspopup="dialog"
         onClick={handleTrigger}
       >
         <span>Collection</span>
@@ -179,11 +184,11 @@ export function CollectionMenu({
       </button>
 
       {open && (
-        <div className="nav-submenu" role="menu" aria-label="Séries de la collection">
+        <div className="nav-submenu" role="dialog" aria-label="Séries de la collection">
           <div className="nav-submenu-head">
             <input
               ref={searchRef}
-              type="text"
+              type="search"
               className="nav-submenu-search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -191,6 +196,9 @@ export function CollectionMenu({
               placeholder="Série ou Pokémon (151, Mewtwo…)"
               aria-label="Rechercher une série ou un Pokémon"
               autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck={false}
             />
             {!query.trim() && jaCount > 0 && (
               <div className="nav-submenu-langs" role="group" aria-label="Langue des séries">
@@ -232,7 +240,6 @@ export function CollectionMenu({
               <div className="nav-submenu-list">
                 <button
                   type="button"
-                  role="menuitem"
                   className={
                     isCollectionActive && selectedSetId === 'all'
                       ? 'nav-submenu-item active'
@@ -257,7 +264,6 @@ export function CollectionMenu({
                       <button
                         key={`mine-${set.id}`}
                         type="button"
-                        role="menuitem"
                         className={active ? 'nav-submenu-item active' : 'nav-submenu-item'}
                         onClick={() => handlePick(set.id)}
                       >
@@ -293,7 +299,6 @@ export function CollectionMenu({
                         <button
                           key={set.id}
                           type="button"
-                          role="menuitem"
                           className={active ? 'nav-submenu-item active' : 'nav-submenu-item'}
                           onClick={() => handlePick(set.id)}
                         >

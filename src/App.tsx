@@ -313,25 +313,33 @@ export default function App() {
     return [...ids].slice(0, 50)
   }, [isAllSets, hunt, deferredQuery])
 
+  const tcgdexFrBySetRef = useRef(tcgdexFrBySet)
+  tcgdexFrBySetRef.current = tcgdexFrBySet
+  const tcgdexFetchRef = useRef(new Set<string>())
+
   useEffect(() => {
     if (!isAllSets) return
     let cancelled = false
     for (const setId of globalSearchSetIds.slice(0, 16)) {
       const set = allCollectionSets.find((s) => s.id === setId)
       if (!set || set.featured || set.language === 'ja') continue
-      if (setId in tcgdexFrBySet) continue
+      if (setId in tcgdexFrBySetRef.current) continue
+      if (tcgdexFetchRef.current.has(setId)) continue
+      tcgdexFetchRef.current.add(setId)
       fetchTcgdexFrenchSet(setId)
         .then((map) => {
           if (!cancelled) {
             setTcgdexFrBySet((prev) => (setId in prev ? prev : { ...prev, [setId]: map }))
           }
         })
-        .catch(() => {})
+        .catch(() => {
+          tcgdexFetchRef.current.delete(setId)
+        })
     }
     return () => {
       cancelled = true
     }
-  }, [isAllSets, globalSearchSetIds, allCollectionSets, tcgdexFrBySet])
+  }, [isAllSets, globalSearchSetIds, allCollectionSets])
 
   const trackedSets = useMemo(() => {
     const needed = new Set<string>(SETS.map((s) => s.id))
@@ -921,6 +929,7 @@ export default function App() {
                 <label className="search">
                   Recherche
                   <input
+                    type="search"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder={
@@ -928,6 +937,10 @@ export default function App() {
                         ? 'Ex. Dracaufeu, Pikachu, GG70…'
                         : 'Nom ou numéro dans cette série…'
                     }
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck={false}
                   />
                 </label>
                 {!isAllSets && (
