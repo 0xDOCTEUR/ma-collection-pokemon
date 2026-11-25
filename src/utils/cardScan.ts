@@ -263,8 +263,14 @@ function makeCrop(
   const sw = Math.max(16, Math.round(sourceW * rw))
   const sh = Math.max(16, Math.round(sourceH * rh))
 
-  const outW = Math.max(360, Math.min(1200, Math.round(sw * scaleFactor)))
-  const outH = Math.max(64, Math.round((outW * sh) / sw))
+  let outW = Math.max(360, Math.min(1200, Math.round(sw * scaleFactor)))
+  let outH = Math.max(64, Math.round((outW * sh) / sw))
+  const maxPixels = 420_000
+  if (outW * outH > maxPixels) {
+    const shrink = Math.sqrt(maxPixels / (outW * outH))
+    outW = Math.max(120, Math.round(outW * shrink))
+    outH = Math.max(64, Math.round(outH * shrink))
+  }
   const pad = mode === 'soft' || mode === 'softinv' ? 18 : 0
   const canvas = document.createElement('canvas')
   canvas.width = outW + pad * 2
@@ -661,6 +667,26 @@ const SPECIES_CATALOG = Object.entries(FRENCH_NAMES)
   }))
   .sort((a, b) => b.frenchCompact.length - a.frenchCompact.length)
 
+const FRENCH_TO_ENGLISH = new Map<string, string>()
+const ENGLISH_TO_FRENCH_KEYS = new Map<string, string[]>()
+for (const entry of SPECIES_CATALOG) {
+  if (entry.frenchCompact && !FRENCH_TO_ENGLISH.has(entry.frenchCompact)) {
+    FRENCH_TO_ENGLISH.set(entry.frenchCompact, entry.englishCompact)
+  }
+  if (entry.englishCompact && entry.frenchCompact) {
+    const list = ENGLISH_TO_FRENCH_KEYS.get(entry.englishCompact) ?? []
+    if (!list.includes(entry.frenchCompact)) list.push(entry.frenchCompact)
+    ENGLISH_TO_FRENCH_KEYS.set(entry.englishCompact, list)
+  }
+}
+
+const englishSpeciesCache = new Map<string, string>()
+const targetCompactCache = new Map<string, string>()
+
+function yieldToBrowser(): Promise<void> {
+  return new Promise((resolve) => window.setTimeout(resolve, 0))
+}
+
 /**
  * Cherche les noms de Pokémon (FR et EN) avec tolérance aux erreurs OCR :
  * - lettre parasite collée (`JMaganon`, `Dracaufeu@y`)
@@ -756,16 +782,40 @@ export function findSpeciesInText(topText: string, extraText = ''): NameHit[] {
   return hits.sort((a, b) => b.priority - a.priority)
 }
 
+function targetCompactKey(name: string): string {
+  const cached = targetCompactCache.get(name)
+  if (cached !== undefined) return cached
+  const val = speciesKey(name).replace(/[^a-z0-9]+/g, '')
+  targetCompactCache.set(name, val)
+  return val
+}
+
 function englishSpeciesKey(name: string): string {
+  const cached = englishSpeciesCache.get(name)
+  if (cached !== undefined) return cached
+
   const fromMain = mainSpecies(name)
-  if (fromMain) return foldName(fromMain).replace(/[^a-z0-9]+/g, '')
-  const key = speciesKey(name).replace(/[^a-z0-9]+/g, '')
-  for (const [french, english] of Object.entries(FRENCH_NAMES)) {
-    const frenchKey = foldName(french).replace(/[^a-z0-9]+/g, '')
-    if (key === frenchKey || (frenchKey.length >= 4 && key.startsWith(frenchKey))) {
-      return foldName(english).replace(/[^a-z0-9]+/g, '')
+  if (fromMain) {
+    const val = foldName(fromMain).replace(/[^a-z0-9]+/g, '')
+    englishSpeciesCache.set(name, val)
+    return val
+  }
+
+  const key = targetCompactKey(name)
+  const direct = FRENCH_TO_ENGLISH.get(key)
+  if (direct) {
+    englishSpeciesCache.set(name, direct)
+    return direct
+  }
+
+  // Préfixe français pour les variantes (ex. « dracaufeuex » → « charizard »)
+  for (const entry of SPECIES_CATALOG) {
+    if (entry.frenchCompact.length >= 4 && key.startsWith(entry.frenchCompact)) {
+      englishSpeciesCache.set(name, entry.englishCompact)
+      return entry.englishCompact
     }
   }
+  englishSpeciesCache.set(name, key)
   return key
 }
 
@@ -774,16 +824,20 @@ function speciesMatchesTarget(species: NameHit, target: ScanTarget): boolean {
   const hitFrench = foldName(species.label).replace(/[^a-z0-9]+/g, '')
   if (englishSpeciesKey(target.name) === hitEnglish) return true
 
-  const targetKey = speciesKey(target.name).replace(/[^a-z0-9]+/g, '')
-  if (targetKey && (targetKey === hitEnglish || targetKey === hitFrench)) return true
+  const targetKey = targetCompactKey(target.name)
+  if (!targetKey) return false
+  if (targetKey === hitEnglish || targetKey === hitFrench) return true
 
-  for (const [french, english] of Object.entries(FRENCH_NAMES)) {
-    const frenchKey = foldName(french).replace(/[^a-z0-9]+/g, '')
-    const englishKey = foldName(english).replace(/[^a-z0-9]+/g, '')
-    if (englishKey !== hitEnglish && frenchKey !== hitFrench) continue
-    if (targetKey === frenchKey || targetKey === englishKey) return true
-    if (targetKey.includes(frenchKey) || frenchKey.includes(targetKey)) {
-      if (Math.min(targetKey.length, frenchKey.length) >= 4) return true
+  const frenchKeys = ENGLISH_TO_FRENCH_KEYS.get(hitEnglish)
+  if (frenchKeys) {
+    for (const frenchKey of frenchKeys) {
+      if (targetKey === frenchKey) return true
+      if (
+        Math.min(targetKey.length, frenchKey.length) >= 4 &&
+        (targetKey.includes(frenchKey) || frenchKey.includes(targetKey))
+      ) {
+        return true
+      }
     }
   }
   return false
@@ -876,7 +930,7 @@ export async function rankTargetsVisually(
     .slice(0, maxInspect)
 
   const scored: ScanMatch[] = []
-  const batchSize = 20
+  const batchSize = 12
   for (let i = 0; i < ordered.length; i += batchSize) {
     const batch = ordered.slice(i, i + batchSize)
     await Promise.all(
@@ -900,6 +954,7 @@ export async function rankTargetsVisually(
         })
       }),
     )
+    await yieldToBrowser()
   }
 
   return scored.sort(
@@ -1141,8 +1196,10 @@ export async function scanCardPhoto(
   onProgress?: (status: string) => void,
 ): Promise<ScanResult> {
   onProgress?.('Recadrage de la carte…')
+  await yieldToBrowser()
   const image = await loadScanCanvas(source)
-  const previewUrl = image.toDataURL('image/jpeg', 0.88)
+  const previewUrl = image.toDataURL('image/jpeg', 0.85)
+  await yieldToBrowser()
   const card = extractCardCanvas(image)
   const condition = guessCondition(card)
   const visualSignature = computeVisualSignature(card, true)
@@ -1151,6 +1208,7 @@ export async function scanCardPhoto(
   )
 
   onProgress?.('Lecture du nom et du numéro…')
+  await yieldToBrowser()
   const worker = await getWorker()
 
   async function ocr(canvas: HTMLCanvasElement, psm: PSM): Promise<string> {
@@ -1160,29 +1218,40 @@ export async function scanCardPhoto(
   }
 
   // 1. Bande du nom en haut : soft (supprime reflets/fonds colorés) + softinv (textes blancs Full Art) + raw
-  const topRegions: { canvas: HTMLCanvasElement; psm: PSM }[] = [
-    { canvas: makeCrop(card, 0.14, 0.025, 0.68, 0.12, 'soft', 3.0), psm: PSM.SINGLE_BLOCK },
-    { canvas: makeCrop(card, 0.22, 0.05, 0.62, 0.11, 'soft', 3.5), psm: PSM.SINGLE_BLOCK },
-    { canvas: makeCrop(card, 0.04, 0.015, 0.92, 0.16, 'softinv', 2.4), psm: PSM.SPARSE_TEXT },
-    { canvas: makeCrop(card, 0.04, 0.015, 0.92, 0.16, 'raw', 2.0), psm: PSM.SPARSE_TEXT },
+  const topSteps: { build: () => HTMLCanvasElement; psm: PSM }[] = [
+    { build: () => makeCrop(card, 0.14, 0.025, 0.68, 0.12, 'soft', 3.0), psm: PSM.SINGLE_BLOCK },
+    { build: () => makeCrop(card, 0.22, 0.05, 0.62, 0.11, 'soft', 3.5), psm: PSM.SINGLE_BLOCK },
+    { build: () => makeCrop(card, 0.04, 0.015, 0.92, 0.16, 'softinv', 2.4), psm: PSM.SPARSE_TEXT },
+    { build: () => makeCrop(card, 0.04, 0.015, 0.92, 0.16, 'raw', 2.0), psm: PSM.SPARSE_TEXT },
   ]
   const topTexts: string[] = []
-  for (const r of topRegions) {
-    const t = await ocr(r.canvas, r.psm)
-    if (t) topTexts.push(t)
+  for (const step of topSteps) {
+    await yieldToBrowser()
+    const t = await ocr(step.build(), step.psm)
+    if (t) {
+      topTexts.push(t)
+      // Si un nom exact (non-flou) est déjà lu, inutile de lancer les passes suivantes du haut !
+      const quick = findSpeciesInText(topTexts.join('\n'))
+      if (quick.some((h) => !h.fuzzy)) break
+    }
   }
 
   // 2. Numéro en bas à GAUCHE (cartes récentes) ET en bas à DROITE (anciennes cartes / XY)
-  const bottomRegions: { canvas: HTMLCanvasElement; psm: PSM }[] = [
-    { canvas: makeCrop(card, 0.02, 0.87, 0.40, 0.12, 'soft', 3.4), psm: PSM.SPARSE_TEXT },
-    { canvas: makeCrop(card, 0.02, 0.87, 0.40, 0.12, 'softinv', 3.4), psm: PSM.SPARSE_TEXT },
-    { canvas: makeCrop(card, 0.68, 0.89, 0.30, 0.10, 'soft', 4.0), psm: PSM.SPARSE_TEXT },
-    { canvas: makeCrop(card, 0.68, 0.89, 0.30, 0.10, 'softinv', 4.0), psm: PSM.SPARSE_TEXT },
+  const bottomSteps: { build: () => HTMLCanvasElement; psm: PSM }[] = [
+    { build: () => makeCrop(card, 0.02, 0.87, 0.40, 0.12, 'soft', 3.4), psm: PSM.SPARSE_TEXT },
+    { build: () => makeCrop(card, 0.68, 0.89, 0.30, 0.10, 'soft', 4.0), psm: PSM.SPARSE_TEXT },
+    { build: () => makeCrop(card, 0.02, 0.87, 0.40, 0.12, 'softinv', 3.4), psm: PSM.SPARSE_TEXT },
+    { build: () => makeCrop(card, 0.68, 0.89, 0.30, 0.10, 'softinv', 4.0), psm: PSM.SPARSE_TEXT },
   ]
   const bottomTexts: string[] = []
-  for (const r of bottomRegions) {
-    const t = await ocr(r.canvas, r.psm)
-    if (t) bottomTexts.push(t)
+  for (const step of bottomSteps) {
+    await yieldToBrowser()
+    const t = await ocr(step.build(), step.psm)
+    if (t) {
+      bottomTexts.push(t)
+      const quickNums = extractNumberHits(bottomTexts.join('\n'), printedTotals)
+      if (quickNums.some((h) => h.trusted && h.total)) break
+    }
   }
 
   let topText = topTexts.join('\n')
@@ -1194,13 +1263,14 @@ export async function scanCardPhoto(
   // 3. Relance large si rien de lu (photo mal cadrée ou très brillante)
   if (speciesHits.length === 0 && numberHits.length === 0) {
     onProgress?.('Nouvel essai sur toute la photo…')
-    const fullFallbacks = [
-      makeCrop(card, 0, 0, 1, 0.25, 'soft', 2.4),
-      makeCrop(card, 0, 0, 1, 0.25, 'softinv', 2.4),
-      makeCrop(image, 0, 0, 1, 1, 'soft', 1.4),
+    const fallbackSteps = [
+      () => makeCrop(card, 0, 0, 1, 0.25, 'soft', 2.4),
+      () => makeCrop(card, 0, 0, 1, 0.25, 'softinv', 2.4),
+      () => makeCrop(image, 0, 0, 1, 1, 'soft', 1.2),
     ]
-    for (const canvas of fullFallbacks) {
-      const t = await ocr(canvas, PSM.SPARSE_TEXT)
+    for (const build of fallbackSteps) {
+      await yieldToBrowser()
+      const t = await ocr(build(), PSM.SPARSE_TEXT)
       if (t) {
         topText = `${topText}\n${t}`
         ocrText = `${ocrText}\n${t}`
@@ -1210,6 +1280,7 @@ export async function scanCardPhoto(
     speciesHits = findSpeciesInText(topText, extraText)
   }
 
+  await yieldToBrowser()
   const { matches: rawMatches, visualPool } = scoreMatches(
     targets,
     numberHits,
