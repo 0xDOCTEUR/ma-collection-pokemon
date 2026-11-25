@@ -69,8 +69,14 @@ export function cardBuyQuery(card: BuyCard, market: Marketplace = 'cardmarket'):
 
 /** Ouvre Cardmarket, Leboncoin et Vinted dans de nouveaux onglets. */
 export function openCardBuySearches(card: BuyCard): void {
-  for (const market of BUY_MARKETPLACES) {
-    window.open(searchUrl(market.id, cardBuyQuery(card, market.id)), '_blank', 'noopener,noreferrer')
+  const urls = BUY_MARKETPLACES.map((market) =>
+    searchUrl(market.id, cardBuyQuery(card, market.id)),
+  )
+  // Ordre inverse : le dernier window.open garde souvent le focus, et on veut
+  // Cardmarket visible. Sans 3e argument : moins bloqué par le navigateur.
+  for (let i = urls.length - 1; i >= 0; i -= 1) {
+    const opened = window.open(urls[i], '_blank')
+    if (opened) opened.opener = null
   }
 }
 
