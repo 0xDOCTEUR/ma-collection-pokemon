@@ -133,26 +133,31 @@ export function PokemonCardTile({
       </button>
 
       <div className="tile-body">
-        <div className="tile-top">
-          <span className="tile-num">
-            {card.number}/{card.printedTotal}
-          </span>
-          <span className="tile-price">{formatPrice(card, 'normal')}</span>
+        <div className="tile-copy">
+          <div className="tile-top">
+            <span className="tile-num">
+              {card.number}/{card.printedTotal}
+            </span>
+            <span className="tile-price">{formatPrice(card, 'normal')}</span>
+            {card.hasReverse && (
+              <span className="tile-price-reverse">Rev. {formatPrice(card, 'reverse')}</span>
+            )}
+          </div>
+          <h3 className="tile-name">{card.name}</h3>
+          {setLabel &&
+            (onOpenSet ? (
+              <button type="button" className="tile-set-label is-link" onClick={onOpenSet}>
+                {setLabel}
+              </button>
+            ) : (
+              <p className="tile-set-label">{setLabel}</p>
+            ))}
+          <div className="tile-meta-row">
+            <p className="tile-meta">{card.rarity}</p>
+            {potential && <PotentialStamp potential={potential} inline tileOnly />}
+          </div>
+          <PopulationLine printings={population} />
         </div>
-        <h3 className="tile-name">{card.name}</h3>
-        {setLabel &&
-          (onOpenSet ? (
-            <button type="button" className="tile-set-label is-link" onClick={onOpenSet}>
-              {setLabel}
-            </button>
-          ) : (
-            <p className="tile-set-label">{setLabel}</p>
-          ))}
-        <div className="tile-meta-row">
-          <p className="tile-meta">{card.rarity}</p>
-          {potential && <PotentialStamp potential={potential} inline tileOnly />}
-        </div>
-        <PopulationLine printings={population} />
 
         <div className="variant-block">
           <p className="variant-title">Normale · {formatPrice(card, 'normal')}</p>

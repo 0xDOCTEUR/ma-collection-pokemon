@@ -3331,15 +3331,26 @@ textarea:focus {
   font-size: 0.68rem;
 }
 
+.tile-copy {
+  min-width: 0;
+}
+
+.tile-price-reverse {
+  display: none;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
 .grid.grid-list {
   grid-template-columns: 1fr;
-  gap: 0.4rem;
+  gap: 0.45rem;
 }
 
 .grid.grid-list .tile {
-  display: grid;
-  grid-template-columns: 64px minmax(0, 1fr);
+  display: flex;
   align-items: stretch;
+  min-height: 148px;
 }
 
 .grid.grid-list .tile:hover {
@@ -3347,15 +3358,26 @@ textarea:focus {
 }
 
 .grid.grid-list .tile-media {
-  border-radius: 0;
+  flex: 0 0 108px;
+  width: 108px;
+  align-self: stretch;
 }
 
 .grid.grid-list .tile-media img,
 .grid.grid-list .tile-media-fallback {
-  aspect-ratio: auto;
+  width: 108px;
   height: 100%;
-  min-height: 88px;
+  min-height: 148px;
+  aspect-ratio: auto;
   object-fit: cover;
+  object-position: center top;
+}
+
+.grid.grid-list .tile-badge {
+  left: 0.35rem;
+  bottom: 0.35rem;
+  padding: 0.16rem 0.4rem;
+  font-size: 0.62rem;
 }
 
 .grid.grid-list .tile-detail-hint,
@@ -3365,30 +3387,49 @@ textarea:focus {
 }
 
 .grid.grid-list .tile-body {
-  display: grid;
-  grid-template-columns: minmax(0, 1.3fr) auto;
-  gap: 0.35rem 0.75rem;
+  flex: 1;
+  display: flex;
   align-items: center;
-  padding: 0.55rem 0.75rem;
+  justify-content: flex-start;
+  gap: 1rem 1.35rem;
+  min-width: 0;
+  padding: 0.7rem 0.95rem;
 }
 
-.grid.grid-list .tile-top,
-.grid.grid-list .tile-name,
-.grid.grid-list .tile-set-label,
-.grid.grid-list .tile-meta-row {
-  grid-column: 1;
+.grid.grid-list .tile-copy {
+  flex: 0 1 26rem;
+  min-width: 0;
+  display: grid;
+  gap: 0.18rem;
+}
+
+.grid.grid-list .tile-top {
+  justify-content: flex-start;
+  gap: 0.55rem 0.75rem;
+  margin-bottom: 0;
+}
+
+.grid.grid-list .tile-price-reverse {
+  display: inline;
 }
 
 .grid.grid-list .tile-name {
   margin: 0;
-  font-size: 0.95rem;
+  font-size: 1.02rem;
+  line-height: 1.2;
+}
+
+.grid.grid-list .tile-set-label {
+  margin: 0;
+}
+
+.grid.grid-list .tile-meta-row {
+  margin: 0;
 }
 
 .grid.grid-list .variant-block {
-  grid-column: 2;
-  grid-row: 1 / span 4;
+  flex: 0 0 auto;
   margin: 0;
-  align-self: center;
 }
 
 .grid.grid-list .variant-title {
@@ -3401,16 +3442,29 @@ textarea:focus {
 
 @media (max-width: 720px) {
   .grid.grid-list .tile {
-    grid-template-columns: 56px minmax(0, 1fr);
+    min-height: 120px;
+  }
+
+  .grid.grid-list .tile-media {
+    flex-basis: 84px;
+    width: 84px;
+  }
+
+  .grid.grid-list .tile-media img,
+  .grid.grid-list .tile-media-fallback {
+    width: 84px;
+    min-height: 120px;
   }
 
   .grid.grid-list .tile-body {
-    grid-template-columns: 1fr;
+    flex-wrap: wrap;
+    gap: 0.55rem 0.75rem;
+    padding: 0.55rem 0.7rem;
   }
 
   .grid.grid-list .variant-block {
-    grid-column: 1;
-    grid-row: auto;
+    margin-left: 0;
+    width: 100%;
   }
 }
 
