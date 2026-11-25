@@ -23,7 +23,8 @@ export function searchUrl(market: Marketplace, query: string): string {
     return `https://www.cardmarket.com/fr/Pokemon/Products/Search?category=-1&searchMode=v2&searchString=${q}`
   }
   if (market === 'vinted') {
-    return `https://www.vinted.fr/catalog?search_text=${q}&catalog[]=2319`
+    // 4874 = Cartes à collectionner (pas Fiction / livres).
+    return `https://www.vinted.fr/catalog?search_text=${q}&catalog[]=4874`
   }
   return `https://www.ebay.fr/sch/i.html?_nkw=${q}&_sop=15`
 }
