@@ -29,6 +29,7 @@ import {
   speciesLabel,
 } from '../utils/generations'
 import { formatCount, formatGemRate, type PsaPrinting } from '../utils/population'
+import { sortRarities } from '../utils/rarity'
 
 type LanguageFilter = 'en' | 'ja' | 'fr' | 'all'
 type SortMode = 'upside' | 'price' | 'pop' | 'number'
@@ -61,6 +62,7 @@ const DEFAULTS = {
   setId: 'all',
   query: '',
   pokemon: '',
+  rarity: '',
   maxPrice: '',
   minRaw: '',
   maxPsa10: '',
@@ -147,6 +149,7 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
   const [setId, setSetId] = useState(DEFAULTS.setId)
   const [query, setQuery] = useState(DEFAULTS.query)
   const [pokemon, setPokemon] = useState(DEFAULTS.pokemon)
+  const [rarity, setRarity] = useState(DEFAULTS.rarity)
   const [maxPrice, setMaxPrice] = useState(DEFAULTS.maxPrice)
   const [minRaw, setMinRaw] = useState(DEFAULTS.minRaw)
   const [maxPsa10, setMaxPsa10] = useState(DEFAULTS.maxPsa10)
@@ -193,6 +196,7 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
     setId,
     query,
     pokemon,
+    rarity,
     maxPrice,
     minRaw,
     maxPsa10,
@@ -259,6 +263,7 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
     setSetId(DEFAULTS.setId)
     setQuery(DEFAULTS.query)
     setPokemon(DEFAULTS.pokemon)
+    setRarity(DEFAULTS.rarity)
     setMaxPrice(DEFAULTS.maxPrice)
     setMinRaw(DEFAULTS.minRaw)
     setMaxPsa10(DEFAULTS.maxPsa10)
@@ -313,8 +318,9 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
       }
       if (series !== 'all' && card.set.series !== series) return false
       if (setId !== 'all' && card.set.id !== setId) return false
+      if (rarity && card.rarity !== rarity) return false
       if (searching) {
-        const haystack = foldName(`${card.name} ${card.number} ${catalogSetSearch(card.set)}`)
+        const haystack = foldName(`${card.name} ${card.number} ${card.rarity} ${catalogSetSearch(card.set)}`)
         if (!needles.some((needle) => haystack.includes(needle))) return false
       }
       if (!browsingSet && indicator !== 'all') {
@@ -381,6 +387,7 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
     setId,
     query,
     pokemon,
+    rarity,
     maxPrice,
     minRaw,
     maxPsa10,
@@ -397,6 +404,23 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
   const pokemonName = pokemon ? speciesLabel(pokemon) : ''
   const selectedSet = data?.sets.find((set) => set.id === setId) ?? null
 
+  const rarityOptions = useMemo(() => {
+    if (!data) return []
+    const present = new Set<string>()
+    for (const card of data.cards) {
+      if (language === 'all' && card.set.language === 'fr') continue
+      if (language !== 'all' && card.set.language !== language) continue
+      if (series !== 'all' && card.set.series !== series) continue
+      if (setId !== 'all' && card.set.id !== setId) continue
+      if (card.rarity) present.add(card.rarity)
+    }
+    return sortRarities([...present])
+  }, [data, language, series, setId])
+
+  useEffect(() => {
+    if (rarity && data && !rarityOptions.includes(rarity)) setRarity('')
+  }, [rarity, rarityOptions, data])
+
   const frenchView = language === 'fr'
   const limitBits = [
     !frenchView && formatTypedNumber(maxPrice) ? `note 10 jusqu’à ${formatTypedNumber(maxPrice)} €` : '',
@@ -408,6 +432,9 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
   ].filter(Boolean)
 
   function emptyMessage(): string {
+    if (rarity && !pokemon && !query.trim()) {
+      return `Aucune carte « ${rarity} » pour cette sélection. Remets Rareté sur Toutes les raretés.`
+    }
     if (pokemon) {
       if (!relaxed && limitBits.length > 0) {
         return `Aucune carte de ${pokemonName} avec ces limites. Ouvre Filtres pour les élargir, ou clique sur Voir toutes les versions.`
@@ -481,7 +508,9 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
           </label>
           {browsingSet && (
             <p className="hunt-series-hint">
-              Série complète, dans l’ordre des numéros. Clique une image pour voir les côtes.
+              {rarity
+                ? `Cartes « ${rarity} », dans l’ordre des numéros.`
+                : 'Série complète, dans l’ordre des numéros. Clique une image pour voir les côtes.'}
             </p>
           )}
         </div>
@@ -514,7 +543,7 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
             <input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Dracaufeu, Mewtwo, 199…"
+              placeholder="Dracaufeu, illustration rare, 199…"
             />
           </label>
           <label>
@@ -535,6 +564,17 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
               {choices.map((option) => (
                 <option key={option.phrase} value={option.phrase}>
                   {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            <span>Rareté</span>
+            <select value={rarity} onChange={(event) => setRarity(event.target.value)}>
+              <option value="">Toutes les raretés</option>
+              {rarityOptions.map((name) => (
+                <option key={name} value={name}>
+                  {name}
                 </option>
               ))}
             </select>
@@ -681,6 +721,7 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
                   : query.trim()
                     ? ` · « ${query.trim()} »`
                     : ''}
+              {rarity ? ` · ${rarity}` : ''}
               {indicator !== 'all' ? ` · ${indicator}` : ''}
               {relaxed
                 ? ' · limites mises de côté'
@@ -735,6 +776,7 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
                     )}
                     <span className="binder-num">#{card.number || '—'}</span>
                     <strong>{label}</strong>
+                    {card.rarity ? <em>{card.rarity}</em> : null}
                     {card.printing ? <em>{huntPrintingLabel(card.printing)}</em> : null}
                     <small>{money(price)}</small>
                   </button>
@@ -806,6 +848,7 @@ export function PsaHunt({ onOpenCard }: { onOpenCard: (card: PsaHuntCard) => voi
                         </p>
                         <h3>{frenchCardName(card.name)}</h3>
                         <p className="tile-meta">
+                          {card.rarity ? `${card.rarity} · ` : ''}
                           {seriesLabel(card.set.series)} · {huntPrintingLabel(card.printing)}
                         </p>
                         {card.total > 0 ? (

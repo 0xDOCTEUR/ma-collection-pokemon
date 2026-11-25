@@ -1,10 +1,11 @@
 import { printingLabel } from './population'
+import { rarityFromPrinting, rarityLabel } from './rarity'
 
 /** Même conversion que le reste de l’appli : les prix de la source sont en dollars. */
 export const USD_TO_EUR = 0.92
 
 /** À changer quand public/data/psa-hunt.json ou psa-french.json est régénéré. */
-export const PSA_HUNT_VERSION = '2026-11-25'
+export const PSA_HUNT_VERSION = '2026-11-25b'
 
 /**
  * Noms affichés. La source anglaise dit « 30th Celebration » :
@@ -45,7 +46,7 @@ export interface PsaHuntSet {
   language: string
 }
 
-/** [série, id carte, nom, numéro, version, total noté, psa10, prix psa10 $, prix brut $, lien] */
+/** [série, id carte, nom, numéro, version, total noté, psa10, prix psa10 $, prix brut $, lien, rareté] */
 export type PsaHuntTuple = [
   number,
   string,
@@ -57,6 +58,7 @@ export type PsaHuntTuple = [
   number | null,
   number | null,
   string,
+  string?,
 ]
 
 export interface PsaHuntFile {
@@ -79,6 +81,8 @@ export interface PsaHuntCard {
   psa10Usd: number | null
   rawUsd: number | null
   slug: string
+  /** Nom français de la rareté. Vide si la source ne la donne pas. */
+  rarity: string
 }
 
 export interface PsaHuntData {
@@ -326,6 +330,7 @@ function expand(file: PsaHuntFile): PsaHuntData {
       psa10Usd: row[7],
       rawUsd: row[8],
       slug: row[9],
+      rarity: rarityLabel(typeof row[10] === 'string' ? row[10] : '') || rarityFromPrinting(row[4]),
     })
   })
   return {

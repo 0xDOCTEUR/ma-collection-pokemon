@@ -131,6 +131,7 @@ async function rowsFromSetApi(slug) {
       psa10Usd: numberOrNull(graded?.psa10),
       rawUsd: numberOrNull(graded?.ungraded) ?? numberOrNull(card.price) ?? numberOrNull(detail.latestPrice),
       slug: card.slug,
+      rarity: typeof card.rarity === 'string' && card.rarity.toLowerCase() !== 'none' ? card.rarity : '',
     }
     if (populations.length === 0) {
       rows.push({ ...base, printing: '', total: 0, psa10: 0 })
@@ -140,6 +141,29 @@ async function rowsFromSetApi(slug) {
       const printing = typeof row.printing === 'string' ? row.printing : ''
       rows.push({ ...base, printing, total: Number(row.total), psa10: Number(row.gem) || 0 })
     }
+  }
+  return rows
+}
+
+async function attachRarity(slug, rows) {
+  if (!slug || rows.length === 0 || rows.every((row) => row.rarity)) return rows
+  try {
+    const response = await fetch(`https://api.cardprice.com/api/sets/${encodeURIComponent(slug)}/cards`, {
+      headers: { accept: 'application/json' },
+      signal: AbortSignal.timeout(25000),
+    })
+    if (!response.ok) return rows
+    const payload = await response.json()
+    const byId = new Map()
+    for (const card of payload.cards ?? []) {
+      const rarity = typeof card.rarity === 'string' ? card.rarity.trim() : ''
+      if (card.id && rarity && rarity.toLowerCase() !== 'none') byId.set(card.id, rarity)
+    }
+    for (const row of rows) {
+      if (!row.rarity) row.rarity = byId.get(row.cardId) || ''
+    }
+  } catch {
+    /* la série reste lisible sans la rareté */
   }
   return rows
 }
@@ -193,6 +217,7 @@ const collected = await mapPool(unique, CONCURRENCY, async (set) => {
     const html = await fetchText(`${SOURCE}/pop/psa/${encodeURIComponent(set.slug)}`)
     let rows = parsePopHtml(html)
     if (rows.length === 0) rows = await rowsFromSetApi(set.slug)
+    rows = await attachRarity(set.slug, rows)
     done += 1
     if (done % 25 === 0 || rows.length === 0) {
       console.log(`${done}/${unique.length} ${set.slug} : ${rows.length}`)
@@ -200,7 +225,7 @@ const collected = await mapPool(unique, CONCURRENCY, async (set) => {
     return { set, rows }
   } catch (error) {
     try {
-      const rows = await rowsFromSetApi(set.slug)
+      const rows = await attachRarity(set.slug, await rowsFromSetApi(set.slug))
       if (rows.length > 0) {
         done += 1
         console.log(`${set.slug} : page de recensement absente, ${rows.length} cartes via la liste`)
@@ -239,6 +264,7 @@ for (const entry of kept) {
       row.psa10Usd,
       row.rawUsd,
       row.slug,
+      row.rarity || '',
     ])
   }
 }
