@@ -128,7 +128,21 @@ export function PokemonCardTile({
             {card.name}
           </span>
         )}
-        <span className="tile-badge">{STATUS_LABEL[overall]}</span>
+        <span
+          className="tile-badge"
+          title={STATUS_LABEL[overall]}
+          aria-label={STATUS_LABEL[overall]}
+        >
+          {overall === 'owned' ? (
+            <span className="tile-check" aria-hidden="true">
+              ✓
+            </span>
+          ) : overall === 'wanted' ? (
+            <span className="tile-check" aria-hidden="true">
+              ★
+            </span>
+          ) : null}
+        </span>
         <span className="tile-detail-hint">Cote</span>
       </button>
 
