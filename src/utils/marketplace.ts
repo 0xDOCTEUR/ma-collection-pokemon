@@ -73,54 +73,12 @@ export type BuyLink = {
   url: string
 }
 
-export type BuyOpenResult = {
-  opened: BuyLink[]
-  blocked: BuyLink[]
-}
-
 export function buyLinksForCard(card: BuyCard): BuyLink[] {
   return BUY_MARKETPLACES.map((market) => ({
     id: market.id,
     label: market.label,
     url: searchUrl(market.id, cardBuyQuery(card, market.id)),
   }))
-}
-
-/**
- * Ouvre un site d’achat tout de suite (pas about:blank).
- * Rend le focus à la page pour enchaîner d’autres ouvertures dans le même geste.
- */
-export function tryOpenBuyLink(link: BuyLink): boolean {
-  const win = window.open(link.url, `pokedoc-buy-${link.id}`)
-  if (!win) return false
-  try {
-    win.blur()
-  } catch {
-    /* ignore */
-  }
-  try {
-    window.focus()
-  } catch {
-    /* ignore */
-  }
-  return true
-}
-
-/**
- * Tente d’ouvrir les 3 d’un coup (clavier / secours).
- * Souvent 1 seul passe : les autres vont dans `blocked`.
- */
-export function openCardBuySearches(card: BuyCard): BuyOpenResult {
-  const links = buyLinksForCard(card)
-  const opened: BuyLink[] = []
-  const blocked: BuyLink[] = []
-
-  for (const link of links) {
-    if (tryOpenBuyLink(link)) opened.push(link)
-    else blocked.push(link)
-  }
-
-  return { opened, blocked }
 }
 
 export interface SearchIdea {

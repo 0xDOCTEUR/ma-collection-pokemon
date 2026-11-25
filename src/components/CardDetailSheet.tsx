@@ -13,7 +13,7 @@ import type {
   PriceRangeDays,
 } from '../types'
 import { buildVisualVariants } from '../utils/cardVariants'
-import { buyLinksForCard, cardBuyQuery, openCardBuySearches } from '../utils/marketplace'
+import { buyLinksForCard, cardBuyQuery } from '../utils/marketplace'
 import { buildTrendPoints, recordPriceSnapshot } from '../utils/priceHistory'
 import { PriceTrendChart } from './PriceTrendChart'
 import { AdvicePrices } from './AdvicePrices'
@@ -77,7 +77,6 @@ export function CardDetailSheet({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [zoomOpen, setZoomOpen] = useState(false)
-  const [buyHint, setBuyHint] = useState(false)
   const [variantId, setVariantId] = useState('normal')
   const buyLinks = useMemo(() => buyLinksForCard(card), [card])
 
@@ -89,7 +88,6 @@ export function CardDetailSheet({
     setVariantId((prev) =>
       variants.some((row) => row.id === prev) ? prev : (variants[0]?.id ?? 'normal'),
     )
-    setBuyHint(false)
   }, [card.id, variants])
 
   useEffect(() => {
@@ -244,20 +242,7 @@ export function CardDetailSheet({
             )}
 
             <div className="buy-bar">
-              <div className="buy-bar-head">
-                <span className="stat-label">Acheter</span>
-                <button
-                  type="button"
-                  className="buy-all-link"
-                  title="Tente d’ouvrir les 3 onglets (souvent bloqué par le navigateur)"
-                  onClick={() => {
-                    const result = openCardBuySearches(card)
-                    setBuyHint(result.blocked.length > 0)
-                  }}
-                >
-                  Tout ouvrir
-                </button>
-              </div>
+              <span className="stat-label">Acheter</span>
               <div className="buy-markets" aria-label="Sites d’achat">
                 {buyLinks.map((link) => (
                   <a
@@ -272,12 +257,6 @@ export function CardDetailSheet({
                   </a>
                 ))}
               </div>
-              {buyHint && (
-                <p className="buy-hint" role="status">
-                  Le navigateur n’ouvre qu’un onglet à la fois. Clique chaque site ci-dessus, ou
-                  autorise les pop-ups (icône à gauche de l’adresse) puis reclique « Tout ouvrir ».
-                </p>
-              )}
             </div>
 
             <div className="card-sheet-prices">

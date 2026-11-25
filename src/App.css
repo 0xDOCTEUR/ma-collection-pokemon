@@ -1744,31 +1744,6 @@ textarea:focus {
   background: rgba(61, 214, 198, 0.08);
 }
 
-.buy-bar-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 0.75rem;
-}
-
-.buy-all-link {
-  margin: 0;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: rgba(159, 208, 240, 0.95);
-  font: inherit;
-  font-size: 0.78rem;
-  font-weight: 650;
-  cursor: pointer;
-  text-decoration: underline;
-  text-underline-offset: 0.15em;
-}
-
-.buy-all-link:hover {
-  color: #c5e4f7;
-}
-
 .buy-markets {
   display: flex;
   flex-wrap: wrap;
@@ -1782,13 +1757,6 @@ textarea:focus {
   text-decoration: none;
   font-size: 0.86rem;
   padding: 0.55rem 0.75rem;
-}
-
-.buy-hint {
-  margin: 0;
-  font-size: 0.76rem;
-  line-height: 1.35;
-  color: rgba(255, 232, 200, 0.92);
 }
 
 .card-sheet-prices,
