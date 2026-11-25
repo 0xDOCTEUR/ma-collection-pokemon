@@ -6,6 +6,7 @@ import { CollectionMenu } from './components/CollectionMenu'
 import { CustomLists } from './components/CustomLists'
 import { ExportPanel } from './components/ExportPanel'
 import { GlobalEstimate } from './components/GlobalEstimate'
+import { HomePage } from './components/HomePage'
 import { PokedocLogo } from './components/PokedocLogo'
 import { CardScan } from './components/CardScan'
 import { CatalogCardSheet } from './components/CatalogCardSheet'
@@ -94,6 +95,7 @@ function readInitialTab(): AppTab {
   try {
     const savedTab = localStorage.getItem(LAST_TAB_KEY)
     if (
+      savedTab === 'accueil' ||
       savedTab === 'collection' ||
       savedTab === 'scan' ||
       savedTab === 'estimation' ||
@@ -106,7 +108,7 @@ function readInitialTab(): AppTab {
   } catch {
     /* ignore */
   }
-  return 'collection'
+  return 'accueil'
 }
 
 function readInitialSetFilter(): string | 'all' {
@@ -592,7 +594,7 @@ export default function App() {
   }
 
   function goHome() {
-    setTab('collection')
+    setTab('accueil')
     setDetailCard(null)
     setCatalogCard(null)
     setScannedCondition(null)
@@ -731,7 +733,14 @@ export default function App() {
         </nav>
       </header>
 
-      {tab === 'scan' ? (
+      {tab === 'accueil' ? (
+        <HomePage
+          onOpenCollection={() => setTab('collection')}
+          onOpenScan={() => setTab('scan')}
+          onOpenLists={() => setTab('listes')}
+          onOpenEstimate={() => setTab('estimation')}
+        />
+      ) : tab === 'scan' ? (
         loading ? (
           <p className="state-msg">Chargement des séries pour le scan…</p>
         ) : (
