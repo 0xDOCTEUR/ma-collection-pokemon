@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useId, useMemo, useState, type ReactNode } from 'react'
 import {
   fetchCardmarketLive,
   formatCardmarketPrice,
@@ -13,13 +13,7 @@ import type {
   PriceRangeDays,
 } from '../types'
 import { buildVisualVariants } from '../utils/cardVariants'
-import {
-  buyLinksForCard,
-  cardBuyQuery,
-  openCardBuySearches,
-  tryOpenBuyLink,
-  type BuyLink,
-} from '../utils/marketplace'
+import { buyLinksForCard, cardBuyQuery, openCardBuySearches } from '../utils/marketplace'
 import { buildTrendPoints, recordPriceSnapshot } from '../utils/priceHistory'
 import { PriceTrendChart } from './PriceTrendChart'
 import { AdvicePrices } from './AdvicePrices'
@@ -83,30 +77,19 @@ export function CardDetailSheet({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [zoomOpen, setZoomOpen] = useState(false)
-  const [buyBlocked, setBuyBlocked] = useState<BuyLink[]>([])
+  const [buyHint, setBuyHint] = useState(false)
   const [variantId, setVariantId] = useState('normal')
-  const buyOpenedRef = useRef<Set<string>>(new Set())
   const buyLinks = useMemo(() => buyLinksForCard(card), [card])
 
   const historyKey = card.tcgdexId || card.id
   const variants = useMemo(() => buildVisualVariants(card, population), [card, population])
   const activeVariant = variants.find((row) => row.id === variantId) ?? variants[0]
 
-  const openBuyAt = (index: number) => {
-    const link = buyLinks[index]
-    if (!link) return
-    if (tryOpenBuyLink(link)) buyOpenedRef.current.add(link.id)
-  }
-
-  const finishBuyGesture = () => {
-    setBuyBlocked(buyLinks.filter((link) => !buyOpenedRef.current.has(link.id)))
-  }
-
   useEffect(() => {
     setVariantId((prev) =>
       variants.some((row) => row.id === prev) ? prev : (variants[0]?.id ?? 'normal'),
     )
-    setBuyBlocked([])
+    setBuyHint(false)
   }, [card.id, variants])
 
   useEffect(() => {
@@ -261,42 +244,25 @@ export function CardDetailSheet({
             )}
 
             <div className="buy-bar">
-              <button
-                type="button"
-                className="btn primary buy-all-btn"
-                title="Ouvrir Cardmarket, Leboncoin et Vinted avec les bons mots-clés"
-                onPointerDown={(event) => {
-                  if (event.button !== 0) return
-                  buyOpenedRef.current = new Set()
-                  // 1re activation (appui) → Cardmarket
-                  openBuyAt(0)
-                }}
-                onPointerUp={(event) => {
-                  if (event.button !== 0) return
-                  // 2e activation (relâchement) → Leboncoin
-                  openBuyAt(1)
-                }}
-                onClick={(event) => {
-                  // Clavier (Entrée / Espace) : un seul geste → on tente les 3.
-                  if (event.detail === 0) {
-                    buyOpenedRef.current = new Set()
+              <div className="buy-bar-head">
+                <span className="stat-label">Acheter</span>
+                <button
+                  type="button"
+                  className="buy-all-link"
+                  title="Tente d’ouvrir les 3 onglets (souvent bloqué par le navigateur)"
+                  onClick={() => {
                     const result = openCardBuySearches(card)
-                    buyOpenedRef.current = new Set(result.opened.map((link) => link.id))
-                    setBuyBlocked(result.blocked)
-                    return
-                  }
-                  // 3e activation (clic) → Vinted
-                  openBuyAt(2)
-                  finishBuyGesture()
-                }}
-              >
-                Acheter
-              </button>
-              <div className="buy-links" aria-label="Sites d’achat">
+                    setBuyHint(result.blocked.length > 0)
+                  }}
+                >
+                  Tout ouvrir
+                </button>
+              </div>
+              <div className="buy-markets" aria-label="Sites d’achat">
                 {buyLinks.map((link) => (
                   <a
                     key={link.id}
-                    className="buy-link"
+                    className="btn primary buy-market-btn"
                     href={link.url}
                     target="_blank"
                     rel="noreferrer"
@@ -306,31 +272,11 @@ export function CardDetailSheet({
                   </a>
                 ))}
               </div>
-              {buyBlocked.length > 0 && (
-                <div className="buy-blocked" role="status">
-                  <p>
-                    Le navigateur a bloqué {buyBlocked.length} onglet
-                    {buyBlocked.length > 1 ? 's' : ''}. Clique pour les ouvrir, ou
-                    autorise les pop-ups (icône à gauche de l’adresse) puis reclique
-                    Acheter.
-                  </p>
-                  <div className="buy-blocked-actions">
-                    {buyBlocked.map((link) => (
-                      <a
-                        key={link.id}
-                        className="btn primary buy-blocked-btn"
-                        href={link.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        onClick={() =>
-                          setBuyBlocked((prev) => prev.filter((row) => row.id !== link.id))
-                        }
-                      >
-                        Ouvrir {link.label}
-                      </a>
-                    ))}
-                  </div>
-                </div>
+              {buyHint && (
+                <p className="buy-hint" role="status">
+                  Le navigateur n’ouvre qu’un onglet à la fois. Clique chaque site ci-dessus, ou
+                  autorise les pop-ups (icône à gauche de l’adresse) puis reclique « Tout ouvrir ».
+                </p>
               )}
             </div>
 
