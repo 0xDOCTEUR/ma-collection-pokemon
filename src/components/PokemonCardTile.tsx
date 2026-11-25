@@ -138,10 +138,7 @@ export function PokemonCardTile({
             <span className="tile-num">
               {card.number}/{card.printedTotal}
             </span>
-            <span className="tile-price">{formatPrice(card, 'normal')}</span>
-            {card.hasReverse && (
-              <span className="tile-price-reverse">Rev. {formatPrice(card, 'reverse')}</span>
-            )}
+            <span className="tile-price tile-price-inline">{formatPrice(card, 'normal')}</span>
           </div>
           <h3 className="tile-name">{card.name}</h3>
           {setLabel &&
@@ -157,6 +154,13 @@ export function PokemonCardTile({
             {potential && <PotentialStamp potential={potential} inline tileOnly />}
           </div>
           <PopulationLine printings={population} />
+        </div>
+
+        <div className="tile-price-stack" aria-label="Prix">
+          <span className="tile-price">{formatPrice(card, 'normal')}</span>
+          {card.hasReverse ? (
+            <span className="tile-price-reverse">Rev. {formatPrice(card, 'reverse')}</span>
+          ) : null}
         </div>
 
         <div className="variant-block">

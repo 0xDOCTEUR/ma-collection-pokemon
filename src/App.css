@@ -3335,8 +3335,11 @@ textarea:focus {
   min-width: 0;
 }
 
-.tile-price-reverse {
+.tile-price-stack {
   display: none;
+}
+
+.tile-price-reverse {
   color: var(--muted);
   font-size: 0.78rem;
   font-weight: 600;
@@ -3344,13 +3347,13 @@ textarea:focus {
 
 .grid.grid-list {
   grid-template-columns: 1fr;
-  gap: 0.45rem;
+  gap: 0.35rem;
 }
 
 .grid.grid-list .tile {
   display: flex;
   align-items: stretch;
-  min-height: 148px;
+  overflow: hidden;
 }
 
 .grid.grid-list .tile:hover {
@@ -3358,64 +3361,82 @@ textarea:focus {
 }
 
 .grid.grid-list .tile-media {
-  flex: 0 0 108px;
-  width: 108px;
+  flex: 0 0 132px;
+  width: 132px;
   align-self: stretch;
+  border-radius: 0;
 }
 
 .grid.grid-list .tile-media img,
 .grid.grid-list .tile-media-fallback {
-  width: 108px;
+  width: 132px;
   height: 100%;
-  min-height: 148px;
+  min-height: 184px;
   aspect-ratio: auto;
   object-fit: cover;
   object-position: center top;
+  border-radius: 0;
 }
 
 .grid.grid-list .tile-badge {
-  left: 0.35rem;
-  bottom: 0.35rem;
-  padding: 0.16rem 0.4rem;
-  font-size: 0.62rem;
+  left: 0.4rem;
+  bottom: 0.4rem;
+  padding: 0.18rem 0.45rem;
+  font-size: 0.64rem;
 }
 
 .grid.grid-list .tile-detail-hint,
 .grid.grid-list .tile-pop,
+.grid.grid-list .tile-price-inline,
 .grid.grid-list .variant-block.reverse {
   display: none;
 }
 
 .grid.grid-list .tile-body {
   flex: 1;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
-  justify-content: flex-start;
-  gap: 1rem 1.35rem;
+  column-gap: 1.1rem;
+  row-gap: 0.45rem;
   min-width: 0;
-  padding: 0.7rem 0.95rem;
+  padding: 0.65rem 1rem 0.65rem 0.85rem;
 }
 
 .grid.grid-list .tile-copy {
-  flex: 0 1 26rem;
   min-width: 0;
   display: grid;
-  gap: 0.18rem;
+  gap: 0.2rem;
+  align-content: center;
 }
 
 .grid.grid-list .tile-top {
   justify-content: flex-start;
-  gap: 0.55rem 0.75rem;
+  gap: 0.5rem;
   margin-bottom: 0;
 }
 
-.grid.grid-list .tile-price-reverse {
-  display: inline;
+.grid.grid-list .tile-price-stack {
+  display: grid;
+  justify-items: end;
+  align-content: center;
+  gap: 0.12rem;
+  min-width: 5.5rem;
+}
+
+.grid.grid-list .tile-price-stack .tile-price {
+  font-size: 1.12rem;
+  line-height: 1.1;
+}
+
+.grid.grid-list .tile-price-stack .tile-price-reverse {
+  display: block;
+  font-size: 0.74rem;
 }
 
 .grid.grid-list .tile-name {
   margin: 0;
-  font-size: 1.02rem;
+  font-size: 1.08rem;
   line-height: 1.2;
 }
 
@@ -3428,8 +3449,10 @@ textarea:focus {
 }
 
 .grid.grid-list .variant-block {
-  flex: 0 0 auto;
   margin: 0;
+  padding: 0;
+  border: 0;
+  justify-self: end;
 }
 
 .grid.grid-list .variant-title {
@@ -3437,34 +3460,68 @@ textarea:focus {
 }
 
 .grid.grid-list .tile-actions {
-  flex-wrap: nowrap;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.35rem;
+  margin: 0;
+  max-width: 15rem;
 }
 
-@media (max-width: 720px) {
-  .grid.grid-list .tile {
-    min-height: 120px;
-  }
+.grid.grid-list .tile-actions .chip,
+.grid.grid-list .tile-actions .add-list-trigger {
+  flex: 0 0 auto;
+  padding: 0.38rem 0.7rem;
+  font-size: 0.78rem;
+}
 
+@media (max-width: 860px) {
   .grid.grid-list .tile-media {
-    flex-basis: 84px;
-    width: 84px;
+    flex-basis: 112px;
+    width: 112px;
   }
 
   .grid.grid-list .tile-media img,
   .grid.grid-list .tile-media-fallback {
-    width: 84px;
-    min-height: 120px;
+    width: 112px;
+    min-height: 156px;
   }
 
   .grid.grid-list .tile-body {
-    flex-wrap: wrap;
-    gap: 0.55rem 0.75rem;
-    padding: 0.55rem 0.7rem;
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: 0.55rem 0.75rem;
+  }
+
+  .grid.grid-list .tile-price-stack {
+    grid-column: 2;
+    grid-row: 1;
   }
 
   .grid.grid-list .variant-block {
-    margin-left: 0;
-    width: 100%;
+    grid-column: 1 / -1;
+    justify-self: stretch;
+  }
+
+  .grid.grid-list .tile-actions {
+    max-width: none;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 560px) {
+  .grid.grid-list .tile-media {
+    flex-basis: 92px;
+    width: 92px;
+  }
+
+  .grid.grid-list .tile-media img,
+  .grid.grid-list .tile-media-fallback {
+    width: 92px;
+    min-height: 128px;
+  }
+
+  .grid.grid-list .tile-name {
+    font-size: 0.98rem;
   }
 }
 
