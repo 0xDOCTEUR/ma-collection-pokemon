@@ -588,30 +588,39 @@ export default function App() {
         )
       ) : (
         <>
-          <header className="hero hero-compact panel">
-            <div className="hero-compact-main">
-              {activeSet && activeSet.logo && (
+          <header
+            className={
+              activeSet?.logo ? 'hero hero-compact panel has-set-theme' : 'hero hero-compact panel'
+            }
+          >
+            {activeSet?.logo && (
+              <div className="set-theme" aria-hidden="true">
                 <img
                   src={activeSet.logo}
-                  alt={`Logo ${activeSet.name}`}
-                  className="set-logo-compact"
+                  alt=""
+                  className="set-theme-art"
                   onError={(e) => {
-                    if (activeSet.logoFallback) {
-                      ;(e.currentTarget as HTMLImageElement).src = activeSet.logoFallback
+                    const img = e.currentTarget as HTMLImageElement
+                    if (activeSet.logoFallback && img.dataset.fallbackTried !== '1') {
+                      img.dataset.fallbackTried = '1'
+                      img.src = activeSet.logoFallback
                     } else {
-                      ;(e.currentTarget as HTMLImageElement).style.display = 'none'
+                      img.style.display = 'none'
                     }
                   }}
                 />
-              )}
+              </div>
+            )}
+
+            <div className="hero-compact-main">
               <div className="hero-compact-copy">
                 <div className="hero-title-row">
                   <h1>{activeSet?.name ?? 'Collection'}</h1>
                   <span className="save-pill">{savedLabel}</span>
                 </div>
                 <p className="hero-sub">
-                  {stats.owned}/{stats.totalSlots} cartes possédées · Valeur estimée{' '}
-                  <strong>{money(stats.ownedValue)}</strong> · Restant{' '}
+                  {stats.owned}/{stats.totalSlots} cartes ·{' '}
+                  <strong>{money(stats.ownedValue)}</strong> · reste{' '}
                   <strong>{money(stats.missingValue)}</strong>
                 </p>
               </div>

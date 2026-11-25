@@ -2852,15 +2852,66 @@ textarea:focus {
 
 /* --- Bandeau compact de série (Collection) --- */
 .hero.hero-compact {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 0.55rem 0.85rem;
   min-height: unset;
-  padding: 0.65rem 0.85rem;
+  padding: 0.75rem 1rem;
   margin-bottom: 0.75rem;
   animation: none;
+}
+
+.hero.hero-compact.has-set-theme {
+  min-height: 5.5rem;
+  padding: 0.85rem 1.1rem;
+}
+
+.set-theme {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.set-theme::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(
+      105deg,
+      rgba(12, 16, 24, 0.96) 0%,
+      rgba(12, 16, 24, 0.88) 38%,
+      rgba(12, 16, 24, 0.45) 68%,
+      rgba(12, 16, 24, 0.2) 100%
+    ),
+    linear-gradient(0deg, rgba(12, 16, 24, 0.35), rgba(12, 16, 24, 0.1));
+}
+
+.set-theme-art {
+  position: absolute;
+  top: 50%;
+  right: -2%;
+  width: min(48%, 340px);
+  height: 150%;
+  object-fit: contain;
+  object-position: right center;
+  transform: translateY(-50%);
+  filter: drop-shadow(0 10px 28px rgba(0, 0, 0, 0.45));
+  opacity: 0.92;
+}
+
+.hero-compact-main,
+.hero-tools-bar {
+  position: relative;
+  z-index: 1;
 }
 
 .hero-compact-main {
@@ -2869,15 +2920,6 @@ textarea:focus {
   gap: 0.7rem;
   flex: 1 1 280px;
   min-width: 0;
-}
-
-.set-logo-compact {
-  width: 42px;
-  height: 42px;
-  object-fit: contain;
-  border-radius: 8px;
-  flex-shrink: 0;
-  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.28));
 }
 
 .hero-compact-copy {
@@ -2894,12 +2936,13 @@ textarea:focus {
 }
 
 .hero.hero-compact h1 {
-  font-size: 1.05rem;
+  font-size: 1.15rem;
   font-weight: 800;
   margin: 0;
   max-width: none;
   line-height: 1.2;
   letter-spacing: -0.02em;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.45);
 }
 
 .hero-compact-copy .save-pill {
@@ -2923,6 +2966,8 @@ textarea:focus {
   width: 46px;
   height: 46px;
   flex-shrink: 0;
+  background: rgba(10, 14, 20, 0.55);
+  backdrop-filter: blur(6px);
 }
 
 .progress-ring-sm strong {
@@ -2944,10 +2989,6 @@ textarea:focus {
   border: 0;
 }
 
-.hero-stats-mini {
-  display: none;
-}
-
 .hero-tool-actions {
   display: flex;
   flex-wrap: wrap;
@@ -2957,6 +2998,30 @@ textarea:focus {
 .hero-tool-actions .btn {
   padding: 0.34rem 0.65rem;
   font-size: 0.78rem;
+  background: rgba(10, 14, 20, 0.55);
+  backdrop-filter: blur(6px);
+}
+
+@media (max-width: 720px) {
+  .hero.hero-compact.has-set-theme {
+    min-height: 6.2rem;
+  }
+
+  .set-theme-art {
+    width: min(62%, 260px);
+    right: -8%;
+    opacity: 0.78;
+  }
+
+  .set-theme::before {
+    background:
+      linear-gradient(
+        115deg,
+        rgba(12, 16, 24, 0.97) 0%,
+        rgba(12, 16, 24, 0.9) 48%,
+        rgba(12, 16, 24, 0.55) 100%
+      );
+  }
 }
 
 /* --- Sections Filtres unifiées (Collection, Catalogue, Listes) --- */
