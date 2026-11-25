@@ -1445,12 +1445,14 @@ textarea:focus {
   position: absolute;
   left: 0.55rem;
   bottom: 0.55rem;
-  padding: 0.25rem 0.55rem;
+  padding: 0.28rem 0.6rem;
   border-radius: 999px;
   font-size: 0.7rem;
-  font-weight: 700;
-  background: rgba(0, 0, 0, 0.7);
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  background: rgba(0, 0, 0, 0.78);
   border: 1px solid var(--line);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
 }
 
 .potential-stamp {
@@ -1763,13 +1765,21 @@ textarea:focus {
 }
 
 .status-owned .tile-badge {
-  color: var(--mint);
-  border-color: rgba(61, 214, 198, 0.4);
+  color: #062a26;
+  background: #3dd6c6;
+  border-color: #3dd6c6;
 }
 
 .status-wanted .tile-badge {
-  color: var(--wanted);
-  border-color: rgba(78, 168, 222, 0.45);
+  color: #fff;
+  background: #2f7fbf;
+  border-color: #2f7fbf;
+}
+
+.status-missing .tile-badge {
+  color: rgba(255, 255, 255, 0.78);
+  background: rgba(18, 22, 30, 0.88);
+  border-color: rgba(255, 255, 255, 0.18);
 }
 
 .tile-body {
