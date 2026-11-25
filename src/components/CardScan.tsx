@@ -95,7 +95,7 @@ export function CardScan({ targets, embedded = false, onClose, onConfirm }: Prop
       setConditionReason(result.condition.reason)
       if (result.matches.length === 0) {
         setMessage(
-          'Pas de correspondance assez sûre dans toutes les séries. Cadre le nom en haut et le numéro en bas à droite, ou cherche à la main.',
+          'Pas de carte assez sûre. Cadre bien le nom en haut et le numéro en bas à droite (ex. 199/165), avec peu de reflet, ou cherche à la main.',
         )
       }
       setStep('result')
@@ -108,12 +108,19 @@ export function CardScan({ targets, embedded = false, onClose, onConfirm }: Prop
   async function captureFrame() {
     const video = videoRef.current
     if (!video || !cameraReady) return
+    const sourceW = video.videoWidth || 960
+    const sourceH = video.videoHeight || 1280
+    // Même proportion que le cadre jaune à l’écran (inset 8% / 12 %).
+    const sx = sourceW * 0.12
+    const sy = sourceH * 0.08
+    const sw = sourceW * 0.76
+    const sh = sourceH * 0.84
     const canvas = document.createElement('canvas')
-    canvas.width = video.videoWidth || 960
-    canvas.height = video.videoHeight || 1280
+    canvas.width = Math.round(sw)
+    canvas.height = Math.round(sh)
     const context = canvas.getContext('2d')
     if (!context) return
-    context.drawImage(video, 0, 0, canvas.width, canvas.height)
+    context.drawImage(video, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height)
     const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.92))
     if (blob) await analyze(blob)
   }
@@ -124,12 +131,19 @@ export function CardScan({ targets, embedded = false, onClose, onConfirm }: Prop
   }
 
   function applyManual() {
-    const number = String(Number.parseInt(manualNumber.trim(), 10))
+    const rawNumber = manualNumber.trim()
+    const number = /^\d+$/.test(rawNumber)
+      ? String(Number.parseInt(rawNumber, 10))
+      : rawNumber.toUpperCase()
     const nameNeedle = manualName.trim().toLowerCase()
     let list = targets
-    if (number && number !== 'NaN') list = list.filter((target) => target.number === number)
+    if (number) list = list.filter((target) => target.number === number)
     if (nameNeedle) {
-      list = list.filter((target) => target.name.toLowerCase().includes(nameNeedle))
+      list = list.filter(
+        (target) =>
+          target.name.toLowerCase().includes(nameNeedle) ||
+          target.setLabel.toLowerCase().includes(nameNeedle),
+      )
     }
     if (list.length === 0) {
       setMessage('Aucune carte trouvée avec ce numéro / ce nom.')

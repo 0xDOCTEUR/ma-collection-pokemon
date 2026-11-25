@@ -58,7 +58,6 @@ const RARITY_FR: Record<string, string> = {
   legend: 'Légende',
   'amazing rare': 'Rare magnifique',
   'secret rare': 'Rare secrète',
-  'rare holo ex': 'Rare EX',
   'holo rare vmax': 'Rare VMAX',
   'holo rare vstar': 'Rare VSTAR',
   'holo rare v': 'Rare V',
