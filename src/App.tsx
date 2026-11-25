@@ -1,4 +1,4 @@
-import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react'
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import { euroValue, fetchPopulation, fetchSetCards } from './api/pokemon'
 import { BackupPanel } from './components/BackupPanel'
 import { CardDetailSheet } from './components/CardDetailSheet'
@@ -154,6 +154,11 @@ function readDensity(): CollectionDensity {
 export default function App() {
   const [tab, setTab] = useState<AppTab>(() => readInitialTab())
   const [selectedSetId, setSelectedSetId] = useState<string | 'all'>(() => readInitialSetFilter())
+  const [lastSeriesId, setLastSeriesId] = useState(() => {
+    const initial = readInitialSetFilter()
+    return initial === 'all' ? 'sv03.5' : initial
+  })
+  const previousSetIdRef = useRef<string | 'all'>(readInitialSetFilter())
   const [cardsBySet, setCardsBySet] = useState<Record<string, PokemonCard[]>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -586,9 +591,31 @@ export default function App() {
   }, [tab, selectedSetId])
 
   useEffect(() => {
-    if (selectedSetId === 'all') return
-    setQuery('')
+    if (selectedSetId !== 'all') setLastSeriesId(selectedSetId)
   }, [selectedSetId])
+
+  useEffect(() => {
+    const previous = previousSetIdRef.current
+    previousSetIdRef.current = selectedSetId
+    // Ne vide la recherche que quand on change d’une série à une autre série.
+    if (
+      selectedSetId !== 'all' &&
+      previous !== 'all' &&
+      previous !== selectedSetId
+    ) {
+      setQuery('')
+    }
+  }, [selectedSetId])
+
+  function searchInAllSets() {
+    setSelectedSetId('all')
+    setTab('collection')
+  }
+
+  function searchInLastSeries() {
+    setSelectedSetId(lastSeriesId)
+    setTab('collection')
+  }
 
   const setHasAnyReverse = useMemo(() => cards.some((c) => c.hasReverse), [cards])
 
@@ -675,6 +702,7 @@ export default function App() {
             ownedCountBySet={ownedCountBySet}
             onOpenCollection={() => setTab('collection')}
             onSelectSet={(setId) => {
+              if (setId !== 'all') setLastSeriesId(setId)
               setSelectedSetId(setId)
               setTab('collection')
             }}
@@ -885,19 +913,53 @@ export default function App() {
             )}
 
             <div className="controls-row">
-              <label className="search">
-                Recherche
-                <input
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder={
-                    isAllSets
-                      ? 'Ex. Dracaufeu, Pikachu, GG70…'
-                      : 'Nom ou numéro…'
-                  }
-                  autoFocus={isAllSets}
-                />
-              </label>
+              <div className="search-block">
+                <label className="search">
+                  Recherche
+                  <input
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    placeholder={
+                      isAllSets
+                        ? 'Ex. Dracaufeu, Pikachu, GG70…'
+                        : 'Nom ou numéro dans cette série…'
+                    }
+                  />
+                </label>
+                <div className="search-scope" role="group" aria-label="Où chercher">
+                  <button
+                    type="button"
+                    className={!isAllSets ? 'is-on' : ''}
+                    aria-pressed={!isAllSets}
+                    title={
+                      isAllSets
+                        ? `Revenir à ${allCollectionSets.find((s) => s.id === lastSeriesId)?.name ?? 'la dernière série'}`
+                        : 'Chercher seulement dans la série ouverte'
+                    }
+                    onClick={searchInLastSeries}
+                  >
+                    Cette série
+                  </button>
+                  <button
+                    type="button"
+                    className={isAllSets ? 'is-on' : ''}
+                    aria-pressed={isAllSets}
+                    title="Chercher un Pokémon dans toutes les séries"
+                    onClick={searchInAllSets}
+                  >
+                    Toutes
+                  </button>
+                </div>
+                {!isAllSets && query.trim().length >= 2 && (
+                  <button
+                    type="button"
+                    className="search-expand-link"
+                    onClick={searchInAllSets}
+                  >
+                    Chercher « {query.trim()} » dans toutes les séries →
+                  </button>
+                )}
+              </div>
 
               <label>
                 Rareté
