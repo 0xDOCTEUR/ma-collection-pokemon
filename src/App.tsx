@@ -752,6 +752,22 @@ export default function App() {
         <>
           <header className="hero hero-compact panel">
             <div className="hero-compact-main">
+              {activeSet?.logo ? (
+                <img
+                  src={activeSet.logo}
+                  alt=""
+                  className="set-logo-mark"
+                  onError={(e) => {
+                    const img = e.currentTarget as HTMLImageElement
+                    if (activeSet.logoFallback && img.dataset.fallbackTried !== '1') {
+                      img.dataset.fallbackTried = '1'
+                      img.src = activeSet.logoFallback
+                    } else {
+                      img.style.display = 'none'
+                    }
+                  }}
+                />
+              ) : null}
               <div className="hero-compact-copy">
                 <div className="hero-title-row">
                   <h1>{isAllSets ? 'Toutes les séries' : (activeSet?.name ?? 'Collection')}</h1>
