@@ -3499,6 +3499,13 @@ button.tile-set-label.is-link:hover {
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
 }
 
+.add-list-dropdown-portal {
+  position: fixed;
+  right: auto;
+  z-index: 80;
+  width: 260px;
+}
+
 .add-list-empty {
   margin: 0 0 0.5rem;
   font-size: 0.8rem;
