@@ -16,9 +16,8 @@ import { buildVisualVariants } from '../utils/cardVariants'
 import {
   buyLinksForCard,
   cardBuyQuery,
-  navigateBuyWindow,
-  openBuyBlank,
   openCardBuySearches,
+  tryOpenBuyLink,
   type BuyLink,
 } from '../utils/marketplace'
 import { buildTrendPoints, recordPriceSnapshot } from '../utils/priceHistory'
@@ -86,30 +85,21 @@ export function CardDetailSheet({
   const [zoomOpen, setZoomOpen] = useState(false)
   const [buyBlocked, setBuyBlocked] = useState<BuyLink[]>([])
   const [variantId, setVariantId] = useState('normal')
-  const buyWinsRef = useRef<(Window | null)[]>([])
+  const buyOpenedRef = useRef<Set<string>>(new Set())
   const buyLinks = useMemo(() => buyLinksForCard(card), [card])
 
   const historyKey = card.tcgdexId || card.id
   const variants = useMemo(() => buildVisualVariants(card, population), [card, population])
   const activeVariant = variants.find((row) => row.id === variantId) ?? variants[0]
 
-  const openBuyBlankAt = (index: number) => {
+  const openBuyAt = (index: number) => {
     const link = buyLinks[index]
     if (!link) return
-    buyWinsRef.current[index] = openBuyBlank(link)
+    if (tryOpenBuyLink(link)) buyOpenedRef.current.add(link.id)
   }
 
   const finishBuyGesture = () => {
-    const blocked: BuyLink[] = []
-    buyLinks.forEach((link, index) => {
-      const win = buyWinsRef.current[index]
-      if (win && !win.closed) {
-        navigateBuyWindow(win, link.url)
-      } else {
-        blocked.push(link)
-      }
-    })
-    setBuyBlocked(blocked)
+    setBuyBlocked(buyLinks.filter((link) => !buyOpenedRef.current.has(link.id)))
   }
 
   useEffect(() => {
@@ -277,24 +267,26 @@ export function CardDetailSheet({
                 title="Ouvrir Cardmarket, Leboncoin et Vinted avec les bons mots-clés"
                 onPointerDown={(event) => {
                   if (event.button !== 0) return
-                  buyWinsRef.current = []
-                  // 1re activation (appui) → onglet vide Cardmarket
-                  openBuyBlankAt(0)
+                  buyOpenedRef.current = new Set()
+                  // 1re activation (appui) → Cardmarket
+                  openBuyAt(0)
                 }}
                 onPointerUp={(event) => {
                   if (event.button !== 0) return
-                  // 2e activation (relâchement) → onglet vide Leboncoin
-                  openBuyBlankAt(1)
+                  // 2e activation (relâchement) → Leboncoin
+                  openBuyAt(1)
                 }}
                 onClick={(event) => {
                   // Clavier (Entrée / Espace) : un seul geste → on tente les 3.
                   if (event.detail === 0) {
+                    buyOpenedRef.current = new Set()
                     const result = openCardBuySearches(card)
+                    buyOpenedRef.current = new Set(result.opened.map((link) => link.id))
                     setBuyBlocked(result.blocked)
                     return
                   }
-                  // 3e activation (clic) → onglet vide Vinted, puis navigation
-                  openBuyBlankAt(2)
+                  // 3e activation (clic) → Vinted
+                  openBuyAt(2)
                   finishBuyGesture()
                 }}
               >

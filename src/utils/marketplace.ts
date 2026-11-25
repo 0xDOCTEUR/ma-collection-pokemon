@@ -86,15 +86,13 @@ export function buyLinksForCard(card: BuyCard): BuyLink[] {
   }))
 }
 
-/** Ouvre un onglet vide (léger) et rend le focus à la page. */
-export function openBuyBlank(link: BuyLink): Window | null {
-  const win = window.open('about:blank', `pokedoc-buy-${link.id}`)
-  if (!win) return null
-  try {
-    win.opener = null
-  } catch {
-    /* ignore */
-  }
+/**
+ * Ouvre un site d’achat tout de suite (pas about:blank).
+ * Rend le focus à la page pour enchaîner d’autres ouvertures dans le même geste.
+ */
+export function tryOpenBuyLink(link: BuyLink): boolean {
+  const win = window.open(link.url, `pokedoc-buy-${link.id}`)
+  if (!win) return false
   try {
     win.blur()
   } catch {
@@ -105,15 +103,7 @@ export function openBuyBlank(link: BuyLink): Window | null {
   } catch {
     /* ignore */
   }
-  return win
-}
-
-export function navigateBuyWindow(win: Window, url: string): void {
-  try {
-    win.location.href = url
-  } catch {
-    /* ignore */
-  }
+  return true
 }
 
 /**
@@ -126,13 +116,8 @@ export function openCardBuySearches(card: BuyCard): BuyOpenResult {
   const blocked: BuyLink[] = []
 
   for (const link of links) {
-    const win = openBuyBlank(link)
-    if (win) {
-      navigateBuyWindow(win, link.url)
-      opened.push(link)
-    } else {
-      blocked.push(link)
-    }
+    if (tryOpenBuyLink(link)) opened.push(link)
+    else blocked.push(link)
   }
 
   return { opened, blocked }
