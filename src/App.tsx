@@ -490,7 +490,41 @@ export default function App() {
 
   return (
     <div className="app">
-      <div className="atmosphere" aria-hidden="true" />
+      <div
+        className={
+          !isToolTab && (activeSet?.logo || activeSet?.chaseImage)
+            ? 'atmosphere has-set-art'
+            : 'atmosphere'
+        }
+        aria-hidden="true"
+      >
+        {!isToolTab && activeSet?.logo ? (
+          <img
+            src={activeSet.logo}
+            alt=""
+            className="set-page-logo"
+            onError={(e) => {
+              const img = e.currentTarget as HTMLImageElement
+              if (activeSet.logoFallback && img.dataset.fallbackTried !== '1') {
+                img.dataset.fallbackTried = '1'
+                img.src = activeSet.logoFallback
+              } else {
+                img.style.display = 'none'
+              }
+            }}
+          />
+        ) : null}
+        {!isToolTab && activeSet?.chaseImage ? (
+          <img
+            src={activeSet.chaseImage}
+            alt=""
+            className="set-page-chase"
+            onError={(e) => {
+              ;(e.currentTarget as HTMLImageElement).style.display = 'none'
+            }}
+          />
+        ) : null}
+      </div>
 
       <header className="site-top">
         <PokedocLogo />
@@ -588,45 +622,8 @@ export default function App() {
         )
       ) : (
         <>
-          <header
-            className={[
-              'hero hero-compact panel',
-              activeSet?.logo || activeSet?.chaseImage ? 'has-set-theme' : '',
-              activeSet?.chaseImage ? 'has-chase' : '',
-            ]
-              .filter(Boolean)
-              .join(' ')}
-          >
-            {activeSet?.chaseImage && (
-              <div className="set-theme" aria-hidden="true">
-                <img
-                  src={activeSet.chaseImage}
-                  alt=""
-                  className="set-theme-chase"
-                  onError={(e) => {
-                    ;(e.currentTarget as HTMLImageElement).style.display = 'none'
-                  }}
-                />
-              </div>
-            )}
-
+          <header className="hero hero-compact panel">
             <div className="hero-compact-main">
-              {activeSet?.logo ? (
-                <img
-                  src={activeSet.logo}
-                  alt=""
-                  className="set-logo-mark"
-                  onError={(e) => {
-                    const img = e.currentTarget as HTMLImageElement
-                    if (activeSet.logoFallback && img.dataset.fallbackTried !== '1') {
-                      img.dataset.fallbackTried = '1'
-                      img.src = activeSet.logoFallback
-                    } else {
-                      img.style.display = 'none'
-                    }
-                  }}
-                />
-              ) : null}
               <div className="hero-compact-copy">
                 <div className="hero-title-row">
                   <h1>{activeSet?.name ?? 'Collection'}</h1>
