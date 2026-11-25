@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { createPortal } from 'react-dom'
 
 interface Props {
   src: string
@@ -10,18 +11,22 @@ interface Props {
 export function CardImageLightbox({ src, alt, fallbackSrc = null, onClose }: Props) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        e.stopPropagation()
+        onClose()
+      }
     }
     const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
-    window.addEventListener('keydown', onKey)
+    window.addEventListener('keydown', onKey, true)
     return () => {
       document.body.style.overflow = prev
-      window.removeEventListener('keydown', onKey)
+      window.removeEventListener('keydown', onKey, true)
     }
   }, [onClose])
 
-  return (
+  return createPortal(
     <div
       className="card-zoom-backdrop"
       role="dialog"
@@ -46,6 +51,7 @@ export function CardImageLightbox({ src, alt, fallbackSrc = null, onClose }: Pro
         }}
       />
       <p className="card-zoom-hint">Clique à côté ou appuie sur Échap pour fermer</p>
-    </div>
+    </div>,
+    document.body,
   )
 }
