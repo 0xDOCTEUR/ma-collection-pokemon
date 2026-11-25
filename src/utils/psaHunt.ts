@@ -184,8 +184,12 @@ export type PotentialLevel = 'open' | 'watch' | 'narrow' | 'unknown'
 
 export interface CardPotential {
   level: PotentialLevel
+  /** Libellé court pour la tuile. */
   title: string
+  /** Phrase claire pour la fiche. */
   reason: string
+  /** Combien de fois la note 10 coûte par rapport à la carte sans note. */
+  premium: number | null
 }
 
 /** Pastilles du catalogue, pour filtrer facilement. */
@@ -195,11 +199,18 @@ export const INDICATOR_FILTERS = [
   { id: 'À suivre', label: 'À suivre', level: 'watch' as PotentialLevel },
   { id: 'Déjà chère', label: 'Déjà chère', level: 'narrow' as PotentialLevel },
   { id: 'Déjà courante', label: 'Déjà courante', level: 'narrow' as PotentialLevel },
-  { id: 'Peu demandée', label: 'Peu demandée', level: 'narrow' as PotentialLevel },
+  { id: 'Marché faible', label: 'Marché faible', level: 'narrow' as PotentialLevel },
   { id: 'Pas assez d’infos', label: 'Pas assez d’infos', level: 'unknown' as PotentialLevel },
 ] as const
 
 export type IndicatorFilterId = (typeof INDICATOR_FILTERS)[number]['id']
+
+function withPremium(
+  potential: Omit<CardPotential, 'premium'>,
+  premium: number | null,
+): CardPotential {
+  return { ...potential, premium }
+}
 
 /**
  * Lecture d’aujourd’hui, pas une promesse de hausse.
@@ -213,18 +224,26 @@ export function cardPotential(
   rawEur: number | null,
 ): CardPotential {
   if (psaEur == null || rawEur == null || psaEur <= 0 || rawEur <= 0) {
-    return {
-      level: 'unknown',
-      title: 'Pas assez d’infos',
-      reason: 'Il manque un prix. Sans le prix de la note 10 et celui de la carte sans note, on ne voit pas s’il reste de la marge.',
-    }
+    return withPremium(
+      {
+        level: 'unknown',
+        title: 'Pas assez d’infos',
+        reason:
+          'Il manque un prix. Sans le prix de la note 10 et celui de la carte sans note, on ne voit pas s’il reste de la marge.',
+      },
+      null,
+    )
   }
   if (total <= 0) {
-    return {
-      level: 'unknown',
-      title: 'Pas assez d’infos',
-      reason: 'Les côtes sont là. Le nombre de cartes déjà notées n’est pas encore publié, donc on ne voit pas si les notes 10 sont rares.',
-    }
+    return withPremium(
+      {
+        level: 'unknown',
+        title: 'Pas assez d’infos',
+        reason:
+          'Les côtes sont là. Le nombre de cartes déjà notées n’est pas encore publié, donc on ne voit pas si les notes 10 sont rares.',
+      },
+      null,
+    )
   }
 
   const premium = psaEur / rawEur
@@ -234,52 +253,79 @@ export function cardPotential(
   const room = premium >= 1.2 && premium <= 5
 
   if (!wanted) {
-    return {
-      level: 'narrow',
-      title: 'Peu demandée',
-      reason: 'La carte sans note se vend encore peu. Une note 10 prend de la valeur seulement si des gens la cherchent déjà.',
-    }
+    return withPremium(
+      {
+        level: 'narrow',
+        title: 'Marché faible',
+        reason:
+          'La carte sans note se vend encore peu. Une note 10 prend de la valeur seulement si des gens la cherchent déjà.',
+      },
+      premium,
+    )
   }
   if (premium > 6) {
-    return {
-      level: 'narrow',
-      title: 'Déjà chère',
-      reason: 'La note 10 coûte déjà plusieurs fois la carte sans note. Une grande partie de la hausse possible est déjà dans le prix.',
-    }
+    return withPremium(
+      {
+        level: 'narrow',
+        title: 'Déjà chère',
+        reason:
+          'La note 10 coûte déjà plusieurs fois la carte sans note. Une grande partie de la hausse possible est déjà dans le prix.',
+      },
+      premium,
+    )
   }
   if (psa10 > 2500) {
-    return {
-      level: 'narrow',
-      title: 'Déjà courante',
-      reason: 'Beaucoup d’exemplaires sont déjà notés 10. Le côté rare de la note parfaite est en grande partie passé.',
-    }
+    return withPremium(
+      {
+        level: 'narrow',
+        title: 'Déjà courante',
+        reason:
+          'Beaucoup d’exemplaires sont déjà notés 10. Le côté rare de la note parfaite est en grande partie passé.',
+      },
+      premium,
+    )
   }
   if (wanted && scarce && room) {
-    return {
-      level: 'open',
-      title: 'Marge ouverte',
-      reason: 'La carte sans note se vend déjà, les notes 10 restent peu nombreuses, et cette note n’est pas encore hors de prix.',
-    }
+    return withPremium(
+      {
+        level: 'open',
+        title: 'Marge ouverte',
+        reason:
+          'La carte sans note se vend déjà, les notes 10 restent peu nombreuses, et cette note n’est pas encore hors de prix.',
+      },
+      premium,
+    )
   }
   if (premium < 1.2) {
-    return {
-      level: 'watch',
-      title: 'À suivre',
-      reason: 'Les notes 10 ne se vendent pas plus cher que la carte sans note. Le marché ne paie pas encore cette note.',
-    }
+    return withPremium(
+      {
+        level: 'watch',
+        title: 'À suivre',
+        reason:
+          'Les notes 10 ne se vendent pas plus cher que la carte sans note. Le marché ne paie pas encore cette note.',
+      },
+      premium,
+    )
   }
   if (premium > 5) {
-    return {
+    return withPremium(
+      {
+        level: 'watch',
+        title: 'À suivre',
+        reason:
+          'La carte sans note se vend déjà, mais la note 10 est déjà bien plus chère. La marge est plus petite.',
+      },
+      premium,
+    )
+  }
+  return withPremium(
+    {
       level: 'watch',
       title: 'À suivre',
-      reason: 'La carte sans note se vend déjà, mais la note 10 est déjà bien plus chère. La marge est plus petite.',
-    }
-  }
-  return {
-    level: 'watch',
-    title: 'À suivre',
-    reason: 'La carte sans note se vend déjà, mais les notes 10 sont déjà assez nombreuses.',
-  }
+      reason: 'La carte sans note se vend déjà, mais les notes 10 sont déjà assez nombreuses.',
+    },
+    premium,
+  )
 }
 
 export function cardImageUrl(cardId: string): string | null {

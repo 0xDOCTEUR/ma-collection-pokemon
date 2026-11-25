@@ -1047,8 +1047,8 @@ export default function App() {
                       ).
                     </>
                   )}{' '}
-                  La pastille sous la rareté indique la marge : verte pour une marge ouverte, jaune
-                  pour à suivre, rouge quand la hausse facile est moins probable.
+                  Sous la rareté, seuls les signaux utiles apparaissent : marge ouverte (vert) ou à
+                  suivre (jaune), avec le rapport note 10 / carte sans note (ex. ×2,1).
                 </p>
               )}
             </div>

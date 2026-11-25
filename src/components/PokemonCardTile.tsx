@@ -150,7 +150,7 @@ export function PokemonCardTile({
           ))}
         <div className="tile-meta-row">
           <p className="tile-meta">{card.rarity}</p>
-          {potential && <PotentialStamp potential={potential} inline />}
+          {potential && <PotentialStamp potential={potential} inline tileOnly />}
         </div>
         <PopulationLine printings={population} />
 
