@@ -48,8 +48,7 @@ export function QuickAdd({ cards, onApply }: Props) {
 
     if (ids.length) onApply(ids, mode, variant)
 
-    const label =
-      mode === 'owned' ? 'possédées' : mode === 'wanted' ? 'recherchées' : 'manquantes'
+    const label = mode === 'owned' ? 'possédées' : 'manquantes'
     const version = variant === 'reverse' ? 'reverse' : 'normales'
     let msg = `${ids.length} carte(s) ${version} marquées comme ${label}.`
     if (noReverse.length) msg += ` Pas de reverse pour : ${noReverse.join(', ')}.`
@@ -70,7 +69,6 @@ export function QuickAdd({ cards, onApply }: Props) {
             Marquer comme
             <select value={mode} onChange={(e) => setMode(e.target.value as CardStatus)}>
               <option value="owned">Possédées</option>
-              <option value="wanted">Recherchées</option>
               <option value="missing">Manquantes</option>
             </select>
           </label>

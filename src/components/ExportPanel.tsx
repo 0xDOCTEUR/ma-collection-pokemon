@@ -15,20 +15,18 @@ interface Props {
   getStatus: (cardId: string, variant: CardVariant) => CardStatus
 }
 
-type ListKind = 'complete' | 'owned' | 'missing' | 'wanted'
+type ListKind = 'complete' | 'owned' | 'missing'
 
 const KIND_LABEL: Record<ListKind, string> = {
   complete: 'Liste complète',
   owned: 'Cartes possédées',
   missing: 'Cartes manquantes',
-  wanted: 'Cartes recherchées',
 }
 
 function filterEntries(all: ListEntry[], kind: ListKind): ListEntry[] {
   if (kind === 'complete') return all
   if (kind === 'owned') return all.filter((e) => e.status === 'owned')
-  if (kind === 'missing') return all.filter((e) => e.status !== 'owned')
-  return all.filter((e) => e.status === 'wanted')
+  return all.filter((e) => e.status !== 'owned')
 }
 
 export function ExportPanel({ setName, cards, getStatus }: Props) {
@@ -43,7 +41,6 @@ export function ExportPanel({ setName, cards, getStatus }: Props) {
       complete: allEntries.length,
       owned: allEntries.filter((e) => e.status === 'owned').length,
       missing: allEntries.filter((e) => e.status !== 'owned').length,
-      wanted: allEntries.filter((e) => e.status === 'wanted').length,
     }),
     [allEntries],
   )
@@ -75,11 +72,9 @@ export function ExportPanel({ setName, cards, getStatus }: Props) {
   const emptyMessage =
     kind === 'owned'
       ? 'Aucune carte possédée pour le moment. Coche « J’ai » sur tes cartes.'
-      : kind === 'wanted'
-        ? 'Aucune carte recherchée pour le moment.'
-        : kind === 'missing'
-          ? 'Bravo, tu as tout ! Aucune carte manquante.'
-          : 'Aucune carte dans cette série.'
+      : kind === 'missing'
+        ? 'Bravo, tu as tout ! Aucune carte manquante.'
+        : 'Aucune carte dans cette série.'
 
   return (
     <section className="export panel" id="export">
@@ -87,7 +82,7 @@ export function ExportPanel({ setName, cards, getStatus }: Props) {
         <div>
           <h2>Voir et télécharger les listes</h2>
           <p className="muted">
-            Possédées, manquantes, recherchées ou complète · reverse notées avec un R (ex. 25R)
+            Possédées, manquantes ou complète · reverse notées avec un R (ex. 25R)
           </p>
         </div>
       </div>
@@ -113,7 +108,6 @@ export function ExportPanel({ setName, cards, getStatus }: Props) {
           <select value={kind} onChange={(e) => setKind(e.target.value as ListKind)}>
             <option value="owned">Possédées ({counts.owned})</option>
             <option value="missing">Manquantes ({counts.missing})</option>
-            <option value="wanted">Recherchées ({counts.wanted})</option>
             <option value="complete">Complète ({counts.complete})</option>
           </select>
         </label>

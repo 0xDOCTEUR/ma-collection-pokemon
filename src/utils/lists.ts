@@ -60,8 +60,7 @@ export function formatList(entries: ListEntry[], format: ListFormat): string {
     ...entries.map((e) => {
       const price = pricesFor(e.card, e.variant)
       const cm = cardmarketPricesFor(e.card, e.variant)
-      const statut =
-        e.status === 'owned' ? 'possedee' : e.status === 'wanted' ? 'recherchee' : 'manquante'
+      const statut = e.status === 'owned' ? 'possedee' : 'manquante'
       return `${e.setName ?? e.card.setId};${e.card.number};${e.card.name};${e.variant};${statut};${e.card.rarity};${price.eur ?? price.usd ?? ''};${cm.eur ?? ''}`
     }),
   ].join('\n')

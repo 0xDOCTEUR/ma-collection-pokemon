@@ -163,10 +163,7 @@ export function CardDetailSheet({
                   <strong className="sheet-collection-state">
                     {normalStatus === 'owned' || (card.hasReverse && reverseStatus === 'owned')
                       ? 'Dans ta collection'
-                      : normalStatus === 'wanted' ||
-                          (card.hasReverse && reverseStatus === 'wanted')
-                        ? 'Marquée comme recherchée'
-                        : 'Pas encore ajoutée'}
+                      : 'Manquante'}
                   </strong>
                 </div>
                 <div className="sheet-collection-actions">
@@ -178,15 +175,6 @@ export function CardDetailSheet({
                     }
                   >
                     {normalStatus === 'owned' ? '✓ J’ai' : '+ J’ai'}
-                  </button>
-                  <button
-                    type="button"
-                    className={normalStatus === 'wanted' ? 'chip active-wanted' : 'chip'}
-                    onClick={() =>
-                      onSetStatus('normal', normalStatus === 'wanted' ? 'missing' : 'wanted')
-                    }
-                  >
-                    {normalStatus === 'wanted' ? '★ Recherchée' : 'Je cherche'}
                   </button>
                   {card.hasReverse && (
                     <button

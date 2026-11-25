@@ -172,7 +172,7 @@ function isReversePrinting(printing: string): boolean {
 
 /**
  * Construit les cartes `PokemonCard[]` d’une série issue du catalogue `psa-hunt.json`
- * pour la suivre dans Collection (cases J’ai / Recherchée / Reverse + côtes).
+ * pour la suivre dans Collection (J’ai / Reverse + côtes + listes).
  */
 export function buildCatalogSetCards(
   setId: string,

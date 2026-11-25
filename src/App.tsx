@@ -57,7 +57,6 @@ function trackSlot(
   value: number,
   acc: {
     owned: number
-    wanted: number
     missing: number
     ownedValue: number
     missingValue: number
@@ -66,10 +65,6 @@ function trackSlot(
   if (status === 'owned') {
     acc.owned += 1
     acc.ownedValue += value
-  } else if (status === 'wanted') {
-    acc.wanted += 1
-    acc.missing += 1
-    acc.missingValue += value
   } else {
     acc.missing += 1
     acc.missingValue += value
@@ -80,7 +75,6 @@ const FILTER_STATUS_LABEL: Record<FilterStatus, string> = {
   all: 'Toutes',
   owned: 'Possédées',
   missing: 'Manquantes',
-  wanted: 'Recherchées',
   'reverse-missing': 'Reverse manquantes',
   'reverse-owned': 'Reverse possédées',
 }
@@ -499,7 +493,6 @@ export default function App() {
   const stats = useMemo(() => {
     const acc = {
       owned: 0,
-      wanted: 0,
       missing: 0,
       ownedValue: 0,
       missingValue: 0,
@@ -539,8 +532,6 @@ export default function App() {
     let list = enriched.filter(({ card, normalStatus, reverseStatus }) => {
       if (filter === 'owned') {
         if (!(normalStatus === 'owned' || reverseStatus === 'owned')) return false
-      } else if (filter === 'wanted') {
-        if (!(normalStatus === 'wanted' || reverseStatus === 'wanted')) return false
       } else if (filter === 'missing') {
         if (!(normalStatus === 'missing' || (card.hasReverse && reverseStatus === 'missing'))) {
           return false
@@ -622,17 +613,15 @@ export default function App() {
   const statusCounts = useMemo(() => {
     let owned = 0
     let missing = 0
-    let wanted = 0
     let reverseMissing = 0
     let reverseOwned = 0
     for (const { card, normalStatus, reverseStatus } of enriched) {
       if (normalStatus === 'owned' || (card.hasReverse && reverseStatus === 'owned')) owned += 1
       if (normalStatus === 'missing' || (card.hasReverse && reverseStatus === 'missing')) missing += 1
-      if (normalStatus === 'wanted' || (card.hasReverse && reverseStatus === 'wanted')) wanted += 1
       if (card.hasReverse && reverseStatus === 'missing') reverseMissing += 1
       if (card.hasReverse && reverseStatus === 'owned') reverseOwned += 1
     }
-    return { all: enriched.length, owned, missing, wanted, reverseMissing, reverseOwned }
+    return { all: enriched.length, owned, missing, reverseMissing, reverseOwned }
   }, [enriched])
 
   const hasActiveCollectionFilters =
@@ -890,7 +879,6 @@ export default function App() {
                     ['all', 'Toutes', statusCounts.all],
                     ['owned', 'Possédées', statusCounts.owned],
                     ['missing', 'Manquantes', statusCounts.missing],
-                    ['wanted', 'Recherchées', statusCounts.wanted],
                     ...(setHasAnyReverse
                       ? ([
                           ['reverse-missing', 'Reverse manquantes', statusCounts.reverseMissing],

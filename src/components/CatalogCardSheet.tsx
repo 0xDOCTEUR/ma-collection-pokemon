@@ -153,11 +153,7 @@ export function CatalogCardSheet({
                     Ma collection{collectionVariantLabel ? ` · ${collectionVariantLabel}` : ''}
                   </span>
                   <strong className="sheet-collection-state">
-                    {collectionStatus === 'owned'
-                      ? 'Dans ta collection'
-                      : collectionStatus === 'wanted'
-                        ? 'Marquée comme recherchée'
-                        : 'Pas encore ajoutée'}
+                    {collectionStatus === 'owned' ? 'Dans ta collection' : 'Manquante'}
                   </strong>
                 </div>
                 <div className="sheet-collection-actions">
@@ -169,15 +165,6 @@ export function CatalogCardSheet({
                     }
                   >
                     {collectionStatus === 'owned' ? '✓ J’ai' : '+ J’ai'}
-                  </button>
-                  <button
-                    type="button"
-                    className={collectionStatus === 'wanted' ? 'chip active-wanted' : 'chip'}
-                    onClick={() =>
-                      onSetCollectionStatus(collectionStatus === 'wanted' ? 'missing' : 'wanted')
-                    }
-                  >
-                    {collectionStatus === 'wanted' ? '★ Recherchée' : 'Je cherche'}
                   </button>
                 </div>
               </div>

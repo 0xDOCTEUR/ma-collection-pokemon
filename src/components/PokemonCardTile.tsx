@@ -14,12 +14,6 @@ import {
   type PsaPrinting,
 } from '../utils/population'
 
-const STATUS_LABEL: Record<CardStatus, string> = {
-  owned: 'Possédée',
-  missing: 'Manquante',
-  wanted: 'Recherchée',
-}
-
 interface Props {
   card: PokemonCard
   normalStatus: CardStatus
@@ -35,8 +29,8 @@ interface Props {
   listActions?: ReactNode
 }
 
-function nextToggle(current: CardStatus, target: 'owned' | 'wanted'): CardStatus {
-  return current === target ? 'missing' : target
+function toggleOwned(current: CardStatus): CardStatus {
+  return current === 'owned' ? 'missing' : 'owned'
 }
 
 function versionName(label: string): string | null {
@@ -93,12 +87,13 @@ export function PokemonCardTile({
   const overall: CardStatus =
     normalStatus === 'owned' || (card.hasReverse && reverseStatus === 'owned')
       ? 'owned'
-      : normalStatus === 'wanted' || (card.hasReverse && reverseStatus === 'wanted')
-        ? 'wanted'
-        : 'missing'
+      : 'missing'
 
   return (
-    <article className={`tile status-${overall}`}>
+    <article
+      className={`tile status-${overall}`}
+      title={overall === 'owned' ? 'Possédée' : 'Manquante'}
+    >
       <button
         type="button"
         className={imgBroken ? 'tile-media is-broken' : 'tile-media'}
@@ -128,17 +123,6 @@ export function PokemonCardTile({
             {card.name}
           </span>
         )}
-        <span
-          className="tile-badge"
-          title={STATUS_LABEL[overall]}
-          aria-label={STATUS_LABEL[overall]}
-        >
-          {overall === 'owned' ? (
-            <span className="tile-check" aria-hidden="true">
-              ✓
-            </span>
-          ) : null}
-        </span>
         <span className="tile-detail-hint">Cote</span>
       </button>
 
@@ -179,16 +163,9 @@ export function PokemonCardTile({
             <button
               type="button"
               className={normalStatus === 'owned' ? 'chip active-owned' : 'chip'}
-              onClick={() => onSetStatus('normal', nextToggle(normalStatus, 'owned'))}
+              onClick={() => onSetStatus('normal', toggleOwned(normalStatus))}
             >
               J’ai
-            </button>
-            <button
-              type="button"
-              className={normalStatus === 'wanted' ? 'chip active-wanted' : 'chip'}
-              onClick={() => onSetStatus('normal', nextToggle(normalStatus, 'wanted'))}
-            >
-              Je cherche
             </button>
             {listActions}
           </div>
@@ -201,16 +178,9 @@ export function PokemonCardTile({
               <button
                 type="button"
                 className={reverseStatus === 'owned' ? 'chip active-owned' : 'chip'}
-                onClick={() => onSetStatus('reverse', nextToggle(reverseStatus, 'owned'))}
+                onClick={() => onSetStatus('reverse', toggleOwned(reverseStatus))}
               >
                 J’ai reverse
-              </button>
-              <button
-                type="button"
-                className={reverseStatus === 'wanted' ? 'chip active-wanted' : 'chip'}
-                onClick={() => onSetStatus('reverse', nextToggle(reverseStatus, 'wanted'))}
-              >
-                Cherche reverse
               </button>
             </div>
           </div>

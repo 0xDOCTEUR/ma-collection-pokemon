@@ -13,8 +13,6 @@ interface SetBreakdown {
   setName: string
   ownedCount: number
   ownedValue: number
-  wantedCount: number
-  wantedValue: number
   missingCount: number
   missingValue: number
   totalSlots: number
@@ -43,10 +41,8 @@ export function GlobalEstimate({ sets = SETS, cardsBySet, getStatus }: Props) {
   const breakdowns: SetBreakdown[] = []
   const ownedSlots: OwnedSlot[] = []
   let ownedTotal = 0
-  let wantedTotal = 0
   let missingTotal = 0
   let ownedValue = 0
-  let wantedValue = 0
   let missingValue = 0
 
   for (const set of sets) {
@@ -56,8 +52,6 @@ export function GlobalEstimate({ sets = SETS, cardsBySet, getStatus }: Props) {
       setName: set.name,
       ownedCount: 0,
       ownedValue: 0,
-      wantedCount: 0,
-      wantedValue: 0,
       missingCount: 0,
       missingValue: 0,
       totalSlots: 0,
@@ -77,15 +71,6 @@ export function GlobalEstimate({ sets = SETS, cardsBySet, getStatus }: Props) {
           ownedTotal += 1
           ownedValue += value
           ownedSlots.push({ card, variant, setName: set.name })
-        } else if (status === 'wanted') {
-          row.wantedCount += 1
-          row.wantedValue += value
-          wantedTotal += 1
-          wantedValue += value
-          row.missingCount += 1
-          row.missingValue += value
-          missingTotal += 1
-          missingValue += value
         } else {
           row.missingCount += 1
           row.missingValue += value
@@ -127,11 +112,6 @@ export function GlobalEstimate({ sets = SETS, cardsBySet, getStatus }: Props) {
           <strong>{money(ownedValue)}</strong>
         </article>
         <article className="panel estimate-card">
-          <span className="stat-label">Coût des recherchées</span>
-          <strong>{money(wantedValue)}</strong>
-          <small>{wantedTotal} version(s)</small>
-        </article>
-        <article className="panel estimate-card">
           <span className="stat-label">Coût pour tout compléter</span>
           <strong>{money(missingValue)}</strong>
           <small>{missingTotal} version(s) restantes</small>
@@ -146,7 +126,6 @@ export function GlobalEstimate({ sets = SETS, cardsBySet, getStatus }: Props) {
               <th>Série</th>
               <th>Possédées</th>
               <th>Valeur sélection</th>
-              <th>Recherchées</th>
               <th>Reste à compléter</th>
             </tr>
           </thead>
@@ -158,9 +137,6 @@ export function GlobalEstimate({ sets = SETS, cardsBySet, getStatus }: Props) {
                   {row.ownedCount}/{row.totalSlots}
                 </td>
                 <td>{money(row.ownedValue)}</td>
-                <td>
-                  {row.wantedCount} · {money(row.wantedValue)}
-                </td>
                 <td>{money(row.missingValue)}</td>
               </tr>
             ))}
@@ -180,22 +156,14 @@ export function GlobalEstimate({ sets = SETS, cardsBySet, getStatus }: Props) {
                   src={slot.card.imageSmall}
                   alt=""
                   width={48}
-                  height={67}
-                  onError={(e) => {
-                    const img = e.currentTarget
-                    if (slot.card.imageFallback && img.dataset.fallbackTried !== '1') {
-                      img.dataset.fallbackTried = '1'
-                      img.src = slot.card.imageFallback
-                    }
-                  }}
+                  height={68}
+                  loading="lazy"
                 />
                 <div>
-                  <strong>
-                    {slot.card.name}
-                    {slot.variant === 'reverse' ? ' (reverse)' : ''}
-                  </strong>
+                  <strong>{slot.card.name}</strong>
                   <span>
                     {slot.setName} · #{slot.card.number}
+                    {slot.variant === 'reverse' ? ' · reverse' : ''}
                   </span>
                 </div>
                 <em>{formatPrice(slot.card, slot.variant)}</em>

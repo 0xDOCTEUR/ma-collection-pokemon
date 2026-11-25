@@ -1,19 +1,35 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { CardStatus, CardVariant, CollectionMap, CollectionsBySet } from '../types'
-import { variantKey } from '../types'
+import { normalizeCardStatus, variantKey } from '../types'
 
 const STORAGE_KEY = 'pokemon-collection-v2'
 const LEGACY_KEY = 'pokemon-151-collection-v1'
 const LEGACY_SET = 'sv03.5'
 
+function normalizeMap(map: CollectionMap): CollectionMap {
+  const next: CollectionMap = {}
+  for (const [key, status] of Object.entries(map)) {
+    const normalized = normalizeCardStatus(status)
+    if (normalized === 'owned') next[key] = 'owned'
+  }
+  return next
+}
+
 function load(): CollectionsBySet {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) return JSON.parse(raw) as CollectionsBySet
+    if (raw) {
+      const parsed = JSON.parse(raw) as CollectionsBySet
+      const next: CollectionsBySet = {}
+      for (const [setId, map] of Object.entries(parsed)) {
+        next[setId] = normalizeMap(map)
+      }
+      return next
+    }
 
     const legacy = localStorage.getItem(LEGACY_KEY)
     if (legacy) {
-      return { [LEGACY_SET]: JSON.parse(legacy) as CollectionMap }
+      return { [LEGACY_SET]: normalizeMap(JSON.parse(legacy) as CollectionMap) }
     }
   } catch {
     /* ignore */
@@ -32,17 +48,18 @@ export function useCollection() {
 
   const getStatus = useCallback(
     (setId: string, id: string, variant: CardVariant = 'normal'): CardStatus =>
-      collections[setId]?.[variantKey(id, variant)] ?? 'missing',
+      normalizeCardStatus(collections[setId]?.[variantKey(id, variant)]),
     [collections],
   )
 
   const setStatus = useCallback(
     (setId: string, id: string, status: CardStatus, variant: CardVariant = 'normal') => {
       const key = variantKey(id, variant)
+      const nextStatus = normalizeCardStatus(status)
       setCollections((prev) => {
         const setMap = { ...(prev[setId] ?? {}) }
-        if (status === 'missing') delete setMap[key]
-        else setMap[key] = status
+        if (nextStatus === 'missing') delete setMap[key]
+        else setMap[key] = 'owned'
         return { ...prev, [setId]: setMap }
       })
     },
@@ -51,12 +68,13 @@ export function useCollection() {
 
   const markMany = useCallback(
     (setId: string, ids: string[], status: CardStatus, variant: CardVariant = 'normal') => {
+      const nextStatus = normalizeCardStatus(status)
       setCollections((prev) => {
         const setMap = { ...(prev[setId] ?? {}) }
         for (const id of ids) {
           const key = variantKey(id, variant)
-          if (status === 'missing') delete setMap[key]
-          else setMap[key] = status
+          if (nextStatus === 'missing') delete setMap[key]
+          else setMap[key] = 'owned'
         }
         return { ...prev, [setId]: setMap }
       })

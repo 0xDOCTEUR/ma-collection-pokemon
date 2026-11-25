@@ -1,5 +1,10 @@
-export type CardStatus = 'owned' | 'missing' | 'wanted'
+export type CardStatus = 'owned' | 'missing'
 export type CardVariant = 'normal' | 'reverse'
+
+/** Ancien statut « wanted » → traité comme manquante. */
+export function normalizeCardStatus(raw: unknown): CardStatus {
+  return raw === 'owned' ? 'owned' : 'missing'
+}
 
 export interface CardPrices {
   eur: number | null
@@ -55,7 +60,7 @@ export interface PriceHistoryPoint {
 export type CollectionMap = Record<string, CardStatus>
 export type CollectionsBySet = Record<string, CollectionMap>
 
-export type FilterStatus = 'all' | CardStatus | 'reverse-missing' | 'reverse-owned'
+export type FilterStatus = 'all' | 'owned' | 'missing' | 'reverse-missing' | 'reverse-owned'
 export type SortKey = 'number' | 'price-asc' | 'price-desc' | 'name' | 'pop-asc' | 'pop-desc'
 
 export function variantKey(cardId: string, variant: CardVariant): string {
